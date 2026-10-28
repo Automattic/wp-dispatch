@@ -397,10 +397,7 @@ final class ReaderStore: ObservableObject {
     private struct File: Codable { var starred: [ReaderSite] = []; var saved: [ReaderPost] = [] }
 
     private static let fileURL: URL = {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("WPNotifications", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("reader.json")
+        AppData.directory.appendingPathComponent("reader.json")
     }()
 
     private static func loadFile() -> File {

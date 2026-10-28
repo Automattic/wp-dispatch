@@ -14,7 +14,7 @@ The token is stored in `credentials.json` and lasts about 14 days, with no refre
 
 | | |
 |---|---|
-| Client ID | `151672` (`OAuth.clientID`), "WP Menu", owned by Shaun |
+| Client ID | `151672` (`OAuth.clientID`), "Dispatch for WordPress.com", owned by Shaun |
 | Type | Native |
 | Redirect URL | `http://localhost`, with no port or path |
 

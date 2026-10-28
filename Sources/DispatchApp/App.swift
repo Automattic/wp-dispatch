@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: PanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppData.migrateFromOldName()
         controller = PanelController(store: Store())
     }
 }

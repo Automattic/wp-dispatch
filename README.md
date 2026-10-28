@@ -1,4 +1,4 @@
-# WP Notifications
+# Dispatch for WordPress.com
 
 A macOS menu bar app for skimming WordPress.com. It shows your notifications and the Reader (blogs and P2s) in a panel under the W icon, with an in-app reader so you can tell whether something is worth your time before you open a browser.
 
@@ -17,7 +17,7 @@ A macOS menu bar app for skimming WordPress.com. It shows your notifications and
 Requires macOS 14+ and Swift 5.10+ (Xcode or the command-line tools).
 
 ```bash
-./build.sh            # builds build/WP Notifications.app
+./build.sh            # builds build/Dispatch.app
 ./build.sh --install  # builds, then moves it to ~/Applications
 ```
 
@@ -36,7 +36,7 @@ Requires macOS 14+ and Swift 5.10+ (Xcode or the command-line tools).
 | `OAuth.swift` | WordPress.com sign-in (see [docs/auth.md](docs/auth.md)). |
 | `Credentials.swift` | Token storage in a 0600 JSON file. |
 
-Local data lives in `~/Library/Application Support/WPNotifications/`:
+Local data lives in `~/Library/Application Support/Dispatch/`:
 - `credentials.json` holds the token.
 - `reader.json` holds stars and saves.
 
