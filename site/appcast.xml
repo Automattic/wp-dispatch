@@ -3,6 +3,22 @@
     <channel>
         <title>Dispatch</title>
         <item>
+            <title>0.1.1</title>
+            <pubDate>Wed, 28 Oct 2026 19:36:28 -0400</pubDate>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Dispatch 0.1.1</h2>
+<ul>
+  <li>Dispatch now updates itself. You'll get a prompt like this one whenever there's a new version.</li>
+</ul>
+]]></description>
+            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.1.1.zip" length="2043527" type="application/octet-stream" sparkle:edSignature="dUmXo+raVH4pXwJcFM5YXtIMw/ZxuY1TaTxACmQnSgE6MzLyq2f+qD69+7qU/6ZTq15XW8gmLxiyR0i8LUc3CQ=="/>
+            <sparkle:deltas>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch3-2.delta" sparkle:deltaFrom="2" length="1322" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="C/vhLgOtngtj/ipXIl06YG9YjwW/D5TfrqoGXx3T1CiQZq44d/fyFEGipbthjgQnp2tFk5tyh1bt1ciKwtiFBQ=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.1.0</title>
             <pubDate>Wed, 28 Oct 2026 19:21:12 -0400</pubDate>
             <sparkle:version>2</sparkle:version>

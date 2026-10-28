@@ -6,6 +6,7 @@ build/
 
 # Release zips are rebuilt by release.sh and published to the Space, not committed.
 site/releases/*.zip
+site/releases/*.delta
 .spacefast/state.json
 site/.spacefast/state.json
 .claude/
