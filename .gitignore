@@ -3,3 +3,9 @@ build/
 .swiftpm/
 .DS_Store
 *.xcodeproj/xcuserdata/
+
+# Release zips are rebuilt by release.sh and published to the Space, not committed.
+site/releases/*.zip
+.spacefast/state.json
+site/.spacefast/state.json
+.claude/

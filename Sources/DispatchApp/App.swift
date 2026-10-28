@@ -9,5 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppData.migrateFromOldName()
         controller = PanelController(store: Store())
+        _ = Updates.shared // starts the daily background check
+        if let controller { Screenshots.stage(controller) }
     }
 }

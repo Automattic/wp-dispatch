@@ -1,0 +1,14 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Dispatch</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Wed, 28 Oct 2026 19:21:12 -0400</pubDate>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.1.0.zip" length="2043530" type="application/octet-stream" sparkle:edSignature="Bc/kju5oEj4+VTFOSHHW08zTd1oDsnEZKyTTQ3KhDjc17nrpNS4rYZ5ulUoKSRUTGzeH33w5nkZAOEL8q0UkDw=="/>
+        </item>
+    </channel>
+</rss>

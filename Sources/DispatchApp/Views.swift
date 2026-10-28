@@ -63,6 +63,9 @@ struct ListPane: View {
                             ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
                     }
                     Divider()
+                    Button("Check for Updates…") { Updates.shared.checkForUpdates() }
+                    Text("Dispatch \(Updates.shared.versionLabel)")
+                    Divider()
                     Button("Sign out") { store.signOut() }
                     Button("Quit") { NSApp.terminate(nil) }
                 } label: {
