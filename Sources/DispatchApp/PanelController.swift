@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import WebKit
 
 /// Borderless panels can't become key by default; we need key for keyboard nav and text fields.
 final class Panel: NSPanel {
@@ -24,6 +25,10 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var keptVisible: Set<Int> = []
     /// Comments drawer under the reader; starts closed each launch, then sticks while you move between posts.
     @Published var commentsOpen = false
+    /// Set by the list as it scrolls; shows the back-to-top button.
+    @Published var listScrolled = false
+    /// Bumped to ask the visible list to scroll to its top.
+    @Published private(set) var scrollToTopRequest = 0
     @Published var unreadOnly = UserDefaults.standard.bool(forKey: "unreadOnly") {
         didSet { UserDefaults.standard.set(unreadOnly, forKey: "unreadOnly") }
     }
@@ -317,6 +322,8 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
+    func scrollToTop() { scrollToTopRequest += 1 }
+
     func openSelectedInBrowser() {
         let link = section == .notifications ? selectedNote?.url : (selectedPost?.originalURL ?? selectedPost?.URL)
         guard let link, let url = URL(string: link) else { return }
@@ -439,6 +446,11 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         if e.window?.firstResponder is NSTextView { return e } // typing a comment
         if e.modifierFlags.contains(.command) {
             if e.charactersIgnoringModifiers == "w", mode == .detached { attach(show: false); return nil }
+            // ⌘↑: back to the top of the list, unless the article has focus (it scrolls itself).
+            if e.keyCode == 126, !Self.isInWebView(e.window?.firstResponder) {
+                scrollToTop()
+                return nil
+            }
             return e
         }
         switch e.keyCode {
@@ -466,6 +478,15 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     // MARK: Helpers
+
+    private static func isInWebView(_ responder: NSResponder?) -> Bool {
+        var view = responder as? NSView
+        while let v = view {
+            if v is WKWebView { return true }
+            view = v.superview
+        }
+        return false
+    }
 
     private func animate(_ window: NSWindow, to frame: NSRect, alpha: CGFloat? = nil,
                          duration: TimeInterval, completion: (() -> Void)? = nil) {

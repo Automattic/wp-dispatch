@@ -140,6 +140,7 @@ struct NotificationFilters: View {
             PillPicker(options: [.init("All", false), .init("Unread", true, badge: store.unreadCount)],
                        selection: c.unreadOnly) { c.unreadOnly = $0 }
             Spacer()
+            BackToTopButton()
             IconButton("checkmark.circle", help: "Mark all as read") { Task { await store.markAllRead() } }
                 .disabled(store.unreadCount == 0)
         }
@@ -162,6 +163,7 @@ struct ReaderFilters: View {
                          name: reader.siteName(id), size: 20)
                 Text(reader.siteName(id)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 Spacer()
+                BackToTopButton()
             }
         } else {
             HStack {
@@ -171,8 +173,36 @@ struct ReaderFilters: View {
                     .init("Saved", .saved, badge: reader.saved.count, symbol: "bookmark.fill", quietBadge: true),
                 ], selection: reader.feed) { reader.show($0) }
                 Spacer()
+                BackToTopButton()
             }
         }
+    }
+}
+
+/// Shows once the list has scrolled away from the top. ⌘↑ does the same.
+struct BackToTopButton: View {
+    @EnvironmentObject var c: PanelController
+
+    var body: some View {
+        if c.listScrolled {
+            IconButton("arrow.up", help: "Back to top (⌘↑)") { c.scrollToTop() }
+                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+        }
+    }
+}
+
+/// Zero-height view at the top of a list's scroll content: the target for back-to-top,
+/// and it tells the controller whether the list has scrolled away from the top.
+struct ListTop: View {
+    static let id = "list-top"
+    @EnvironmentObject var c: PanelController
+
+    var body: some View {
+        Color.clear.frame(height: 0).id(Self.id)
+            .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).minY < -60 } action: { scrolled in
+                withAnimation(.easeOut(duration: 0.15)) { c.listScrolled = scrolled }
+            }
+            .onDisappear { c.listScrolled = false }
     }
 }
 
@@ -194,17 +224,24 @@ struct NotificationList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 2) {
-                        ForEach(notes) { note in
-                            NoteRow(note: note, selected: note.id == c.selectedID, selection: selection).id(note.id)
+                    // ScrollView stacks with default spacing; keep the marker flush with the list.
+                    VStack(spacing: 0) {
+                        ListTop()
+                        LazyVStack(spacing: 2) {
+                            ForEach(notes) { note in
+                                NoteRow(note: note, selected: note.id == c.selectedID, selection: selection).id(note.id)
+                            }
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.top, 6)
+                        .padding(.bottom, c.mode == .attached ? 18 : 6)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.top, 6)
-                    .padding(.bottom, c.mode == .attached ? 18 : 6)
                 }
                 .onChange(of: c.selectedID) { _, id in
                     if let id { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(id) } }
+                }
+                .onChange(of: c.scrollToTopRequest) { _, _ in
+                    withAnimation(.easeOut(duration: 0.3)) { proxy.scrollTo(ListTop.id, anchor: .top) }
                 }
             }
         }
@@ -233,30 +270,37 @@ struct PostList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 2) {
-                        ForEach(reader.posts) { post in
-                            Group {
-                                if post.isXPost {
-                                    XPostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
-                                } else {
-                                    PostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
+                    // ScrollView stacks with default spacing; keep the marker flush with the list.
+                    VStack(spacing: 0) {
+                        ListTop()
+                        LazyVStack(spacing: 2) {
+                            ForEach(reader.posts) { post in
+                                Group {
+                                    if post.isXPost {
+                                        XPostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
+                                    } else {
+                                        PostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
+                                    }
                                 }
+                                    .id(post.id)
+                                    .onAppear {
+                                        if post == reader.posts.last { Task { await reader.loadMore() } }
+                                    }
                             }
-                                .id(post.id)
-                                .onAppear {
-                                    if post == reader.posts.last { Task { await reader.loadMore() } }
-                                }
+                            if reader.isLoading {
+                                ProgressView().controlSize(.small).padding(12)
+                            }
                         }
-                        if reader.isLoading {
-                            ProgressView().controlSize(.small).padding(12)
-                        }
+                        .padding(.horizontal, 6)
+                        .padding(.top, 6)
+                        .padding(.bottom, c.mode == .attached ? 18 : 6)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.top, 6)
-                    .padding(.bottom, c.mode == .attached ? 18 : 6)
                 }
                 .onChange(of: c.selectedPostID) { _, id in
                     if let id { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(id) } }
+                }
+                .onChange(of: c.scrollToTopRequest) { _, _ in
+                    withAnimation(.easeOut(duration: 0.3)) { proxy.scrollTo(ListTop.id, anchor: .top) }
                 }
                 .onChange(of: reader.feed) { _, _ in
                     if let first = reader.posts.first { proxy.scrollTo(first.id, anchor: .top) }

@@ -24,8 +24,10 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - the comments drawer state,
 - keyboard handling, through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep:
   - `↑`/`↓`, `j`/`k`: move the selection
+  - `⌘↑`: scroll the list back to the top, unless the article has focus (then the article scrolls). The ↑ button beside the filters does the same, and shows once the list has scrolled (`ListTop` reports it).
   - `o`: open in the browser
   - `s`: save the post
+  - `l`: like the post
   - `esc`: close the reader or the panel
   - `⌘W`: put the detached window back in the menu bar
 
