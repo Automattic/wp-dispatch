@@ -67,7 +67,7 @@ Versions use `MAJOR.MINOR.PATCH`. Sparkle decides what's newer by `CFBundleVersi
    .build/artifacts/sparkle/Sparkle/bin/generate_keys --account dispatch -f dispatch-sparkle.key
    ```
    If the key is lost for good, current installs can't verify new updates. Everyone would have to download a new build by hand, and that build would need a new key in `SUPublicEDKey`. Keep a backup in a password manager.
-2. **Spacefast.** Run `sf login` with an account that's a member of Shaun's Team. `release.sh` always publishes to the Space ID above (it's also in `site/.spacefast/space.json`), so it can't accidentally create a new Space.
+2. **Spacefast.** Run `sf login` with an account that's a member of Shaun's Team. `release.sh` always publishes to the Space ID above (`site/.spacefast/space.json` names the same Space, `dispatchapp`), so it can't accidentally create a new Space.
 3. **Previous zips.** `release.sh` downloads the current release's zip if `site/releases/` doesn't have it. Older zips aren't needed.
 
 ## Testing an update

@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 VERSION=$1
 [[ -z "$VERSION" ]] && { echo "usage: ./release.sh <version> [--no-publish], e.g. 0.2.0"; exit 1; }
 SITE_URL=https://dispatchapp.space.fast
-SPACE_ID=spc_6f81e0c2ca994ef597cc94eb55f421d5 # also in site/.spacefast/space.json
+SPACE_ID=spc_6f81e0c2ca994ef597cc94eb55f421d5 # the "dispatchapp" Space, as in site/.spacefast/space.json
 TOOLS=.build/artifacts/sparkle/Sparkle/bin
 PLIST=Info.plist
 
