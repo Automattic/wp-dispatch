@@ -67,6 +67,7 @@ struct ListPane: View {
                     Text("Dispatch \(Updates.shared.versionLabel)")
                     Divider()
                     Button("Sign out") { store.signOut() }
+                    Button("Restart") { Updates.relaunch() }
                     Button("Quit") { NSApp.terminate(nil) }
                 } label: {
                     Image(systemName: "ellipsis").frame(width: 22, height: 22)
