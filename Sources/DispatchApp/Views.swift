@@ -467,6 +467,13 @@ struct PostRow: View {
                                     .contentTransition(.numericText(value: Double(like.count)))
                             }
                         }
+                        if let comments = post.comment_count, comments > 0 {
+                            HStack(spacing: 2) {
+                                Image(systemName: "bubble.left").foregroundStyle(Color.secondary.opacity(0.6))
+                                Text("\(comments)")
+                            }
+                            .help(comments == 1 ? "1 comment" : "\(comments) comments")
+                        }
                         if reader.isSaved(post) {
                             Image(systemName: "bookmark.fill").foregroundStyle(Color.accentColor)
                         }

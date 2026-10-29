@@ -30,12 +30,16 @@ struct ReaderPost: Codable, Identifiable, Hashable {
     let metadata: [Meta]?
     let like_count: Int?
     let i_like: Bool?
+    /// From the feed's `discussion.comment_count`; kept flat so saved posts store it too.
+    let comment_count: Int?
 
     var isExternal: Bool { is_external ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like
+        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count
     }
+    private enum FeedKeys: String, CodingKey { case discussion }
+    private struct Discussion: Decodable { let comment_count: Int? }
 
     // The Reader API is loose with types (string IDs, `[]` for a missing icon), so decode leniently.
     init(from decoder: Decoder) throws {
@@ -58,6 +62,8 @@ struct ReaderPost: Codable, Identifiable, Hashable {
         metadata = try? c.decode([Meta].self, forKey: .metadata)
         like_count = int(.like_count)
         i_like = (try? c.decode(Bool.self, forKey: .i_like)) ?? int(.i_like).map { $0 != 0 } // sometimes 0/1
+        comment_count = int(.comment_count)
+            ?? (try? decoder.container(keyedBy: FeedKeys.self).decode(Discussion.self, forKey: .discussion))?.comment_count
     }
 
     // MARK: X-posts

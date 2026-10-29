@@ -32,6 +32,7 @@
     chev: `<svg class="chev" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6.5 5 3.5l3 3"/></svg>`,
     star: svg(`<path stroke-linejoin="round" d="M8 1.4l1.95 4.06 4.45.57-3.27 3.08.84 4.41L8 11.4l-3.97 2.12.84-4.41L1.6 6.03l4.45-.57z"/>`),
     starFill: `<svg viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-linejoin="round"><path d="M8 1.4l1.95 4.06 4.45.57-3.27 3.08.84 4.41L8 11.4l-3.97 2.12.84-4.41L1.6 6.03l4.45-.57z"/></svg>`,
+    comment: svg(`<path stroke-linejoin="round" d="M2.5 4.2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v4.6a2 2 0 0 1-2 2H7.2l-3.2 2.6v-2.6h.5a2 2 0 0 1-2-2z"/>`),
     plus: svg(`<path d="M3 3.5A2.5 2.5 0 0 1 5.5 1h5A2.5 2.5 0 0 1 13 3.5v4A2.5 2.5 0 0 1 10.5 10H7l-3 2.5V10A2.5 2.5 0 0 1 3 7.5zM8 3.8v3.4M6.3 5.5h3.4"/>`),
     send: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M12 17V7.5M7.8 11.5 12 7.3l4.2 4.2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     xpost: svg(`<path d="M3 3v5a2 2 0 0 0 2 2h8M10 7l3 3-3 3"/>`),
@@ -229,7 +230,7 @@
         <div class="top"><div class="who"><b>${S[p.site].name}</b></div><div class="time">${p.ago}</div></div>
         <div class="title">${esc(p.title)}</div>
         <div class="ex">${esc(p.excerpt)}</div>
-        <div class="foot">${P[p.author][0]} · ${p.read}${p.likes ? ` · <span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}</div>
+        <div class="foot">${P[p.author][0]} · ${p.read}${p.likes ? ` · <span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments?.length ? ` <span class="sim-likes">${I.comment}${p.comments.length}</span>` : ""}</div>
       </div></div>`;
   }
   function renderRows(swap) {
