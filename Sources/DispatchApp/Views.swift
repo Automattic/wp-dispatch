@@ -1188,9 +1188,14 @@ struct HeightHandle: View {
                 onBegin: { dragging = true; c.beginResize() },
                 onChange: { c.updateResize() },
                 onEnd: { dragging = false; c.endResize() })
+            // The whole bottom edge drags, but the grip stays centered under the list, which is
+            // the part hanging from the menu bar. Centered on the full panel it landed under the
+            // reader, next to the divider.
             Capsule()
                 .fill(Color.primary.opacity(hovering || dragging ? 0.4 : 0.14))
                 .frame(width: dragging ? 48 : 36, height: 4)
+                .frame(width: c.listWidth)
+                .frame(maxWidth: .infinity, alignment: .trailing)
                 .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity)
