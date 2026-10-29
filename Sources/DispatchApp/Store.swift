@@ -262,6 +262,16 @@ final class Store: ObservableObject {
             expireSession()
             throw OAuthError.denied("Your WordPress.com session expired.")
         }
+        // Reads fall back on empty results; writes need to say what went wrong.
+        if method != "GET", let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            let err = try? JSONDecoder().decode([String: String].self, from: data)
+            throw APIError(message: err?["message"] ?? "WordPress.com returned an error (\(http.statusCode)).")
+        }
         return data
     }
+}
+
+struct APIError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }

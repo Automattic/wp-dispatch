@@ -436,6 +436,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     private func handleKey(_ e: NSEvent) -> NSEvent? {
         guard store.isConnected, e.window === panel || e.window === window else { return e }
+        if e.window?.firstResponder is NSTextView { return e } // typing a comment
         if e.modifierFlags.contains(.command) {
             if e.charactersIgnoringModifiers == "w", mode == .detached { attach(show: false); return nil }
             return e

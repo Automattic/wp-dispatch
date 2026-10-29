@@ -45,7 +45,11 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
   - `site_ID` is sometimes a string.
   - `site_icon` is sometimes `[]`.
 - X-posts are resolved from `xpost_origin` metadata. When you can't access the origin, the reader shows a fallback notice.
-- Comments come from `sites/{site}/posts/{post}/replies` and are ordered into threads.
+- Comments come from `sites/{site}/posts/{post}/replies`, with `like_count` and `i_like`, and are ordered into threads.
+- Writing:
+  - `setLike` posts to `comments/{id}/likes/new` or `likes/mine/delete`.
+  - `postComment` posts to `posts/{post}/replies/new` for a comment on the post, or `comments/{id}/replies/new` for a reply.
+- `Store.request` throws `APIError` when a write (non-GET) fails. Reads still fail quietly.
 - Stars and saves persist to `reader.json`.
 
 **`Credentials.swift`** stores the token as a JSON file and defines `AppData.directory`.
@@ -57,6 +61,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - `ListPane` has two rows: the section tabs plus chrome buttons, then the filters.
 - Notification rows, post rows and compact `XPostRow`s.
 - `DetailPane`: a toolbar, the web content, and the comments drawer.
+- The comments drawer shows Like and Reply under each comment in the open list. A comment box at the bottom sends with ⌘↩, and a "+" bubble at the end of the strip opens it. While the box has focus, the panel's keyboard shortcuts are off.
 - The comments drawer has two states that morph into each other with `matchedGeometryEffect`:
   - Closed: a horizontal strip of avatars and chat bubbles. The mouse wheel scrolls it sideways.
   - Open: a threaded list.

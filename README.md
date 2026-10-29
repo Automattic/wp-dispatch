@@ -10,7 +10,7 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 - **Reader.** Feeds for Blogs, P2s, Starred sites and Saved posts. Click a site name to read that site's feed.
 - **X-posts.** Shown as compact rows (origin → destination) that open the original post, with a fallback when you can't access the origin P2.
 - **Reader pane.** Clean typography, an estimated reading time, and highlighting of mentions of you.
-- **Comments drawer.** When closed it shows a horizontal strip of avatars and chat bubbles. When open it becomes a threaded list.
+- **Comments.** When closed, the drawer shows a horizontal strip of avatars and chat bubbles. When open, it becomes a threaded list where you can like comments, reply to them, or comment on the post.
 - **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window.
 - **Keyboard.** `↑`/`↓` or `j`/`k` move between items, `o` opens in the browser, `s` saves, `esc` closes the reader, and `⌘W` closes the window.
 - **Updates.** Dispatch checks for updates once a day, or on demand from ⋯ → Check for Updates…

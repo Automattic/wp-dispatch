@@ -107,12 +107,14 @@ struct PostComment: Decodable, Identifiable {
     /// Plain text with paragraph breaks kept; computed once since rows re-render a lot.
     let text: String
     var depth = 0
+    var likeCount: Int
+    var iLike: Bool
 
     var dateValue: Date? { date.flatMap { ISO8601DateFormatter().date(from: $0) } }
     /// First ~140 characters on one line, for the closed bubble strip.
     var snippet: String { String(text.replacingOccurrences(of: "\n", with: " ").prefix(140)) }
 
-    private enum CodingKeys: String, CodingKey { case id = "ID", author, date, content, parent }
+    private enum CodingKeys: String, CodingKey { case id = "ID", author, date, content, parent, like_count, i_like }
     private enum ParentKeys: String, CodingKey { case id = "ID" }
 
     init(from decoder: Decoder) throws {
@@ -124,6 +126,8 @@ struct PostComment: Decodable, Identifiable {
         parentID = (try? c.nestedContainer(keyedBy: ParentKeys.self, forKey: .parent))
             .flatMap { try? $0.decode(Int.self, forKey: .id) }
         text = ((try? c.decode(String.self, forKey: .content)) ?? "").commentText
+        likeCount = (try? c.decode(Int.self, forKey: .like_count)) ?? 0
+        iLike = (try? c.decode(Bool.self, forKey: .i_like)) ?? false
     }
 }
 
@@ -291,7 +295,7 @@ final class ReaderStore: ObservableObject {
         if let cached = commentCache[key] { return cached }
         struct Response: Decodable { let comments: [PostComment] }
         guard let data = try? await store.request(
-                "sites/\(site)/posts/\(post)/replies?number=100&order=ASC&fields=ID,author,date,content,parent"),
+                "sites/\(site)/posts/\(post)/replies?number=100&order=ASC&fields=ID,author,date,content,parent,like_count,i_like"),
               let flat = try? JSONDecoder().decode(Response.self, from: data).comments else { return [] }
 
         let children = Dictionary(grouping: flat.filter { $0.parentID != nil }, by: { $0.parentID! })
@@ -306,6 +310,26 @@ final class ReaderStore: ObservableObject {
         for root in flat where root.parentID.map({ !known.contains($0) }) ?? true { walk(root, 0) }
         commentCache[key] = ordered
         return ordered
+    }
+
+    /// The drawer edits its own copy of a thread (likes, new comments); this keeps the cache in step.
+    func storeComments(_ comments: [PostComment], site: Int, post: Int) {
+        commentCache["\(site)-\(post)"] = comments
+    }
+
+    /// Likes or unlikes a comment. Returns WordPress.com's count afterwards.
+    func setLike(_ like: Bool, comment: Int, site: Int) async throws -> (iLike: Bool, count: Int) {
+        struct Response: Decodable { let i_like: Bool; let like_count: Int }
+        let path = "sites/\(site)/comments/\(comment)/likes/" + (like ? "new" : "mine/delete")
+        let r = try JSONDecoder().decode(Response.self, from: try await store.request(path, method: "POST"))
+        return (r.i_like, r.like_count)
+    }
+
+    /// Comments on the post, or replies to `parent`. Returns the new comment.
+    func postComment(_ text: String, site: Int, post: Int, replyingTo parent: Int?) async throws -> PostComment {
+        let path = parent.map { "sites/\(site)/comments/\($0)/replies/new" } ?? "sites/\(site)/posts/\(post)/replies/new"
+        let body = try JSONEncoder().encode(["content": text])
+        return try JSONDecoder().decode(PostComment.self, from: try await store.request(path, method: "POST", body: body))
     }
 
     // MARK: Stars & saves

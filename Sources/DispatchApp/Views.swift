@@ -647,6 +647,11 @@ struct CommentsDrawer: View {
     @State private var comments: [PostComment]?
     @State private var appeared = false
     @State private var focus: Int?
+    @State private var replyTo: PostComment?
+    @State private var draft = ""
+    @State private var sending = false
+    @State private var sendError: String?
+    @FocusState private var composing: Bool
     @Namespace private var ns
 
     private let spring = Animation.spring(response: 0.48, dampingFraction: 0.8)
@@ -655,11 +660,16 @@ struct CommentsDrawer: View {
         // A real (zero-height) view so `.task` runs before there's anything to show.
         VStack(spacing: 0) {
             Color.clear.frame(height: 0)
-            if let comments, !comments.isEmpty {
+            if let comments {
                 VStack(spacing: 0) {
                     Divider().opacity(0.6)
                     header(comments.count)
-                    if c.commentsOpen { list(comments) } else { strip(comments) }
+                    if c.commentsOpen {
+                        if !comments.isEmpty { list(comments) }
+                        composer
+                    } else if !comments.isEmpty {
+                        strip(comments)
+                    }
                 }
                 .background(Color.primary.opacity(0.025))
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -678,13 +688,117 @@ struct CommentsDrawer: View {
         withAnimation(spring) { c.commentsOpen.toggle() }
     }
 
+    /// Opens the list with the comment box focused, replying to `comment` (or the post).
+    private func startReply(to comment: PostComment?) {
+        replyTo = comment
+        sendError = nil
+        if !c.commentsOpen { focus = comment?.id; withAnimation(spring) { c.commentsOpen = true } }
+        DispatchQueue.main.async { composing = true }
+    }
+
+    private func toggleLike(_ comment: PostComment) {
+        guard let i = comments?.firstIndex(where: { $0.id == comment.id }) else { return }
+        let like = !comment.iLike
+        // Flip it right away; settle on WordPress.com's count when it answers.
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            comments?[i].iLike = like
+            comments?[i].likeCount += like ? 1 : -1
+        }
+        Task {
+            let result = try? await reader.setLike(like, comment: comment.id, site: site)
+            guard let j = comments?.firstIndex(where: { $0.id == comment.id }) else { return }
+            comments?[j].iLike = result?.iLike ?? !like
+            comments?[j].likeCount = result?.count ?? comment.likeCount
+            if let comments { reader.storeComments(comments, site: site, post: post) }
+        }
+    }
+
+    private func send() {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, !sending else { return }
+        sending = true
+        sendError = nil
+        Task {
+            defer { sending = false }
+            do {
+                var new = try await reader.postComment(text, site: site, post: post, replyingTo: replyTo?.id)
+                var list = comments ?? []
+                // Replies go after the parent's existing replies; new comments go at the end.
+                if let parent = replyTo, let p = list.firstIndex(where: { $0.id == parent.id }) {
+                    new.depth = list[p].depth + 1
+                    var at = p + 1
+                    while at < list.count, list[at].depth > list[p].depth { at += 1 }
+                    list.insert(new, at: at)
+                } else {
+                    list.append(new)
+                }
+                withAnimation(spring) { comments = list }
+                reader.storeComments(list, site: site, post: post)
+                focus = new.id
+                draft = ""
+                replyTo = nil
+            } catch {
+                sendError = error.localizedDescription
+            }
+        }
+    }
+
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let replyTo {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrowshape.turn.up.left.fill").font(.system(size: 9))
+                    Text("Replying to \(replyTo.author?.name ?? "comment")").lineLimit(1)
+                    Button { self.replyTo = nil } label: { Image(systemName: "xmark").font(.system(size: 8, weight: .bold)) }
+                        .buttonStyle(.plain)
+                        .help("Comment on the post instead")
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            }
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField(replyTo == nil ? "Add a comment…" : "Write a reply…", text: $draft, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12.5))
+                    .lineSpacing(3)
+                    .lineLimit(1...6)
+                    .focused($composing)
+                    .disabled(sending)
+                    .onExitCommand { if replyTo != nil { replyTo = nil } else { composing = false } }
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.primary.opacity(0.06)))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.accentColor.opacity(composing ? 0.5 : 0), lineWidth: 1))
+                Button(action: send) {
+                    if sending {
+                        ProgressView().controlSize(.small).frame(width: 24, height: 24)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill").font(.system(size: 24))
+                    }
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary.opacity(0.4) : Color.accentColor)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sending)
+                .keyboardShortcut(.return, modifiers: .command)
+                .help("Send (⌘↩)")
+            }
+            if let sendError {
+                Text(sendError).font(.system(size: 11)).foregroundStyle(.red)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 18) // clears the panel's resize handle
+    }
+
     private func header(_ count: Int) -> some View {
         Button { toggle() } label: {
             HStack(spacing: 6) {
                 Image(systemName: "bubble.left.and.bubble.right.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.accentColor)
-                Text(count == 1 ? "1 comment" : "\(count) comments")
+                Text(count == 0 ? "Add a comment" : count == 1 ? "1 comment" : "\(count) comments")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
                 Image(systemName: "chevron.up")
@@ -716,6 +830,17 @@ struct CommentsDrawer: View {
                     .animation(.spring(response: 0.42, dampingFraction: 0.68).delay(Double(min(i, 14)) * 0.045),
                                value: appeared)
                 }
+                Button { startReply(to: nil) } label: {
+                    Image(systemName: "plus.bubble")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color.primary.opacity(0.06)))
+                }
+                .buttonStyle(.plain)
+                .help("Add a comment")
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeOut(duration: 0.3).delay(Double(min(comments.count, 14)) * 0.045), value: appeared)
             }
             .padding(.horizontal, 16)
             .padding(.top, 2)
@@ -729,9 +854,14 @@ struct CommentsDrawer: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     ForEach(comments) { comment in
-                        CommentBubble(comment: comment, expanded: true, ns: ns)
-                            .padding(.leading, CGFloat(min(comment.depth, 3)) * 24)
-                            .id(comment.id)
+                        VStack(alignment: .leading, spacing: 4) {
+                            CommentBubble(comment: comment, expanded: true, ns: ns)
+                            CommentActions(comment: comment, replying: replyTo?.id == comment.id,
+                                           like: { toggleLike(comment) }, reply: { startReply(to: comment) })
+                                .padding(.leading, 36) // under the bubble, past the avatar
+                        }
+                        .padding(.leading, CGFloat(min(comment.depth, 3)) * 24)
+                        .id(comment.id)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -779,6 +909,7 @@ struct CommentBubble: View {
                 }
                 Text(expanded ? comment.text : comment.snippet)
                     .font(.system(size: expanded ? 12.5 : 12))
+                    .lineSpacing(expanded ? 3.5 : 2)
                     .lineLimit(expanded ? nil : 2)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
@@ -795,6 +926,34 @@ struct CommentBubble: View {
             )
         }
         .padding(.top, 2)
+    }
+}
+
+/// Like and Reply, under a comment in the open list.
+struct CommentActions: View {
+    let comment: PostComment
+    let replying: Bool
+    let like: () -> Void
+    let reply: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Button(action: like) {
+                HStack(spacing: 3) {
+                    Image(systemName: comment.iLike ? "heart.fill" : "heart")
+                        .foregroundStyle(comment.iLike ? Color.pink : Color.secondary)
+                        .symbolEffect(.bounce, value: comment.iLike)
+                    if comment.likeCount > 0 { Text("\(comment.likeCount)").monospacedDigit() }
+                }
+            }
+            .help(comment.iLike ? "Unlike" : "Like")
+            Button(action: reply) { Text("Reply") }
+                .foregroundStyle(replying ? Color.accentColor : Color.secondary)
+                .help("Reply to \(comment.author?.name ?? "this comment")")
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(.secondary)
     }
 }
 
