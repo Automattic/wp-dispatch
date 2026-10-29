@@ -7,7 +7,7 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 ## Features
 
 - **Notifications.** Choose All or Unread. Opening a note marks it read.
-- **Reader.** Feeds for Blogs, P2s and Saved posts. Click a site name to read that site's feed.
+- **Reader.** Following (your blogs), Automattic (your P2s) and Saved. `←`/`→` switch between them. Click a site name to read that site's feed.
 - **Likes.** Like posts with the heart or `l`, which are real WordPress.com likes. X-posts like the original post.
 - **X-posts.** Shown as compact rows (origin → destination) that open the original post, with a fallback when you can't access the origin P2.
 - **Reader pane.** Clean typography, an estimated reading time, and highlighting of mentions of you.

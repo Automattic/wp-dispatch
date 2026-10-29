@@ -189,7 +189,7 @@
   function renderFilters() {
     const opts = st.section === "notifications"
       ? [["all", "All"], ["unread", "Unread"]]
-      : [["blogs", "Blogs"], ["p2s", "P2s"], ["saved", `${I.markFill.replace("<svg", '<svg width="9" height="10"')} Saved`]];
+      : [["blogs", "Following"], ["p2s", "Automattic"], ["saved", `${I.markFill.replace("<svg", '<svg width="9" height="10"')} Saved`]];
     const cur = st.section === "notifications" ? st.filter : st.feed;
     const box = $(".sim-filters");
     box.innerHTML = `<div class="sim-pills"><div class="sim-pill-thumb"></div>${opts.map(([v, label]) =>
@@ -334,6 +334,11 @@
     section(v) { if (st.section === v) return; st.section = v; st.sel = null; st.commentsOpen = false; render(true); },
     filter(v) { st.filter = v; renderFilters(); renderRows(true); },
     feed(v) { st.feed = v; st.sel = null; render(true); },
+    tab(d) {
+      if (st.section !== "reader") return;
+      const tabs = ["blogs", "p2s", "saved"], next = tabs[Math.min(Math.max(tabs.indexOf(st.feed) + d, 0), 2)];
+      if (next !== st.feed) A.feed(next);
+    },
     select(v) {
       st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = "";
       if (st.section === "notifications") st.read.add(v);
@@ -408,7 +413,7 @@
       return;
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const k = { j: ["move", 1], ArrowDown: ["move", 1], k: ["move", -1], ArrowUp: ["move", -1], Escape: ["close"], s: ["save"], l: ["likePost"], o: ["toast", "Opens in your browser"] }[e.key];
+    const k = { j: ["move", 1], ArrowDown: ["move", 1], k: ["move", -1], ArrowUp: ["move", -1], ArrowLeft: ["tab", -1], ArrowRight: ["tab", 1], Escape: ["close"], s: ["save"], l: ["likePost"], o: ["toast", "Opens in your browser"] }[e.key];
     if (!k) return;
     e.preventDefault();
     if (e.isTrusted) stopTour();
@@ -525,7 +530,7 @@
       await point('.sim-pill[data-v="saved"]', t); await sleep(1200, t);
     },
     async xposts(t) {
-      caption("P2s too. X-posts show where they came from and open the original post.");
+      caption("P2s live under Automattic. X-posts show where they came from and open the original post.");
       if (st.section !== "reader") await point('.sim-tab[data-v="reader"]', t);
       await point('.sim-pill[data-v="p2s"]', t); await sleep(900, t);
       await point(rowSel("train"), t); await sleep(2400, t);

@@ -168,8 +168,8 @@ struct ReaderFilters: View {
         } else {
             HStack {
                 PillPicker(options: [
-                    .init("Blogs", ReaderStore.Feed.blogs),
-                    .init("P2s", .p2s),
+                    .init("Following", ReaderStore.Feed.blogs),
+                    .init("Automattic", .p2s),
                     .init("Saved", .saved, badge: reader.saved.count, symbol: "bookmark.fill", quietBadge: true),
                 ], selection: reader.feed) { reader.show($0) }
                 Spacer()

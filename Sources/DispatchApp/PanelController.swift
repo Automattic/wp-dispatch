@@ -324,6 +324,15 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     func scrollToTop() { scrollToTopRequest += 1 }
 
+    /// ←/→ in the Reader: the next feed tab over. Not in a single site's feed (it has no tabs).
+    private func switchFeed(_ delta: Int) -> Bool {
+        let tabs: [ReaderStore.Feed] = [.blogs, .p2s, .saved]
+        guard section == .reader, let i = tabs.firstIndex(of: reader.feed) else { return false }
+        let next = tabs[min(max(i + delta, 0), tabs.count - 1)]
+        if next != reader.feed { reader.show(next) }
+        return true
+    }
+
     func openSelectedInBrowser() {
         let link = section == .notifications ? selectedNote?.url : (selectedPost?.originalURL ?? selectedPost?.URL)
         guard let link, let url = URL(string: link) else { return }
@@ -459,6 +468,8 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             return nil
         case 125: move(1); return nil   // ↓
         case 126: move(-1); return nil  // ↑
+        case 123: return switchFeed(-1) ? nil : e // ←
+        case 124: return switchFeed(1) ? nil : e  // →
         default: break
         }
         switch e.charactersIgnoringModifiers {

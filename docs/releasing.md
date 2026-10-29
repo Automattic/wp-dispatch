@@ -107,7 +107,7 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 `site/index.html` is one hand-written page with a download button, an interactive demo, the features and the install steps.
 
 **The demo** (`sim.js` and `sim.css`) is a working HTML copy of the panel, filled with made-up content:
-- Visitors can click and use `j`, `k`, `l`, `s`, `o` and `esc`.
+- Visitors can click and use `j`, `k`, `←`, `→`, `l`, `s`, `o` and `esc`.
 - A guided tour drives the same UI with a pretend cursor. Each feature in the list plays its own chapter.
 - Phone-width screens get a camera that follows the list or the reader.
 - Real clicks pause the tour.

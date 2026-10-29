@@ -68,7 +68,7 @@ To sign out completely, use ⋯ → **Sign out**, or delete `credentials.json`. 
   ```bash
   DISPATCH_SCENE=post ~/Applications/Dispatch.app/Contents/MacOS/Dispatch &
   ```
-  `reader` opens the Reader's Blogs feed, `post` also opens its first post, and `comments` also opens its comments drawer. See `Screenshots.swift`. Then capture the window by its ID (find it with `CGWindowListCopyWindowInfo`, owner name "Dispatch"):
+  `reader` opens the Reader's Following feed, `post` also opens its first post, and `comments` also opens its comments drawer. See `Screenshots.swift`. Then capture the window by its ID (find it with `CGWindowListCopyWindowInfo`, owner name "Dispatch"):
   ```bash
   screencapture -l<windowID> -x shot.png
   ```

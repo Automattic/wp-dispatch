@@ -1,7 +1,7 @@
 import AppKit
 
 /// Stages the panel for website screenshots: `DISPATCH_SCENE=reader|post|comments open Dispatch.app`.
-/// Only public blogs (the Reader's Blogs feed) — never notifications or P2s.
+/// Only public blogs (the Reader's Following feed) — never notifications or P2s.
 @MainActor
 enum Screenshots {
     static func stage(_ controller: PanelController) {
