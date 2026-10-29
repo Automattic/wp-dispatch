@@ -930,7 +930,7 @@ struct CommentsDrawer: View {
                             CommentBubble(comment: comment, expanded: true, ns: ns)
                             CommentActions(comment: comment, replying: replyTo?.id == comment.id,
                                            like: { toggleLike(comment) }, reply: { startReply(to: comment) })
-                                .padding(.leading, 36) // under the bubble, past the avatar
+                                .padding(.leading, 47) // lined up with the bubble's text, clear of its rounded corner
                         }
                         .padding(.leading, CGFloat(min(comment.depth, 3)) * 24)
                         .id(comment.id)
@@ -990,7 +990,6 @@ struct CommentBubble: View {
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
             .frame(width: expanded ? nil : 190, alignment: .leading)
-            .frame(maxWidth: expanded ? .infinity : nil, alignment: .leading)
             .background(
                 UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 14,
                                        bottomTrailingRadius: 14, topTrailingRadius: 14, style: .continuous)
@@ -998,6 +997,8 @@ struct CommentBubble: View {
                     .matchedGeometryEffect(id: "bubble\(comment.id)", in: ns)
             )
         }
+        // Short comments get short bubbles; long ones wrap at the drawer's width.
+        .frame(maxWidth: expanded ? .infinity : nil, alignment: .leading)
         .padding(.top, 2)
     }
 }
