@@ -55,10 +55,13 @@ $TOOLS/generate_appcast --account dispatch \
   --maximum-versions 5 \
   -o site/appcast.xml site/releases
 
+# Fresh copies of the demo for this release.
+sed -i '' -E "s#(sim\.(css|js))\?v=[0-9]+#\1?v=$BUILD#g" site/index.html
+
 # The website's Download button always gets the newest zip.
 print -r -- "/download /releases/Dispatch-$VERSION.zip 302" > site/_redirects
 
 if [[ "$2" != "--no-publish" ]]; then
   (cd site && sf publish --space $SPACE_ID --yes --wait -m "Dispatch $VERSION")
 fi
-echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects and any release notes."
+echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects, site/index.html and any release notes."

@@ -7,12 +7,13 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 ## Features
 
 - **Notifications.** Choose All or Unread. Opening a note marks it read.
-- **Reader.** Feeds for Blogs, P2s, Starred sites and Saved posts. Click a site name to read that site's feed.
+- **Reader.** Feeds for Blogs, P2s and Saved posts. Click a site name to read that site's feed.
+- **Likes.** Like posts with the heart or `l`, which are real WordPress.com likes. X-posts like the original post.
 - **X-posts.** Shown as compact rows (origin → destination) that open the original post, with a fallback when you can't access the origin P2.
 - **Reader pane.** Clean typography, an estimated reading time, and highlighting of mentions of you.
 - **Comments.** When closed, the drawer shows a horizontal strip of avatars and chat bubbles. When open, it becomes a threaded list where you can like comments, reply to them, or comment on the post.
 - **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window.
-- **Keyboard.** `↑`/`↓` or `j`/`k` move between items, `o` opens in the browser, `s` saves, `esc` closes the reader, and `⌘W` closes the window.
+- **Keyboard.** `↑`/`↓` or `j`/`k` move between items, `l` likes, `o` opens in the browser, `s` saves, `esc` closes the reader, and `⌘W` closes the window.
 - **Updates.** Dispatch checks for updates once a day, or on demand from ⋯ → Check for Updates…
 
 ## Quick start
@@ -51,7 +52,7 @@ Info.plist             Bundle info, version, Sparkle feed URL and public key
 build.sh               Builds, embeds and signs Dispatch.app (--install puts it in ~/Applications)
 release.sh             Versions, builds, signs and publishes an update
 Sources/DispatchApp/   The app (see docs/architecture.md)
-site/                  The website and update feed, published to Spacefast
+site/                  The website (with an interactive demo, sim.js) and update feed, published to Spacefast
 docs/                  Everything else worth knowing
 ```
 
@@ -61,9 +62,9 @@ docs/                  Everything else worth knowing
 | `PanelController.swift` | Status item, attached panel, detached window, sizing, animations, keyboard. |
 | `Views.swift` | All SwiftUI views. |
 | `Store.swift` | Sign-in state, notifications, REST helper, session expiry. |
-| `ReaderStore.swift` | Reader feeds, stars and saves, x-posts, comments. |
+| `ReaderStore.swift` | Reader feeds, post likes, saves, x-posts, comments. |
 | `Reader.swift` | Reader HTML template, `WKWebView` wrapper, W logo. |
 | `OAuth.swift` | WordPress.com sign-in over a localhost listener. |
 | `Credentials.swift` | Data folder, token file, migration from the old name. |
 | `Updates.swift` | Sparkle updater and version label. |
-| `Screenshots.swift` | `DISPATCH_SCENE` staging for screenshots and checking the UI. |
+| `Screenshots.swift` | `DISPATCH_SCENE` staging, for checking the UI without clicking. |

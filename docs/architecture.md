@@ -39,7 +39,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Session expiry: a 401 or `invalid_token` signs out and shows "Session expired". A 403 from a private P2 doesn't.
 
 **`ReaderStore.swift`**
-- Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.starred` (merged per-site streams), `.saved` (local), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
+- Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (local), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
 - Each feed is cached, with pagination through `before=`.
 - The response decoding is lenient because the API is inconsistent:
   - `site_ID` is sometimes a string.
@@ -50,7 +50,13 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
   - `setLike` posts to `comments/{id}/likes/new` or `likes/mine/delete`.
   - `postComment` posts to `posts/{post}/replies/new` for a comment on the post, or `comments/{id}/replies/new` for a reply.
 - `Store.request` throws `APIError` when a write (non-GET) fails. Reads still fail quietly.
-- Stars and saves persist to `reader.json`.
+- Post likes are real WordPress.com likes:
+  - `toggleLike` posts to `sites/{site}/posts/{post}/likes/new` or `likes/mine/delete`.
+  - The feeds carry `like_count` and `i_like`. Both are loose types, so they're decoded leniently.
+  - `likes` holds what's changed since a feed loaded.
+  - X-posts like the original post and fetch its count on open.
+  - RSS-only posts can't be liked.
+- Saved posts persist to `reader.json`. There used to be a local "Starred sites" feature; it was removed because it was easy to mistake for likes. Old `starred` entries in the file are ignored.
 
 **`Credentials.swift`** stores the token as a JSON file and defines `AppData.directory`.
 

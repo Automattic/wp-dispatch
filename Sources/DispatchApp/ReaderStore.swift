@@ -28,11 +28,13 @@ struct ReaderPost: Codable, Identifiable, Hashable {
     /// RSS-only blogs: `site_ID` is really the feed ID and the site endpoints don't apply.
     let is_external: Bool?
     let metadata: [Meta]?
+    let like_count: Int?
+    let i_like: Bool?
 
     var isExternal: Bool { is_external ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata
+        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like
     }
 
     // The Reader API is loose with types (string IDs, `[]` for a missing icon), so decode leniently.
@@ -54,6 +56,8 @@ struct ReaderPost: Codable, Identifiable, Hashable {
         word_count = int(.word_count)
         is_external = try? c.decode(Bool.self, forKey: .is_external)
         metadata = try? c.decode([Meta].self, forKey: .metadata)
+        like_count = int(.like_count)
+        i_like = (try? c.decode(Bool.self, forKey: .i_like)) ?? int(.i_like).map { $0 != 0 } // sometimes 0/1
     }
 
     // MARK: X-posts
@@ -139,17 +143,16 @@ struct ReaderSite: Codable, Hashable, Identifiable {
     var isFeed = false
 }
 
-/// Followed blogs, Automattic P2s, starred sites and saved posts.
-/// Stars and saves are local to this app (WordPress.com has no API for them).
+/// Followed blogs, Automattic P2s and saved posts.
+/// Saves are local to this app (WordPress.com has no API for them); likes are real WordPress.com likes.
 @MainActor
 final class ReaderStore: ObservableObject {
-    enum Feed: Hashable { case blogs, p2s, starred, saved, site(Int, isFeed: Bool) }
+    enum Feed: Hashable { case blogs, p2s, saved, site(Int, isFeed: Bool) }
 
     @Published private(set) var feed: Feed = .blogs
     @Published private(set) var posts: [ReaderPost] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: String?
-    @Published private(set) var starred: [ReaderSite] = []
     @Published private(set) var saved: [ReaderPost] = []
     @Published private(set) var sites: [Int: ReaderSite] = [:]
     /// Icons for sites we don't follow (x-post origins), looked up on demand.
@@ -166,7 +169,6 @@ final class ReaderStore: ObservableObject {
     init(store: Store) {
         self.store = store
         let saved = Self.loadFile()
-        starred = saved.starred
         self.saved = saved.saved
     }
 
@@ -227,15 +229,6 @@ final class ReaderStore: ObservableObject {
         case .p2s: posts = try await get("read/a8c?number=20")
         case .site(let id, let isFeed): posts = try await get(Self.streamPath(id, isFeed: isFeed, number: 20))
         case .saved: posts = saved
-        case .starred:
-            // No combined endpoint: pull each starred site and merge by date.
-            let paths = starred.map { Self.streamPath($0.id, isFeed: $0.isFeed, number: 10) }
-            posts = await withTaskGroup(of: [ReaderPost].self) { group in
-                for path in paths { group.addTask { (try? await get(path)) ?? [] } }
-                var all: [ReaderPost] = []
-                for await batch in group { all += batch }
-                return all.sorted { ($0.date ?? "") > ($1.date ?? "") }
-            }
         }
         return Page(posts: posts, before: posts.last?.date, done: posts.isEmpty || feed == .saved)
     }
@@ -260,13 +253,13 @@ final class ReaderStore: ObservableObject {
     }
 
     func siteName(_ id: Int) -> String {
-        sites[id]?.name ?? starred.first { $0.id == id }?.name ?? visited[id]?.name
+        sites[id]?.name ?? visited[id]?.name
             ?? posts.first { $0.site_ID == id }?.site_name ?? "Site"
     }
 
     func icon(for post: ReaderPost) -> String? {
         if let img = post.site_icon?.img, !img.isEmpty { return img }
-        return sites[post.site_ID]?.icon ?? starred.first { $0.id == post.site_ID }?.icon
+        return sites[post.site_ID]?.icon
     }
 
     func icon(forSite id: Int) -> String? { sites[id]?.icon ?? extraIcons[id] ?? visited[id]?.icon }
@@ -332,21 +325,55 @@ final class ReaderStore: ObservableObject {
         return try JSONDecoder().decode(PostComment.self, from: try await store.request(path, method: "POST", body: body))
     }
 
-    // MARK: Stars & saves
+    // MARK: Likes
+    // Real WordPress.com post likes. X-posts like the original post, not the snippet.
 
-    func isStarred(_ siteID: Int) -> Bool { starred.contains { $0.id == siteID } }
-    func isSaved(_ post: ReaderPost) -> Bool { saved.contains { $0.id == post.id } }
+    struct LikeState { var liked: Bool; var count: Int }
+    /// What we've learned since the feed loaded (toggles, x-post originals), keyed by "site-post".
+    @Published private(set) var likes: [String: LikeState] = [:]
 
-    func toggleStar(_ post: ReaderPost) {
-        if let i = starred.firstIndex(where: { $0.id == post.site_ID }) {
-            starred.remove(at: i)
-        } else {
-            starred.append(ReaderSite(id: post.site_ID, name: post.site_name ?? siteName(post.site_ID),
-                                      icon: icon(for: post), isFeed: post.isExternal))
-        }
-        cache[.starred] = nil
-        persist()
+    private func likeTarget(_ post: ReaderPost) -> (site: Int, post: Int)? {
+        if let origin = post.xpostOrigin { return origin }
+        return post.isExternal ? nil : (post.site_ID, post.postID)
     }
+
+    func canLike(_ post: ReaderPost) -> Bool { likeTarget(post) != nil }
+
+    /// Nil while an x-post's original hasn't been looked up yet.
+    func likeState(_ post: ReaderPost) -> LikeState? {
+        guard let t = likeTarget(post) else { return nil }
+        if let known = likes["\(t.site)-\(t.post)"] { return known }
+        return post.isXPost ? nil : LikeState(liked: post.i_like ?? false, count: post.like_count ?? 0)
+    }
+
+    /// X-posts carry the snippet's likes, so fetch the original's.
+    func loadLikeState(for post: ReaderPost) async {
+        guard post.isXPost, let t = likeTarget(post), likes["\(t.site)-\(t.post)"] == nil else { return }
+        struct Response: Decodable { let like_count: Int?; let i_like: Bool? }
+        guard let data = try? await store.request("sites/\(t.site)/posts/\(t.post)?fields=like_count,i_like"),
+              let r = try? JSONDecoder().decode(Response.self, from: data) else { return }
+        likes["\(t.site)-\(t.post)"] = LikeState(liked: r.i_like ?? false, count: r.like_count ?? 0)
+    }
+
+    /// Flips the like right away, then settles on WordPress.com's answer (or flips back).
+    func toggleLike(_ post: ReaderPost) async {
+        guard let t = likeTarget(post), let before = likeState(post) else { return }
+        let key = "\(t.site)-\(t.post)"
+        let like = !before.liked
+        likes[key] = LikeState(liked: like, count: max(0, before.count + (like ? 1 : -1)))
+        struct Response: Decodable { let i_like: Bool; let like_count: Int }
+        let path = "sites/\(t.site)/posts/\(t.post)/likes/" + (like ? "new" : "mine/delete")
+        if let data = try? await store.request(path, method: "POST"),
+           let r = try? JSONDecoder().decode(Response.self, from: data) {
+            likes[key] = LikeState(liked: r.i_like, count: r.like_count)
+        } else {
+            likes[key] = before
+        }
+    }
+
+    // MARK: Saves
+
+    func isSaved(_ post: ReaderPost) -> Bool { saved.contains { $0.id == post.id } }
 
     func toggleSave(_ post: ReaderPost) {
         if let i = saved.firstIndex(where: { $0.id == post.id }) { saved.remove(at: i) } else { saved.insert(post, at: 0) }
@@ -418,7 +445,8 @@ final class ReaderStore: ObservableObject {
 
     // MARK: Persistence
 
-    private struct File: Codable { var starred: [ReaderSite] = []; var saved: [ReaderPost] = [] }
+    // Older builds also stored `starred` sites here; decoding ignores it.
+    private struct File: Codable { var saved: [ReaderPost] = [] }
 
     private static let fileURL: URL = {
         AppData.directory.appendingPathComponent("reader.json")
@@ -430,7 +458,7 @@ final class ReaderStore: ObservableObject {
     }
 
     private func persist() {
-        guard let data = try? JSONEncoder().encode(File(starred: starred, saved: saved)) else { return }
+        guard let data = try? JSONEncoder().encode(File(saved: saved)) else { return }
         try? data.write(to: Self.fileURL, options: .atomic)
     }
 }

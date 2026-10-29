@@ -1,1 +1,5 @@
-{"space":"spc_6f81e0c2ca994ef597cc94eb55f421d5"}
+{
+  "team": "shaun-team",
+  "space": "dispatchapp",
+  "apiBaseUrl": "https://api.spacefast.com"
+}

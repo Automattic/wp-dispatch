@@ -7,7 +7,7 @@ Dispatch ships as a zip on its website and updates itself with [Sparkle](https:/
 | Piece | Where |
 |---|---|
 | Website, downloads, update feed | Spacefast Space `dispatchapp`, id `spc_6f81e0c2ca994ef597cc94eb55f421d5`, in team **Shaun's Team** (`shaun-team`). It's public at https://dispatchapp.space.fast. |
-| Site source | `site/`: `index.html`, `images/`, `appcast.xml`, `_redirects` and `releases/`. |
+| Site source | `site/`: `index.html`, the interactive demo (`sim.js` and `sim.css`), `appcast.xml`, `_redirects` and `releases/`. |
 | Update feed | `https://dispatchapp.space.fast/appcast.xml`, set as `SUFeedURL` in `Info.plist`. It's generated, so don't edit it by hand. |
 | Download button | `/download`, a 302 redirect in `site/_redirects` that `release.sh` rewrites for each release. |
 | Release zips and deltas | `site/releases/`. They're gitignored and published with the site. The appcast keeps 5 versions. |
@@ -104,7 +104,18 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 
 ## Website
 
-`site/index.html` is one hand-written page: a download button, features, install steps and two screenshots. To update it without a release:
+`site/index.html` is one hand-written page with a download button, an interactive demo, the features and the install steps.
+
+**The demo** (`sim.js` and `sim.css`) is a working HTML copy of the panel, filled with made-up content:
+- Visitors can click and use `j`, `k`, `l`, `s`, `o` and `esc`.
+- A guided tour drives the same UI with a pretend cursor. Each feature in the list plays its own chapter.
+- Phone-width screens get a camera that follows the list or the reader.
+- Real clicks pause the tour.
+- It can be driven from code through `window.DispatchSim`: `play()`, `pause()`, `chapter(name)`, and `do.*` for individual actions. See the header comment in `sim.js`.
+
+When the app gains or changes a visible feature, update the demo data, its actions and the tour.
+
+**Cache busting:** `index.html` loads `sim.css?v=…` and `sim.js?v=…`. After editing either file, bump the number. `release.sh` sets it to the build number. To update the site without a release:
 
 ```bash
 cd site && sf publish --space spc_6f81e0c2ca994ef597cc94eb55f421d5 --yes --wait
@@ -112,7 +123,7 @@ cd site && sf publish --space spc_6f81e0c2ca994ef597cc94eb55f421d5 --yes --wait
 
 To preview it locally, run any static server on `site/`, for example `python3 -m http.server -d site`. The `_redirects` file only works on Spacefast.
 
-To retake the screenshots, use `DISPATCH_SCENE` (see [development.md](development.md)). Only show the public Blogs feed. Never put notifications, P2 content or anything internal to Automattic on the site.
+Never put real notifications, P2 content or anything internal to Automattic on the site. The demo's people and blogs are made up.
 
 ## Not done yet
 

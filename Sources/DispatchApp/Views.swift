@@ -162,16 +162,12 @@ struct ReaderFilters: View {
                          name: reader.siteName(id), size: 20)
                 Text(reader.siteName(id)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 Spacer()
-                StarButton(on: reader.isStarred(id)) {
-                    if let post = reader.posts.first { reader.toggleStar(post) }
-                }
             }
         } else {
             HStack {
                 PillPicker(options: [
                     .init("Blogs", ReaderStore.Feed.blogs),
                     .init("P2s", .p2s),
-                    .init("Starred", .starred, symbol: "star.fill"),
                     .init("Saved", .saved, badge: reader.saved.count, symbol: "bookmark.fill", quietBadge: true),
                 ], selection: reader.feed) { reader.show($0) }
                 Spacer()
@@ -231,8 +227,6 @@ struct PostList: View {
                 switch reader.feed {
                 case .saved: EmptyState(symbol: "bookmark", title: "Nothing saved yet",
                                         detail: "Press s while reading, or right-click a post")
-                case .starred: EmptyState(symbol: "star", title: "No starred sites",
-                                          detail: "Star a blog or P2 to collect its posts here")
                 default: EmptyState(symbol: "newspaper", title: "No posts")
                 }
             }
@@ -392,9 +386,6 @@ struct PostRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(site.plainText).fontWeight(.semibold).foregroundStyle(.secondary).lineLimit(1)
-                        if reader.isStarred(post.site_ID) {
-                            Image(systemName: "star.fill").font(.system(size: 8.5)).foregroundStyle(.yellow)
-                        }
                         Spacer(minLength: 4)
                         Text(post.dateValue.map(shortTime) ?? "")
                             .font(.system(size: 11).monospacedDigit())
@@ -414,6 +405,13 @@ struct PostRow: View {
                             Text(name)
                         }
                         if let time = post.readingTime { Text(time) }
+                        if let like = reader.likeState(post), like.count > 0 {
+                            HStack(spacing: 2) {
+                                Image(systemName: like.liked ? "heart.fill" : "heart")
+                                    .foregroundStyle(like.liked ? Color.pink : Color.secondary.opacity(0.6))
+                                Text("\(like.count)")
+                            }
+                        }
                         if reader.isSaved(post) {
                             Image(systemName: "bookmark.fill").foregroundStyle(Color.accentColor)
                         }
@@ -428,7 +426,11 @@ struct PostRow: View {
         }
         .contextMenu {
             Button(reader.isSaved(post) ? "Remove from Saved" : "Save Post") { reader.toggleSave(post) }
-            Button(reader.isStarred(post.site_ID) ? "Unstar \(site)" : "Star \(site)") { reader.toggleStar(post) }
+            if reader.canLike(post) {
+                Button(reader.likeState(post)?.liked == true ? "Unlike Post" : "Like Post") {
+                    Task { await reader.toggleLike(post) }
+                }
+            }
             Button("Show Only \(site)") { reader.show(.site(post.site_ID, isFeed: post.isExternal)) }
             Divider()
             Button("Open in Browser") {
@@ -569,7 +571,7 @@ struct Avatar: View {
         switch kind {
         case .mention: return ("at", .orange)
         case .comment: return ("bubble.left.fill", .blue)
-        case .like: return ("star.fill", .pink)
+        case .like: return ("heart.fill", .pink)
         case .follow: return ("person.fill", .green)
         case .other: return ("bell.fill", .gray)
         }
@@ -589,8 +591,10 @@ struct DetailPane: View {
                     IconButton("xmark", help: "Close reader (esc)") { c.closeDetail() }
                 }
                 if c.section == .reader, let post = c.selectedPost {
-                    StarButton(on: reader.isStarred(post.site_ID)) { reader.toggleStar(post) }
-                        .help(reader.isStarred(post.site_ID) ? "Unstar this site" : "Star this site")
+                    if reader.canLike(post) {
+                        LikeButton(state: reader.likeState(post)) { Task { await reader.toggleLike(post) } }
+                            .task(id: post.id) { await reader.loadLikeState(for: post) }
+                    }
                     IconButton(reader.isSaved(post) ? "bookmark.fill" : "bookmark",
                                help: reader.isSaved(post) ? "Remove from Saved (s)" : "Save post (s)",
                                tint: reader.isSaved(post) ? .accentColor : nil) { reader.toggleSave(post) }
@@ -995,7 +999,7 @@ struct ReaderPlaceholder: View {
                 .frame(width: 40, height: 40)
                 .opacity(0.18)
             Text("Pick something to read").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
-            Text(reader ? "↑ ↓ or j k to move · s to save · o to open" : "↑ ↓ or j k to move · o to open in browser")
+            Text(reader ? "↑ ↓ or j k to move · l to like · s to save · o to open" : "↑ ↓ or j k to move · o to open in browser")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
         }
@@ -1073,13 +1077,31 @@ struct PillPicker<T: Hashable>: View {
     }
 }
 
-struct StarButton: View {
-    let on: Bool
+/// Heart and count for the open post. Dimmed until an x-post's original has been looked up.
+struct LikeButton: View {
+    let state: ReaderStore.LikeState?
     let action: () -> Void
 
     var body: some View {
-        IconButton(on ? "star.fill" : "star", help: on ? "Unstar site" : "Star site",
-                   tint: on ? .yellow : nil, action: action)
+        let liked = state?.liked ?? false
+        Button(action: action) {
+            HStack(spacing: 3) {
+                Image(systemName: liked ? "heart.fill" : "heart")
+                    .font(.system(size: 13))
+                    .symbolEffect(.bounce, value: liked)
+                if let count = state?.count, count > 0 {
+                    Text("\(count)").font(.system(size: 11, weight: .medium).monospacedDigit())
+                }
+            }
+            .foregroundStyle(liked ? Color.pink : Color.secondary)
+            .padding(.horizontal, 5)
+            .frame(minWidth: 26, minHeight: 26)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(state == nil)
+        .opacity(state == nil ? 0.4 : 1)
+        .help(liked ? "Unlike (l)" : "Like (l)")
     }
 }
 

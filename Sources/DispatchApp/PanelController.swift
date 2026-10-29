@@ -457,6 +457,10 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             guard section == .reader, let post = selectedPost else { return e }
             reader.toggleSave(post)
             return nil
+        case "l":
+            guard section == .reader, let post = selectedPost, reader.canLike(post) else { return e }
+            Task { await reader.toggleLike(post) }
+            return nil
         default: return e
         }
     }
