@@ -128,7 +128,6 @@
 .sim-like:hover { background: var(--s-fill); }
 .sim-like svg { width: 15px; height: 15px; }
 .sim-like.liked { color: var(--s-pink); }
-.sim-like.liked svg { animation: sim-beat .35s ease; }
 .sim-likes { display: inline-flex; align-items: center; gap: 2px; vertical-align: -1px; }
 .sim-likes svg { width: 10px; height: 10px; }
 .sim-likes.liked { color: var(--s-pink); }
@@ -172,8 +171,22 @@
 .sim-acts button { display: flex; gap: 3px; align-items: center; }
 .sim-acts svg { width: 12px; height: 12px; }
 .sim-acts .liked { color: var(--s-pink); }
-.sim-acts .liked svg { animation: sim-beat .35s ease; }
-@keyframes sim-beat { 50% { transform: scale(1.35); } }
+/* Like star: a fifth of a turn lands the star on itself, so it can spin and settle. */
+.sim-star { position: relative; display: inline-flex; }
+.sim-star svg { display: block; }
+.sim-star.pop svg { animation: sim-pop .65s cubic-bezier(.3,1.6,.5,1); }
+.sim-star.unpop svg { animation: sim-unpop .45s ease; }
+.sim-star.pop::before, .sim-star.pop::after { content: ""; position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.sim-star.pop::before { width: 4px; height: 4px; margin: -2px; border-radius: 50%; border: 2px solid var(--s-pink); animation: sim-ring .55s ease-out .06s both; }
+.sim-star.pop::after { width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; animation: sim-sparks .6s ease-out .06s both; }
+@keyframes sim-pop { 0% { transform: scale(1); } 14% { transform: scale(.55) rotate(-24deg); } 45% { transform: scale(1.55) rotate(60deg); } 100% { transform: scale(1) rotate(72deg); } }
+@keyframes sim-unpop { 20% { transform: scale(.7, .52) rotate(-14deg); } 45% { transform: scale(1.05) rotate(10deg); } 70% { transform: rotate(-5deg); } 100% { transform: none; } }
+@keyframes sim-ring { from { transform: scale(1); opacity: .6; } to { transform: scale(6); opacity: 0; border-width: .3px; } }
+@keyframes sim-sparks {
+  from { opacity: 1; box-shadow: 0 0 0 var(--s-pink), 0 0 0 #ff9f0a, 0 0 0 #ffd60a, 0 0 0 #bf5af2, 0 0 0 var(--s-pink), 0 0 0 #ff9f0a, 0 0 0 #63e6be, 0 0 0 #bf5af2; }
+  to { opacity: 0; box-shadow: 0 -15px 0 var(--s-pink), 11px -11px 0 #ff9f0a, 15px 0 0 #ffd60a, 11px 11px 0 #bf5af2, 0 15px 0 var(--s-pink), -11px 11px 0 #ff9f0a, -15px 0 0 #63e6be, -11px -11px 0 #bf5af2; }
+}
+@media (prefers-reduced-motion: reduce) { .sim-star.pop svg, .sim-star.unpop svg, .sim-star.pop::before, .sim-star.pop::after { animation: none; } }
 .sim-acts .replying { color: var(--s-accent); }
 .sim-composer { padding: 8px 16px 18px; }
 .sim-replyto { color: var(--s-muted); font-size: 11px; margin-bottom: 5px; }

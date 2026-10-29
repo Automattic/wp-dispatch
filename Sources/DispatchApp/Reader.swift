@@ -29,12 +29,17 @@ enum ReaderPage {
             .map { RelativeDateTimeFormatter().localizedString(for: $0, relativeTo: .now) }
         let host = url.flatMap { URL(string: $0)?.host }?.replacingOccurrences(of: ".wordpress.com", with: "")
 
-        let byline = [author.map { "<strong>\(escape($0))</strong>" }, host.map(escape), when]
+        // `person` elements open a hovercard (see `js` and HTMLView's "hovercard" handler).
+        func person(_ name: String?, _ avatar: String?) -> String {
+            gravatarHash(avatar) == nil ? ""
+                : " data-person data-name=\"\(escape(name ?? ""))\" data-avatar=\"\(escape(avatar ?? ""))\""
+        }
+        let byline = [author.map { "<strong\(person($0, avatar))>\(escape($0))</strong>" }, host.map(escape), when]
             .compactMap { $0 }.joined(separator: "<span class=sep>·</span>")
-        let avatarTag = avatar.map { "<img class=avatar src=\"\(escape($0))\">" } ?? ""
+        let avatarTag = avatar.map { "<img class=avatar src=\"\(escape($0))\"\(person(author, $0))>" } ?? ""
         let likersTag = likers.isEmpty ? "" : """
             <div class=likers>\(likers.prefix(12).map { p in
-                "<span class=liker>\(p.avatar.map { "<img src=\"\(escape($0))\">" } ?? "")\(escape(p.name))</span>"
+                "<span class=liker\(person(p.name, p.avatar))>\(p.avatar.map { "<img src=\"\(escape($0))\">" } ?? "")\(escape(p.name))</span>"
             }.joined())</div>
             """
         let termsJSON = (try? String(data: JSONEncoder().encode(terms), encoding: .utf8)) ?? "[]"
@@ -110,6 +115,19 @@ enum ReaderPage {
     """
 
     private static let js = """
+    // Hovercards: tell the app where a person is, so it can open their card beside them.
+    const hc = window.webkit?.messageHandlers?.hovercard;
+    if (hc) {
+      for (const el of document.querySelectorAll('[data-person]')) {
+        el.addEventListener('mouseenter', () => {
+          const r = el.getBoundingClientRect();
+          hc.postMessage({ enter: true, name: el.dataset.name, avatar: el.dataset.avatar,
+                           x: r.left, y: r.top, w: r.width, h: r.height });
+        });
+        el.addEventListener('mouseleave', () => hc.postMessage({ enter: false }));
+      }
+      addEventListener('scroll', () => hc.postMessage({ enter: false }), { passive: true });
+    }
     const content = document.getElementById('content');
     const words = content.innerText.split(/\\s+/).filter(Boolean).length;
     document.getElementById('time').textContent =
@@ -166,24 +184,47 @@ enum ReaderPage {
 struct HTMLView: NSViewRepresentable {
     let html: String
     let baseURL: URL?
+    @EnvironmentObject var reader: ReaderStore
+    @EnvironmentObject var c: PanelController
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> WKWebView {
-        let view = WKWebView()
+        let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "hovercard")
+        let view = WKWebView(frame: .zero, configuration: config)
+        context.coordinator.anchor.view = view
         view.navigationDelegate = context.coordinator
         view.setValue(false, forKey: "drawsBackground")
         return view
     }
 
     func updateNSView(_ view: WKWebView, context: Context) {
+        context.coordinator.reader = reader
+        context.coordinator.panel = c
         guard context.coordinator.loaded != html else { return }
         context.coordinator.loaded = html
         view.loadHTMLString(html, baseURL: baseURL)
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
+        let anchor = Hovercard.Anchor()
+        var reader: ReaderStore?
+        var panel: PanelController?
+
+        /// `{enter, name, avatar, x, y, w, h}` from the page's hover listeners (rect in page points).
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            MainActor.assumeIsolated {
+                guard let body = message.body as? [String: Any] else { return }
+                guard body["enter"] as? Bool == true, let reader, let panel else { return Hovercard.shared.leave(anchor) }
+                func n(_ k: String) -> CGFloat { CGFloat((body[k] as? NSNumber)?.doubleValue ?? 0) }
+                anchor.rect = NSRect(x: n("x"), y: n("y"), width: n("w"), height: n("h"))
+                let card = PersonCard(avatar: body["avatar"] as? String, name: body["name"] as? String)
+                    .environmentObject(reader).environmentObject(panel)
+                Hovercard.shared.hover(AnyView(card), from: anchor, edge: .bottom)
+            }
+        }
 
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                      decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {

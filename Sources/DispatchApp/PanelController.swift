@@ -204,6 +204,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     func hidePanel() {
+        Hovercard.shared.hide()
         guard panel.isVisible else { return }
         removeClickMonitor()
         statusItem.button?.highlight(false)
@@ -284,9 +285,12 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     func openSite(_ url: URL) {
         guard let id = Int(url.lastPathComponent) else { return }
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        let isFeed = query.first { $0.name == "feed" }?.value == "1"
+        openSite(id, isFeed: query.first { $0.name == "feed" }?.value == "1",
+                 name: query.first { $0.name == "name" }?.value)
+    }
+
+    func openSite(_ id: Int, isFeed: Bool = false, name: String?) {
         // Name (and icon, when it's the open post's site) so the header isn't blank while it loads.
-        let name = query.first { $0.name == "name" }?.value
         let icon = currentPost.flatMap { $0.site_ID == id ? reader.icon(for: $0) : nil } ?? reader.icon(forSite: id)
         if let name { reader.remember(ReaderSite(id: id, name: name, icon: icon, isFeed: isFeed)) }
         if section != .reader { switchSection(.reader) }
@@ -452,6 +456,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     private func handleKey(_ e: NSEvent) -> NSEvent? {
         guard store.isConnected, e.window === panel || e.window === window else { return e }
+        Hovercard.shared.hide()
         if e.window?.firstResponder is NSTextView { return e } // typing a comment
         if e.modifierFlags.contains(.command) {
             if e.charactersIgnoringModifiers == "w", mode == .detached { attach(show: false); return nil }

@@ -8,8 +8,9 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 
 - **Notifications.** Choose All or Unread. Opening a note marks it read.
 - **Reader.** Following (your blogs), Automattic (your P2s) and Saved. `←`/`→` switch between them. Click a site name to read that site's feed.
-- **Likes.** Like posts with the heart or `l`, which are real WordPress.com likes. X-posts like the original post.
+- **Likes.** Like posts with the star or `l`, which are real WordPress.com likes (and get a little celebration). X-posts like the original post.
 - **X-posts.** Shown as compact rows (origin → destination) that open the original post, with a fallback when you can't access the origin P2.
+- **Hovercards.** Rest the pointer on an avatar (notifications, comments, the article byline, likers) for a person's Gravatar profile, or on a site icon for the site, with Read and Visit buttons.
 - **Reader pane.** Clean typography, an estimated reading time, and highlighting of mentions of you.
 - **Comments.** When closed, the drawer shows a horizontal strip of avatars and chat bubbles. When open, it becomes a threaded list where you can like comments, reply to them, or comment on the post.
 - **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window.

@@ -30,8 +30,8 @@
     down: svg(`<path d="M4 6l4 4 4-4"/>`),
     bubbles: `<svg class="bub" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3.5A2.5 2.5 0 0 1 4.5 1h5A2.5 2.5 0 0 1 12 3.5v3A2.5 2.5 0 0 1 9.5 9H6l-3 2.3V8.6A2.5 2.5 0 0 1 2 6.5z"/><path opacity=".55" d="M13 5v2.5A3.5 3.5 0 0 1 9.5 11H7.4c.4.6 1.2 1 2.1 1H12l2.5 2v-2.3A2 2 0 0 0 15 10.5V7a2 2 0 0 0-2-2z"/></svg>`,
     chev: `<svg class="chev" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6.5 5 3.5l3 3"/></svg>`,
-    heart: svg(`<path d="M8 13.5S2 10 2 5.8A3 3 0 0 1 8 4.3a3 3 0 0 1 6 1.5C14 10 8 13.5 8 13.5z"/>`),
-    heartFill: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 13.5S2 10 2 5.8A3 3 0 0 1 8 4.3a3 3 0 0 1 6 1.5C14 10 8 13.5 8 13.5z"/></svg>`,
+    star: svg(`<path stroke-linejoin="round" d="M8 1.4l1.95 4.06 4.45.57-3.27 3.08.84 4.41L8 11.4l-3.97 2.12.84-4.41L1.6 6.03l4.45-.57z"/>`),
+    starFill: `<svg viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-linejoin="round"><path d="M8 1.4l1.95 4.06 4.45.57-3.27 3.08.84 4.41L8 11.4l-3.97 2.12.84-4.41L1.6 6.03l4.45-.57z"/></svg>`,
     plus: svg(`<path d="M3 3.5A2.5 2.5 0 0 1 5.5 1h5A2.5 2.5 0 0 1 13 3.5v4A2.5 2.5 0 0 1 10.5 10H7l-3 2.5V10A2.5 2.5 0 0 1 3 7.5zM8 3.8v3.4M6.3 5.5h3.4"/>`),
     send: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M12 17V7.5M7.8 11.5 12 7.3l4.2 4.2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     xpost: svg(`<path d="M3 3v5a2 2 0 0 0 2 2h8M10 7l3 3-3 3"/>`),
@@ -229,7 +229,7 @@
         <div class="top"><div class="who"><b>${S[p.site].name}</b></div><div class="time">${p.ago}</div></div>
         <div class="title">${esc(p.title)}</div>
         <div class="ex">${esc(p.excerpt)}</div>
-        <div class="foot">${P[p.author][0]} · ${p.read}${p.likes ? ` · <span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.heartFill : I.heart}${p.likes}</span>` : ""}</div>
+        <div class="foot">${P[p.author][0]} · ${p.read}${p.likes ? ` · <span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}</div>
       </div></div>`;
   }
   function renderRows(swap) {
@@ -246,6 +246,13 @@
     const list = items();
     const i = list.findIndex((it) => keyOf(it) === st.sel);
     return i < 0 ? null : { item: list[i], index: i, count: list.length };
+  }
+
+  // The like star, with a one-off pop (or squash) right after it's toggled.
+  function star(x) {
+    const fx = x.pop ? ` ${x.pop}` : "";
+    delete x.pop;
+    return `<span class="sim-star${fx}">${x.liked ? I.starFill : I.star}</span>`;
   }
 
   function renderDetail() {
@@ -273,7 +280,7 @@
     const reader = st.section === "reader" && p;
     return `<div class="sim-dhead">
       <button class="sim-icon" data-a="close" title="Close (esc)">${I.x}</button>
-      ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)">${p.liked ? I.heartFill : I.heart}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
+      ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)">${star(p)}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
       <button class="sim-icon ${st.saved.has(s.item) ? "on" : ""}" data-a="save" title="Save (s)">${st.saved.has(s.item) ? I.markFill : I.mark}</button>` : ""}
       <button class="sim-icon" data-a="toast" data-v="Opens in your browser" title="Open in browser (o)">${I.safari}</button>
       <span class="spacer"></span>
@@ -301,7 +308,7 @@
     box.innerHTML = head + `<div class="sim-clist">${list.map((cm) => `
       <div style="padding-left:${Math.min(cm.depth, 3) * 24}px">
         <div class="sim-cmt ${cm.fresh ? "" : "settled"}" style="${cm.fresh ? "" : "animation:none"}">${av(cm.who)}<div class="sim-bubble"><div class="name">${P[cm.who][0]}<span>${cm.ago}</span></div>${marked(cm.text)}</div></div>
-        <div class="sim-acts"><button class="${cm.liked ? "liked" : ""}" data-a="like" data-v="${cm.id}">${cm.liked ? I.heartFill : I.heart}${cm.likes ? cm.likes : ""}</button>
+        <div class="sim-acts"><button class="${cm.liked ? "liked" : ""}" data-a="like" data-v="${cm.id}">${star(cm)}${cm.likes ? cm.likes : ""}</button>
         <button class="${st.replyTo === cm.id ? "replying" : ""}" data-a="reply" data-v="${cm.id}">Reply</button></div>
       </div>`).join("")}</div>
       <div class="sim-composer">
@@ -357,7 +364,7 @@
     comments() { st.commentsOpen = !st.commentsOpen; st.replyTo = null; renderComments(true); },
     like(v) {
       const s = selected(); const cm = s && postFor(s.item).comments.find((x) => x.id === Number(v)); if (!cm) return;
-      cm.liked = !cm.liked; cm.likes += cm.liked ? 1 : -1; renderComments();
+      cm.liked = !cm.liked; cm.likes += cm.liked ? 1 : -1; cm.pop = cm.liked ? "pop" : "unpop"; renderComments();
     },
     reply(v) {
       st.replyTo = v ? Number(v) : null; st.typing = true;
@@ -382,7 +389,7 @@
     },
     likePost() {
       const s = selected(); const p = s && postFor(s.item); if (!p || st.section !== "reader") return;
-      p.liked = !p.liked; p.likes += p.liked ? 1 : -1;
+      p.liked = !p.liked; p.likes += p.liked ? 1 : -1; p.pop = p.liked ? "pop" : "unpop";
       renderRows(); renderDetail();
     },
     save() {

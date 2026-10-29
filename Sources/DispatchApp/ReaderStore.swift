@@ -349,6 +349,51 @@ final class ReaderStore: ObservableObject {
         return try JSONDecoder().decode(PostComment.self, from: try await store.request(path, method: "POST", body: body))
     }
 
+    // MARK: Hovercards
+    // People come from Gravatar's public profiles (the hash is in every avatar URL), sites from the Reader.
+
+    struct Profile: Decodable {
+        let display_name: String?
+        let description: String?
+        let location: String?
+        let job_title: String?
+        let company: String?
+        let pronouns: String?
+        let profile_url: String?
+    }
+    struct SiteInfo: Decodable {
+        struct Icon: Decodable { let img: String? }
+        let name: String?
+        let description: String?
+        let URL: String?
+        let subscribers_count: Int?
+        let post_count: Int?
+        let icon: Icon?
+    }
+    /// A stored nil means we looked and there's nothing public (private profile, private P2).
+    private var profiles: [String: Profile?] = [:]
+    private var siteInfos: [Int: SiteInfo?] = [:]
+
+    func profile(hash: String) async -> Profile? {
+        if let known = profiles[hash] { return known }
+        let url = Foundation.URL(string: "https://api.gravatar.com/v3/profiles/\(hash)?source=hovercard")!
+        let found = (try? await URLSession.shared.data(from: url)).flatMap { data, response in
+            (response as? HTTPURLResponse)?.statusCode == 200 ? try? JSONDecoder().decode(Profile.self, from: data) : nil
+        }
+        profiles[hash] = found
+        return found
+    }
+
+    func siteInfo(_ id: Int) async -> SiteInfo? {
+        if let known = siteInfos[id] { return known }
+        // An error body decodes too (every field is optional), so a site needs at least a name.
+        let found = (try? await store.request("read/sites/\(id)"))
+            .flatMap { try? JSONDecoder().decode(SiteInfo.self, from: $0) }
+            .flatMap { $0.name == nil ? nil : $0 }
+        siteInfos[id] = found
+        return found
+    }
+
     // MARK: Likes
     // Real WordPress.com post likes. X-posts like the original post, not the snippet.
 

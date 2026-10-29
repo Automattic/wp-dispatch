@@ -83,6 +83,14 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - `HTMLView` is the `WKWebView` wrapper. It catches `wpn://site/<id>` links, which open a site's feed in the list, and sends every other link to the browser.
 - The W logo is rendered as a template image.
 
+## Hovercards: `Hovercards.swift`
+
+- `.hovercard(edge:) { … }` on any view opens a card beside it after a ~0.5s hover (instantly when one is already open). The card lives in its own borderless, non-activating `NSPanel` that can't become key, so the list keeps keyboard focus and the card isn't clipped by the panel.
+- Moving onto the card keeps it open; leaving both closes it after a short grace. Any key press and `hidePanel()` close it too.
+- `PersonCard` loads the public Gravatar profile (`api.gravatar.com/v3/profiles/<hash>`, no auth). The hash comes from the avatar URL WordPress.com already gives us (`gravatarHash`). `SiteCard` loads `read/sites/{id}`. Both are cached in `ReaderStore`, including misses.
+- In the article, elements with `data-person` post their rect to the `hovercard` script handler in `HTMLView`, and the card anchors to that rect inside the web view.
+- Likes are stars (`LikeStar`): liking spins and pops the star with a burst of sparks, unliking squashes it. Only real toggles animate.
+
 ## Sign-in and updates
 
 - **Sign-in:** an implicit-grant OAuth flow over a localhost listener. See [auth.md](auth.md).

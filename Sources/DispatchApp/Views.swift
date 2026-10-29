@@ -384,7 +384,12 @@ struct NoteRow: View {
     var body: some View {
         SelectableRow(selected: selected, selection: selection, unread: note.isUnread, action: { c.select(note) }) {
             HStack(alignment: .top, spacing: 11) {
-                Avatar(url: note.icon, kind: note.kind)
+                if gravatarHash(note.icon) != nil {
+                    Avatar(url: note.icon, kind: note.kind)
+                        .hovercard { PersonCard(avatar: note.icon, name: note.actor) }
+                } else {
+                    Avatar(url: note.icon, kind: note.kind)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -425,7 +430,12 @@ struct PostRow: View {
         let site = post.site_name ?? reader.siteName(post.site_ID)
         SelectableRow(selected: selected, selection: selection, action: { c.select(post) }) {
             HStack(alignment: .top, spacing: 11) {
-                SiteIcon(url: reader.icon(for: post), name: site, size: 34)
+                if post.isExternal {
+                    SiteIcon(url: reader.icon(for: post), name: site, size: 34)
+                } else {
+                    SiteIcon(url: reader.icon(for: post), name: site, size: 34)
+                        .hovercard { SiteCard(id: post.site_ID, name: site, icon: reader.icon(for: post)) }
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -451,9 +461,9 @@ struct PostRow: View {
                         if let time = post.readingTime { Text(time) }
                         if let like = reader.likeState(post), like.count > 0 {
                             HStack(spacing: 2) {
-                                Image(systemName: like.liked ? "heart.fill" : "heart")
-                                    .foregroundStyle(like.liked ? Color.pink : Color.secondary.opacity(0.6))
+                                LikeStar(liked: like.liked, size: 10, idle: Color.secondary.opacity(0.6))
                                 Text("\(like.count)")
+                                    .contentTransition(.numericText(value: Double(like.count)))
                             }
                         }
                         if reader.isSaved(post) {
@@ -508,6 +518,12 @@ struct XPostRow: View {
                             .background(Color.gray.gradient, in: Circle())
                             .overlay(Circle().stroke(Color(nsColor: .windowBackgroundColor), lineWidth: 1.5))
                             .offset(x: 4, y: 4)
+                    }
+                    .hovercard {
+                        if let origin = post.xpostOrigin {
+                            SiteCard(id: origin.site, name: source.name ?? source.handle,
+                                     icon: reader.icon(forSite: origin.site))
+                        }
                     }
                     .frame(width: 34)
                     .task { if let origin = post.xpostOrigin { await reader.loadIcon(forSite: origin.site) } }
@@ -615,7 +631,7 @@ struct Avatar: View {
         switch kind {
         case .mention: return ("at", .orange)
         case .comment: return ("bubble.left.fill", .blue)
-        case .like: return ("heart.fill", .pink)
+        case .like: return ("star.fill", .pink)
         case .follow: return ("person.fill", .green)
         case .other: return ("bell.fill", .gray)
         }
@@ -637,6 +653,7 @@ struct DetailPane: View {
                 if c.section == .reader, let post = c.selectedPost {
                     if reader.canLike(post) {
                         LikeButton(state: reader.likeState(post)) { Task { await reader.toggleLike(post) } }
+                            .id(post.id) // a new post's like state shouldn't play the like animation
                             .task(id: post.id) { await reader.loadLikeState(for: post) }
                     }
                     IconButton(reader.isSaved(post) ? "bookmark.fill" : "bookmark",
@@ -969,6 +986,7 @@ struct CommentBubble: View {
             .frame(width: 28, height: 28)
             .clipShape(Circle())
             .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+            .hovercard(edge: .top) { PersonCard(avatar: comment.author?.avatar_URL, name: comment.author?.name) }
             .matchedGeometryEffect(id: "avatar\(comment.id)", in: ns)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1014,10 +1032,11 @@ struct CommentActions: View {
         HStack(spacing: 14) {
             Button(action: like) {
                 HStack(spacing: 3) {
-                    Image(systemName: comment.iLike ? "heart.fill" : "heart")
-                        .foregroundStyle(comment.iLike ? Color.pink : Color.secondary)
-                        .symbolEffect(.bounce, value: comment.iLike)
-                    if comment.likeCount > 0 { Text("\(comment.likeCount)").monospacedDigit() }
+                    LikeStar(liked: comment.iLike, size: 11)
+                    if comment.likeCount > 0 {
+                        Text("\(comment.likeCount)").monospacedDigit()
+                            .contentTransition(.numericText(value: Double(comment.likeCount)))
+                    }
                 }
             }
             .help(comment.iLike ? "Unlike" : "Like")
@@ -1156,14 +1175,14 @@ struct LikeButton: View {
         let liked = state?.liked ?? false
         Button(action: action) {
             HStack(spacing: 3) {
-                Image(systemName: liked ? "heart.fill" : "heart")
-                    .font(.system(size: 13))
-                    .symbolEffect(.bounce, value: liked)
+                LikeStar(liked: state?.liked, size: 14)
                 if let count = state?.count, count > 0 {
                     Text("\(count)").font(.system(size: 11, weight: .medium).monospacedDigit())
+                        .contentTransition(.numericText(value: Double(count)))
                 }
             }
             .foregroundStyle(liked ? Color.pink : Color.secondary)
+            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state?.count)
             .padding(.horizontal, 5)
             .frame(minWidth: 26, minHeight: 26)
             .contentShape(Rectangle())
@@ -1172,6 +1191,102 @@ struct LikeButton: View {
         .disabled(state == nil)
         .opacity(state == nil ? 0.4 : 1)
         .help(liked ? "Unlike (l)" : "Like (l)")
+    }
+}
+
+/// WordPress.com likes are stars. Liking one spins it a fifth of a turn (so it lands on itself),
+/// pops it big and throws a ring of sparks; unliking squashes it and gives it a wobble.
+/// Only real changes animate: a nil (still loading) state, or a new view identity, doesn't.
+struct LikeStar: View {
+    let liked: Bool?
+    var size: CGFloat = 12
+    var idle: Color = .secondary
+    @State private var likes = 0
+    @State private var unlikes = 0
+
+    private struct Pop { var scale = 1.0; var angle = 0.0; var squash = 1.0 }
+
+    var body: some View {
+        let on = liked ?? false
+        Image(systemName: on ? "star.fill" : "star")
+            .font(.system(size: size, weight: .semibold))
+            .foregroundStyle(on ? Color.pink : idle)
+            .keyframeAnimator(initialValue: Pop(), trigger: likes) { star, p in
+                star.scaleEffect(p.scale).rotationEffect(.degrees(p.angle))
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(0.55, duration: 0.09)
+                    SpringKeyframe(1.55, duration: 0.2, spring: .snappy)
+                    SpringKeyframe(1, duration: 0.45, spring: .bouncy(extraBounce: 0.25))
+                }
+                KeyframeTrack(\.angle) {
+                    CubicKeyframe(-24, duration: 0.09)
+                    SpringKeyframe(72, duration: 0.6, spring: .bouncy(extraBounce: 0.2))
+                }
+            }
+            .keyframeAnimator(initialValue: Pop(), trigger: unlikes) { star, p in
+                star.scaleEffect(x: p.scale, y: p.scale * p.squash).rotationEffect(.degrees(p.angle))
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(0.7, duration: 0.1)
+                    SpringKeyframe(1, duration: 0.4, spring: .bouncy)
+                }
+                KeyframeTrack(\.squash) {
+                    CubicKeyframe(0.75, duration: 0.1)
+                    SpringKeyframe(1, duration: 0.35, spring: .bouncy)
+                }
+                KeyframeTrack(\.angle) {
+                    CubicKeyframe(-14, duration: 0.08)
+                    CubicKeyframe(10, duration: 0.1)
+                    CubicKeyframe(-5, duration: 0.09)
+                    CubicKeyframe(0, duration: 0.1)
+                }
+            }
+            .background { LikeSparks(trigger: likes, radius: size * 1.5) }
+            .onChange(of: liked) { old, new in
+                guard let old, let new, old != new else { return }
+                if new { likes += 1 } else { unlikes += 1 }
+            }
+    }
+}
+
+/// The burst behind a new like: a ring that opens out and a handful of sparks flying off it.
+private struct LikeSparks: View {
+    let trigger: Int
+    let radius: CGFloat
+    private static let colors: [Color] = [.pink, .orange, .yellow, .purple, .pink, .orange, .mint, .purple]
+
+    var body: some View {
+        // `t` runs 0→1 on each like and rests at 1, where everything is invisible.
+        Color.clear.keyframeAnimator(initialValue: 1.0, trigger: trigger) { view, t in
+            let live = t < 1
+            ZStack {
+                Circle()
+                    .strokeBorder(Color.pink.opacity(live ? 0.55 * (1 - t) : 0), lineWidth: max(0.5, 2.5 * (1 - t)))
+                    .frame(width: radius * 2 * (0.4 + 0.8 * t), height: radius * 2 * (0.4 + 0.8 * t))
+                ForEach(0..<8, id: \.self) { i in
+                    let angle = Double(i) / 8 * 2 * .pi - .pi / 2
+                    let reach = radius * (0.5 + 0.9 * t)
+                    Group {
+                        if i.isMultiple(of: 2) {
+                            Image(systemName: "star.fill").font(.system(size: radius * 0.42))
+                        } else {
+                            Circle().frame(width: radius * 0.26, height: radius * 0.26)
+                        }
+                    }
+                    .foregroundStyle(Self.colors[i])
+                    .scaleEffect(live ? 1.2 - t : 0)
+                    .opacity(live ? 1 - t * t : 0)
+                    .offset(x: cos(angle) * reach, y: sin(angle) * reach)
+                }
+            }
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+        } keyframes: { _ in
+            MoveKeyframe(0)
+            CubicKeyframe(0.15, duration: 0.07) // hold back while the star squashes
+            CubicKeyframe(1, duration: 0.55)
+        }
     }
 }
 
