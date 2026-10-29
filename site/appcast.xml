@@ -3,6 +3,27 @@
     <channel>
         <title>Dispatch</title>
         <item>
+            <title>0.3.0</title>
+            <pubDate>Wed, 28 Oct 2026 23:52:33 -0400</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Dispatch 0.3.0</h2>
+<ul>
+  <li><strong>New tab names.</strong> Blogs is now Following, and P2s is now Automattic.</li>
+  <li><strong>Switch tabs with the arrow keys.</strong> In the Reader, <kbd>←</kbd> and <kbd>→</kbd> move between Following, Automattic and Saved.</li>
+  <li><strong>Back to the top.</strong> Press <kbd>⌘↑</kbd>, or click the ↑ button that appears beside the tabs once you've scrolled.</li>
+  <li><strong>Calmer comments.</strong> The comments drawer stays put when you move between posts instead of sliding in again each time.</li>
+</ul>
+]]></description>
+            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.3.0.zip" length="2271871" type="application/octet-stream" sparkle:edSignature="jXUd/0alVdi8tqe3Nwye70YmV72WAALvSXw5PkVPgQrtWgZuX9dwYYkjI+4+3Vfqpx6ODnZAebN6ANzuSEydAQ=="/>
+            <sparkle:deltas>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch5-4.delta" sparkle:deltaFrom="4" length="291298" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="vrEGuV24GFDQISdhdio/lf3Tp+ukA72p1yRyMvez+sYuCoG1Ye/hgvIgW9LCVJHf3+rEyQilO1sOzxIrspcMCw=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch5-3.delta" sparkle:deltaFrom="3" length="457638" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="yuzO91cK4JvdZYvmHt5CUbodgTp4ENAJ/TMp6iN6EnEdnk0R7Q9J43UesXMKfqaD+MvLXU4gAnWCf1sSois2BQ=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch5-2.delta" sparkle:deltaFrom="2" length="459058" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="ajou7E6mvcPfUMXFQ+oAH+mO9P/63H+4tpNuLImosMXoyZUxwiNveJI+FvejvOo0d245plWHKxUmXcd0SVBFCQ=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.2.0</title>
             <pubDate>Wed, 28 Oct 2026 20:30:33 -0400</pubDate>
             <sparkle:version>4</sparkle:version>
