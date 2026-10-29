@@ -193,7 +193,8 @@ final class ReaderStore: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            let page = try await fetch(feed, before: nil)
+            var page = try await fetch(feed, before: nil)
+            page.posts = Self.oneCopyEach(page.posts)
             cache[feed] = page
             if self.feed == feed { posts = page.posts }
             error = nil
@@ -208,8 +209,7 @@ final class ReaderStore: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         guard let next = try? await fetch(feed, before: current.before) else { return }
-        let known = Set(current.posts.map(\.id))
-        let merged = current.posts + next.posts.filter { !known.contains($0.id) }
+        let merged = Self.oneCopyEach(current.posts + next.posts)
         cache[feed] = Page(posts: merged, before: next.before, done: next.done)
         if self.feed == feed { posts = merged }
     }
@@ -231,6 +231,28 @@ final class ReaderStore: ObservableObject {
         case .saved: posts = saved
         }
         return Page(posts: posts, before: posts.last?.date, done: posts.isEmpty || feed == .saved)
+    }
+
+    /// One row per story. A post x-posted to several P2s you follow shows up once per P2, plus the
+    /// original: keep the first (newest) spot, and show the original there once we've seen it.
+    private static func oneCopyEach(_ posts: [ReaderPost]) -> [ReaderPost] {
+        func keys(_ p: ReaderPost) -> [String] {
+            if p.isXPost { return [p.xpostOrigin.map { "\($0.site)-\($0.post)" }, p.originalURL].compactMap { $0 } }
+            return ["\(p.site_ID)-\(p.postID)", p.URL].compactMap { $0 }
+        }
+        var out: [ReaderPost] = []
+        var slot: [String: Int] = [:]
+        for post in posts {
+            let ks = keys(post)
+            if let i = ks.lazy.compactMap({ slot[$0] }).first {
+                if out[i].isXPost && !post.isXPost { out[i] = post }
+                for k in ks { slot[k] = i }
+                continue
+            }
+            for k in ks { slot[k] = out.count }
+            out.append(post)
+        }
+        return out
     }
 
     private static func streamPath(_ id: Int, isFeed: Bool, number: Int) -> String {

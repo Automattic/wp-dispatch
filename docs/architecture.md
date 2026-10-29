@@ -43,6 +43,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 
 **`ReaderStore.swift`**
 - Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (local), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
+- Each feed shows a story once (`oneCopyEach`). A post x-posted to several P2s you follow keeps the newest spot, and becomes the original post once that has loaded.
 - Each feed is cached, with pagination through `before=`.
 - The response decoding is lenient because the API is inconsistent:
   - `site_ID` is sometimes a string.
