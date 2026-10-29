@@ -305,6 +305,8 @@ final class ReaderStore: ObservableObject {
         return ordered
     }
 
+    func cachedComments(site: Int, post: Int) -> [PostComment]? { commentCache["\(site)-\(post)"] }
+
     /// The drawer edits its own copy of a thread (likes, new comments); this keeps the cache in step.
     func storeComments(_ comments: [PostComment], site: Int, post: Int) {
         commentCache["\(site)-\(post)"] = comments
@@ -439,6 +441,10 @@ final class ReaderStore: ObservableObject {
     }
 
     func prefetch(_ post: ReaderPost) {
+        // Comments too, so the drawer can swap straight to them on j.
+        if let t = likeTarget(post), commentCache["\(t.site)-\(t.post)"] == nil {
+            Task { _ = await comments(site: t.site, post: t.post) }
+        }
         guard pages[post.id] == nil else { return }
         Task { _ = await page(for: post) }
     }

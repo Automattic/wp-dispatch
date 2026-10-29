@@ -70,6 +70,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Notification rows, post rows and compact `XPostRow`s.
 - `DetailPane`: a toolbar, the web content, and the comments drawer.
 - The comments drawer shows Like and Reply under each comment in the open list. A comment box at the bottom sends with ⌘↩, and a "+" bubble at the end of the strip opens it. While the box has focus, the panel's keyboard shortcuts are off.
+- The drawer is one view for the whole reading session. Moving to another post swaps its thread in place (`.task(id:)`), so it only slides up and pops its bubbles in the first time. `ReaderStore.prefetch` also loads the next post's comments, so `j` usually swaps instantly.
 - The comments drawer has two states that morph into each other with `matchedGeometryEffect`:
   - Closed: a horizontal strip of avatars and chat bubbles. The mouse wheel scrolls it sideways.
   - Open: a threaded list.

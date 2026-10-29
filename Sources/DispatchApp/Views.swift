@@ -676,7 +676,8 @@ struct DetailPane: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if let t = c.commentTarget {
-                CommentsDrawer(site: t.site, post: t.post).id("\(t.site)-\(t.post)")
+                // Not re-identified per post: the drawer stays put and swaps its thread.
+                CommentsDrawer(site: t.site, post: t.post)
             }
         }
         .background(Color(nsColor: .textBackgroundColor).opacity(0.55))
@@ -699,10 +700,13 @@ struct CommentsDrawer: View {
     @State private var draft = ""
     @State private var sending = false
     @State private var sendError: String?
+    /// Moving to another post while its thread loads: the old one stays, dimmed, so nothing jumps.
+    @State private var switching = false
     @FocusState private var composing: Bool
     @Namespace private var ns
 
     private let spring = Animation.spring(response: 0.48, dampingFraction: 0.8)
+    private var key: String { "\(site)-\(post)" }
 
     var body: some View {
         // A real (zero-height) view so `.task` runs before there's anything to show.
@@ -720,14 +724,33 @@ struct CommentsDrawer: View {
                     }
                 }
                 .background(Color.primary.opacity(0.025))
+                .opacity(switching ? 0.45 : 1)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .task {
+        .task(id: key) {
+            // First time: slide up and pop the bubbles in. After that, just swap threads.
+            guard comments != nil else {
+                let loaded = await reader.comments(site: site, post: post)
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { comments = loaded }
+                try? await Task.sleep(for: .milliseconds(60))
+                appeared = true
+                return
+            }
+            replyTo = nil
+            draft = ""
+            sendError = nil
+            focus = nil
+            if let cached = reader.cachedComments(site: site, post: post) {
+                comments = cached
+                switching = false
+                return
+            }
+            withAnimation(.easeOut(duration: 0.12)) { switching = true }
             let loaded = await reader.comments(site: site, post: post)
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { comments = loaded }
-            try? await Task.sleep(for: .milliseconds(60))
-            appeared = true
+            guard !Task.isCancelled else { return }
+            comments = loaded
+            withAnimation(.easeOut(duration: 0.12)) { switching = false }
         }
     }
 
@@ -895,6 +918,7 @@ struct CommentsDrawer: View {
             .padding(.bottom, 14)
             .background(WheelScrollsSideways())
         }
+        .id(key) // each thread starts scrolled to its first comment
     }
 
     private func list(_ comments: [PostComment]) -> some View {
@@ -916,6 +940,7 @@ struct CommentsDrawer: View {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
+            .id(key)
             .frame(maxHeight: .infinity)
             .onAppear {
                 if let focus { DispatchQueue.main.async { withAnimation(spring) { proxy.scrollTo(focus, anchor: .top) } } }
