@@ -3,6 +3,27 @@
     <channel>
         <title>Dispatch</title>
         <item>
+            <title>0.2.0</title>
+            <pubDate>Wed, 28 Oct 2026 20:30:33 -0400</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Dispatch 0.2.0</h2>
+<ul>
+  <li><strong>Reply from the app.</strong> Open the comments drawer to comment on a post, or press Reply under any comment. Send with ⌘↩.</li>
+  <li><strong>Like comments.</strong> Every comment shows a heart and its like count.</li>
+  <li><strong>Like posts.</strong> Use the heart in the reader toolbar, or press <kbd>l</kbd>. These are real WordPress.com likes, and liking an x-post likes the original post.</li>
+  <li><strong>Starred sites are gone.</strong> They only existed inside Dispatch and were easy to confuse with likes. Saved posts are still here.</li>
+  <li>Comments are easier to read, with more space between lines.</li>
+</ul>
+]]></description>
+            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.2.0.zip" length="2168755" type="application/octet-stream" sparkle:edSignature="ptaBWhQkFkEYUa9FJenIRUXXRcejeAt2Z/ti7fZ+AkOnPXzLDfDwdDNevWaA9DyTFX6GIyJs59Er2fXKKvx6DA=="/>
+            <sparkle:deltas>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch4-3.delta" sparkle:deltaFrom="3" length="420470" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="01SmFbOpgLwfLF3hcJQtBQGrefmf7HDGYSDmBkbW+duzybjSUHXZoIVFvsMUflYoOGNFr5GWAWPX464k1funCQ=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch4-2.delta" sparkle:deltaFrom="2" length="419370" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="F9nfStI4Exybe0flrsD4STAlzqtNAtqqV/r+TupUtHS0S1LTKRXBH/S/jhQ4Rp+es7n+/EvFkhYFhnuLF24gAw=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.1.1</title>
             <pubDate>Wed, 28 Oct 2026 19:36:28 -0400</pubDate>
             <sparkle:version>3</sparkle:version>
