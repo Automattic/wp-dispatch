@@ -502,7 +502,7 @@ struct PostRow: View {
                         .driftTag("title")
                     let excerpt = (post.excerpt ?? "").plainText
                     if !excerpt.isEmpty {
-                        Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                        Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(3)
                             .driftTag("excerpt")
                     }
                     HStack(spacing: 6) {
@@ -510,6 +510,13 @@ struct PostRow: View {
                             Text(name)
                         }
                         if let time = post.readingTime { Text(time) }
+                        if let views = post.views {
+                            HStack(spacing: 2) {
+                                Image(systemName: "eye").foregroundStyle(Color.secondary.opacity(0.6))
+                                Text(views)
+                            }
+                            .help("\(views) views")
+                        }
                         if let like = reader.likeState(post), like.count > 0 {
                             HStack(spacing: 2) {
                                 LikeStar(liked: like.liked, size: 10, idle: Color.secondary.opacity(0.6))
@@ -524,7 +531,7 @@ struct PostRow: View {
                             }
                             .help(comments == 1 ? "1 comment" : "\(comments) comments")
                         }
-                        if reader.isSaved(post) {
+                        if reader.isSaved(post) && reader.feed != .saved { // everything in Saved is saved
                             Image(systemName: "bookmark.fill").foregroundStyle(Color.accentColor)
                         }
                     }
@@ -594,7 +601,7 @@ struct XPostRow: View {
                         Text(source.handle).fontWeight(.semibold)
                         Image(systemName: "arrow.right").font(.system(size: 8, weight: .bold)).foregroundStyle(.tertiary)
                         Text(post.destinationHandle)
-                        if reader.isSaved(post) {
+                        if reader.isSaved(post) && reader.feed != .saved {
                             Image(systemName: "bookmark.fill").font(.system(size: 9)).foregroundStyle(Color.accentColor)
                         }
                         Spacer(minLength: 4)
@@ -696,7 +703,7 @@ struct Avatar: View {
         switch kind {
         case .mention: return ("at", .orange)
         case .comment: return ("bubble.left.fill", .blue)
-        case .like: return ("star.fill", .pink)
+        case .like: return ("star.fill", .like)
         case .follow: return ("person.fill", .green)
         case .other: return ("bell.fill", .gray)
         }
@@ -1244,6 +1251,11 @@ struct PillPicker<T: Hashable>: View {
 }
 
 /// Heart and count for the open post. Dimmed until an x-post's original has been looked up.
+extension Color {
+    /// A liked star: WordPress.com's golden yellow, dark enough to read on a light background.
+    static let like = Color(red: 0.96, green: 0.69, blue: 0.0)
+}
+
 struct LikeButton: View {
     let state: ReaderStore.LikeState?
     let action: () -> Void
@@ -1258,7 +1270,7 @@ struct LikeButton: View {
                         .contentTransition(.numericText(value: Double(count)))
                 }
             }
-            .foregroundStyle(liked ? Color.pink : Color.secondary)
+            .foregroundStyle(liked ? Color.like : Color.secondary)
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state?.count)
             .padding(.horizontal, 5)
             .frame(minWidth: 26, minHeight: 26)
@@ -1287,7 +1299,7 @@ struct LikeStar: View {
         let on = liked ?? false
         Image(systemName: on ? "star.fill" : "star")
             .font(.system(size: size, weight: .semibold))
-            .foregroundStyle(on ? Color.pink : idle)
+            .foregroundStyle(on ? Color.like : idle)
             .keyframeAnimator(initialValue: Pop(), trigger: likes) { star, p in
                 star.scaleEffect(p.scale).rotationEffect(.degrees(p.angle))
             } keyframes: { _ in
@@ -1331,7 +1343,7 @@ struct LikeStar: View {
 private struct LikeSparks: View {
     let trigger: Int
     let radius: CGFloat
-    private static let colors: [Color] = [.pink, .orange, .yellow, .purple, .pink, .orange, .mint, .purple]
+    private static let colors: [Color] = [.like, .orange, .yellow, .pink, .like, .orange, .mint, .yellow]
 
     var body: some View {
         // `t` runs 0→1 on each like and rests at 1, where everything is invisible.
@@ -1339,7 +1351,7 @@ private struct LikeSparks: View {
             let live = t < 1
             ZStack {
                 Circle()
-                    .strokeBorder(Color.pink.opacity(live ? 0.55 * (1 - t) : 0), lineWidth: max(0.5, 2.5 * (1 - t)))
+                    .strokeBorder(Color.like.opacity(live ? 0.55 * (1 - t) : 0), lineWidth: max(0.5, 2.5 * (1 - t)))
                     .frame(width: radius * 2 * (0.4 + 0.8 * t), height: radius * 2 * (0.4 + 0.8 * t))
                 ForEach(0..<8, id: \.self) { i in
                     let angle = Double(i) / 8 * 2 * .pi - .pi / 2

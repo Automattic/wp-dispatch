@@ -13,7 +13,7 @@
   --s-line: rgba(0, 0, 0, 0.09);
   --s-fill: rgba(0, 0, 0, 0.05); --s-fill-2: rgba(0, 0, 0, 0.08);
   --s-accent: #3858e9; --s-accent-soft: rgba(56, 88, 233, 0.14); --s-accent-line: rgba(56, 88, 233, 0.35);
-  --s-pink: #e5397a; --s-mark: rgba(255, 196, 0, 0.32);
+  --s-pink: #e5397a; --s-like: #f5b000; --s-link: #0a66d8; --s-mark: rgba(255, 196, 0, 0.32);
   --s-menubar: rgba(255, 255, 255, 0.55);
   --s-ring: #ececec; --s-popover: rgba(250, 250, 252, 0.9);
   --s-control: #fff; --s-fill-pill: rgba(0, 0, 0, 0.07); --s-grip: rgba(0, 0, 0, 0.14); --s-accent-sel: rgba(56, 88, 233, 0.16);
@@ -37,7 +37,7 @@
     --s-line: rgba(255, 255, 255, 0.09);
     --s-fill: rgba(255, 255, 255, 0.06); --s-fill-2: rgba(255, 255, 255, 0.1);
     --s-accent: #7b90ff; --s-accent-soft: rgba(123, 144, 255, 0.18); --s-accent-line: rgba(123, 144, 255, 0.4);
-    --s-mark: rgba(255, 196, 0, 0.25);
+    --s-mark: rgba(255, 196, 0, 0.25); --s-link: #5aa8ff;
     --s-menubar: rgba(20, 20, 24, 0.5);
     --s-ring: #323232; --s-popover: rgba(48, 48, 52, 0.92);
     --s-control: #3a3a3d; --s-fill-pill: rgba(255, 255, 255, 0.08); --s-grip: rgba(255, 255, 255, 0.16); --s-accent-sel: rgba(123, 144, 255, 0.2);
@@ -143,7 +143,7 @@
 .sim-row .top { display: flex; gap: 6px; align-items: baseline; }
 /* Line heights are SwiftUI's for each size, so rows stack to the same heights as the app's. */
 .sim-row .who { line-height: 15px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sim-row .who b { font-weight: 600; }
+.sim-row .who b { font-weight: 600; color: var(--s-text); }
 .sim-row .who span { color: var(--s-muted); }
 .sim-row .who.site { color: var(--s-muted); font-weight: 600; }
 .sim-row .time { line-height: 14px; color: var(--s-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
@@ -190,11 +190,11 @@
 .sim-like { height: 26px; min-width: 26px; padding: 0 5px; border-radius: 7px; display: flex; align-items: center; gap: 3px; color: var(--s-muted); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .sim-like:hover { background: var(--s-fill); }
 .sim-like svg { width: 19px; height: 19px; } /* SF "star" at 14pt semibold */
-.sim-like.liked { color: var(--s-pink); }
+.sim-like.liked { color: var(--s-like); }
 .sim-likes { display: inline-flex; align-items: center; gap: 2px; vertical-align: -1px; }
 .sim-likes svg { width: 11.5px; height: 11.5px; } /* the SF Symbols' size at 11pt */
 .sim-likes svg.cm { width: 12.5px; height: 12.5px; }
-.sim-likes.liked { color: var(--s-pink); }
+.sim-likes.liked { color: var(--s-like); }
 .sim-article { flex: 1; overflow: hidden; padding: 18px 24px 10px; }
 .sim-article .eyebrow { color: var(--s-muted); font-weight: 600; font-size: 11.5px; }
 .sim-article .eyebrow a { color: inherit; text-decoration: none; }
@@ -215,6 +215,21 @@
 .sim-article mark { background: var(--s-mark); color: inherit; border-radius: 3px; padding: 0 2px; }
 .sim-article mark.on { animation: sim-flash 1.4s ease; }
 @keyframes sim-flash { 15%, 60% { background: rgba(255, 150, 0, .75); } }
+/* A comment notification's thread (ReaderPage.commentPage) */
+.sim-row:not(.note) .ex { -webkit-line-clamp: 3; }
+.sim-peek { margin: 12px 0 0; color: var(--s-muted); font-size: 13.5px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sim-full { margin-top: 12px; font-size: 13.5px; line-height: 1.55; }
+.sim-full p { margin: 0 0 10px; }
+.sim-readpost { display: block; margin-top: 8px; color: var(--s-link); font-size: 12px; font-weight: 600; cursor: pointer; }
+.sim-label { color: var(--s-muted); font-size: 11.5px; font-weight: 600; margin: 0 0 10px; }
+.sim-tcmt { display: flex; gap: 10px; align-items: flex-start; position: relative; }
+.sim-tbubble { min-width: 0; padding: 8px 12px; border-radius: 4px 14px 14px 14px; background: var(--s-fill-2); font-size: 13.5px; line-height: 1.55; }
+.sim-tbubble .who { font-size: 12px; margin-bottom: 3px; }
+.sim-tbubble .who span { color: var(--s-muted); font-size: 11px; margin-left: 6px; }
+.sim-tcmt.parent { padding-bottom: 14px; color: var(--s-muted); }
+.sim-tcmt.parent b { color: var(--s-text); }
+.sim-tcmt.parent::before { content: ""; position: absolute; left: 13px; top: 32px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--s-line); }
+.sim-tcmt.this .sim-tbubble { background: color-mix(in srgb, var(--s-link) 9%, var(--s-fill-2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s-link) 35%, transparent); }
 .sim-placeholder { flex: 1; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--s-muted); text-align: center; font-size: 13px; font-weight: 500; }
 .sim-placeholder svg { width: 40px; height: 40px; opacity: .18; color: var(--s-text); }
 .sim-placeholder small { margin-top: -6px; color: var(--s-faint); font-size: 11px; font-weight: 400; }
@@ -244,21 +259,21 @@
 .sim-acts { display: flex; gap: 14px; padding: 0 0 12px 47px; color: var(--s-muted); font-size: 11px; font-weight: 600; }
 .sim-acts button { display: flex; gap: 3px; align-items: center; }
 .sim-acts svg { width: 12px; height: 12px; }
-.sim-acts .liked { color: var(--s-pink); }
+.sim-acts .liked { color: var(--s-like); }
 /* Like star: a fifth of a turn lands the star on itself, so it can spin and settle. */
 .sim-star { position: relative; display: inline-flex; }
 .sim-star svg { display: block; }
 .sim-star.pop svg { animation: sim-pop .65s cubic-bezier(.3,1.6,.5,1); }
 .sim-star.unpop svg { animation: sim-unpop .45s ease; }
 .sim-star.pop::before, .sim-star.pop::after { content: ""; position: absolute; left: 50%; top: 50%; pointer-events: none; }
-.sim-star.pop::before { width: 4px; height: 4px; margin: -2px; border-radius: 50%; border: 2px solid var(--s-pink); animation: sim-ring .55s ease-out .06s both; }
+.sim-star.pop::before { width: 4px; height: 4px; margin: -2px; border-radius: 50%; border: 2px solid var(--s-like); animation: sim-ring .55s ease-out .06s both; }
 .sim-star.pop::after { width: 3px; height: 3px; margin: -1.5px; border-radius: 50%; animation: sim-sparks .6s ease-out .06s both; }
 @keyframes sim-pop { 0% { transform: scale(1); } 14% { transform: scale(.55) rotate(-24deg); } 45% { transform: scale(1.55) rotate(60deg); } 100% { transform: scale(1) rotate(72deg); } }
 @keyframes sim-unpop { 20% { transform: scale(.7, .52) rotate(-14deg); } 45% { transform: scale(1.05) rotate(10deg); } 70% { transform: rotate(-5deg); } 100% { transform: none; } }
 @keyframes sim-ring { from { transform: scale(1); opacity: .6; } to { transform: scale(6); opacity: 0; border-width: .3px; } }
 @keyframes sim-sparks {
-  from { opacity: 1; box-shadow: 0 0 0 var(--s-pink), 0 0 0 #ff9f0a, 0 0 0 #ffd60a, 0 0 0 #bf5af2, 0 0 0 var(--s-pink), 0 0 0 #ff9f0a, 0 0 0 #63e6be, 0 0 0 #bf5af2; }
-  to { opacity: 0; box-shadow: 0 -15px 0 var(--s-pink), 11px -11px 0 #ff9f0a, 15px 0 0 #ffd60a, 11px 11px 0 #bf5af2, 0 15px 0 var(--s-pink), -11px 11px 0 #ff9f0a, -15px 0 0 #63e6be, -11px -11px 0 #bf5af2; }
+  from { opacity: 1; box-shadow: 0 0 0 var(--s-like), 0 0 0 #ff9f0a, 0 0 0 #ffd60a, 0 0 0 #bf5af2, 0 0 0 var(--s-pink), 0 0 0 #ff9f0a, 0 0 0 #63e6be, 0 0 0 #bf5af2; }
+  to { opacity: 0; box-shadow: 0 -15px 0 var(--s-like), 11px -11px 0 #ff9f0a, 15px 0 0 #ffd60a, 11px 11px 0 #bf5af2, 0 15px 0 var(--s-pink), -11px 11px 0 #ff9f0a, -15px 0 0 #63e6be, -11px -11px 0 #bf5af2; }
 }
 @media (prefers-reduced-motion: reduce) { .sim-star.pop svg, .sim-star.unpop svg, .sim-star.pop::before, .sim-star.pop::after { animation: none; } }
 .sim-acts .replying { color: var(--s-accent); }

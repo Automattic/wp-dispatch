@@ -61,6 +61,90 @@ enum ReaderPage {
         """
     }
 
+    /// Someone in a comment thread, or the post's author: who, when, and what they wrote (HTML).
+    struct Speaker { let name: String?; let avatar: String?; let date: String?; let html: String }
+
+    /// A comment notification: the post it's on (a preview, and the whole post a click away), the
+    /// comment it replies to, then the comment itself, highlighted. Mentions are marked in the thread.
+    static func commentPage(eyebrowHTML: String, title: String, post: Speaker?, postExcerpt: String?, postURL: String?,
+                            parent: Speaker?, comment: Speaker, url: String?,
+                            likers: [(name: String, avatar: String?)], terms: [String]) -> String {
+        func when(_ date: String?) -> String? {
+            date.flatMap { ISO8601DateFormatter().date(from: $0) }
+                .map { RelativeDateTimeFormatter().localizedString(for: $0, relativeTo: .now) }
+        }
+        func person(_ name: String?, _ avatar: String?) -> String {
+            gravatarHash(avatar) == nil ? ""
+                : " data-person data-name=\"\(escape(name ?? ""))\" data-avatar=\"\(escape(avatar ?? ""))\""
+        }
+        func bubble(_ s: Speaker, _ cls: String) -> String {
+            let avatar = s.avatar.map { "<img class=av src=\"\(escape($0))\"\(person(s.name, $0))>" } ?? "<span class=av></span>"
+            return """
+            <div class="cmt \(cls)">\(avatar)<div class=bubble>
+              <div class=who><strong\(person(s.name, s.avatar))>\(escape(s.name ?? "Someone"))</strong>\(when(s.date).map { "<time>\($0)</time>" } ?? "")</div>
+              \(MediaLoader.route(s.html))
+            </div></div>
+            """
+        }
+        let host = (postURL ?? url).flatMap { URL(string: $0)?.host }?.replacingOccurrences(of: ".wordpress.com", with: "")
+        let byline = [post?.name.map { "<strong\(person($0, post?.avatar))>\(escape($0))</strong>" }, host.map(escape), when(post?.date)]
+            .compactMap { $0 }.joined(separator: "<span class=sep>·</span>")
+        let avatarTag = post?.avatar.map { "<img class=avatar src=\"\(escape($0))\"\(person(post?.name, $0))>" } ?? ""
+        let peek = (postExcerpt ?? "").plainText
+        let replying = parent.map { "\(escape(comment.name ?? "Someone")) replied to \(escape($0.name ?? "a comment"))" }
+            ?? "\(escape(comment.name ?? "Someone")) commented"
+        let likersTag = likers.isEmpty ? "" : """
+            <div class=likers>\(likers.prefix(12).map { p in
+                "<span class=liker\(person(p.name, p.avatar))>\(p.avatar.map { "<img src=\"\(escape($0))\">" } ?? "")\(escape(p.name))</span>"
+            }.joined())</div>
+            """
+        let termsJSON = (try? String(data: JSONEncoder().encode(terms), encoding: .utf8)) ?? "[]"
+
+        return """
+        <!doctype html><html><head><meta charset=utf-8>
+        <meta name=viewport content="width=device-width">
+        <style>\(css)\(threadCSS)</style></head><body>
+        <header>
+          <div class=eyebrow>\(eyebrowHTML)</div>
+          <h1>\(title)</h1>
+          \(byline.isEmpty ? "" : "<div class=byline>\(avatarTag)<span>\(byline)</span></div>")
+          \(peek.isEmpty ? "" : "<p class=peek>\(escape(peek))</p>")
+          \(post.map { "<details class=post><summary>Read the whole post</summary><div class=full>\(MediaLoader.route($0.html))</div></details>" } ?? "")
+        </header>
+        <article id=content>
+          <div class=label>\(replying)</div>
+          <div class=thread>\(parent.map { bubble($0, "parent") } ?? "")\(bubble(comment, "this"))</div>
+          <div class=chips><span id=time class=chip hidden></span><button id=jump class="chip me" hidden></button></div>
+          \(likersTag)
+        </article>
+        <script>const TERMS = \(termsJSON);\(js)</script>
+        </body></html>
+        """
+    }
+
+    private static let threadCSS = """
+    .peek { margin:12px 0 0; color:var(--muted); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .peek:has(+ details[open]) { display:none; }
+    details.post { margin-top:8px; }
+    details.post summary { cursor:pointer; color:var(--link); font-size:12px; font-weight:600; list-style:none; }
+    details.post summary::-webkit-details-marker { display:none; }
+    details.post summary::after { content:" ↓"; }
+    details.post[open] summary::after { content:" ↑"; }
+    details.post .full { margin-top:12px; }
+    .label { font-size:11.5px; font-weight:600; color:var(--muted); margin:0 0 10px; }
+    .cmt { display:flex; gap:10px; align-items:flex-start; position:relative; }
+    .cmt .av { width:28px; height:28px; border-radius:50%; flex:none; background:var(--chip); }
+    .cmt .bubble { min-width:0; padding:8px 12px; border-radius:4px 14px 14px 14px; background:var(--chip); }
+    .cmt .bubble > :last-child { margin-bottom:0; }
+    .cmt .who { font-size:12px; margin-bottom:3px; }
+    .cmt .who time { color:var(--muted); font-size:11px; margin-left:6px; }
+    .cmt.parent { padding-bottom:14px; color:var(--muted); }
+    .cmt.parent .who strong { color:var(--fg); }
+    .cmt.parent::before { content:""; position:absolute; left:13px; top:32px; bottom:2px; width:2px; border-radius:1px; background:var(--faint); }
+    .cmt.this .bubble { background:color-mix(in srgb, var(--link) 9%, var(--chip)); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--link) 35%, transparent); }
+    article .chips { margin-top:14px; }
+    """
+
     private static let css = """
     :root { color-scheme: light dark; --fg:#1d1d1f; --muted:#6e6e73; --faint:#e6e6ea; --chip:#f0f0f3;
             --link:#0a66d8; --mark:rgba(255,196,0,.42); --markOn:rgba(255,150,0,.75); }
@@ -142,6 +226,7 @@ enum ReaderPage {
       const nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       for (const node of nodes) {
+        if (node.parentElement.closest('.who, .label')) continue; // a name on a comment isn't a mention
         const text = node.nodeValue;
         re.lastIndex = 0;
         if (!re.test(text)) continue;

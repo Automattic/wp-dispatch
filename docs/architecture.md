@@ -41,12 +41,14 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Notifications, polled every 120 seconds.
 - Optimistic mark-as-read.
 - Mention terms from `/me`, used to highlight mentions.
+- Reader pages for notifications (`buildPage`): a comment, a reply or a comment mention gets `ReaderPage.commentPage`, which shows the post first (a three-line preview, with the whole post in a "Read the whole post" disclosure), then the comment it replies to (`parent`), then the comment itself, highlighted. A post mention shows the post; likes and follows show the notification with its likers.
 - Session expiry: a 401 or `invalid_token` signs out and shows "Session expired". A 403 from a private P2 doesn't.
 
 **`ReaderStore.swift`**
 - Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (`read/saved`, paged by `page_handle`), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
 - Each feed shows a story once (`oneCopyEach`). A post x-posted to several P2s you follow keeps the newest spot, and becomes the original post once that has loaded.
 - Each feed is cached, with pagination through `before=`.
+- Rows show the reading time, views (`views`, a preformatted string like "19K", only on some Following posts), likes and comments.
 - The response decoding is lenient because the API is inconsistent:
   - `site_ID` is sometimes a string.
   - `site_icon` is sometimes `[]`.

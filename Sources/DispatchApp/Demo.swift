@@ -22,7 +22,7 @@ enum Demo {
     }()
 
     /// The website's scenes (`SCENES` in site/sim.js). Keep the two lists in step.
-    static let scenes = ["notifications", "note-open", "comments-open", "reader", "reader-post", "xposts"]
+    static let scenes = ["notifications", "note-open", "comments-open", "reply-open", "reader", "reader-post", "xposts"]
 }
 
 // MARK: - Made-up WordPress.com
@@ -42,7 +42,7 @@ final class DemoAPI {
     private struct XPost: Decodable { let from: String; let to: String }
     private struct Post: Decodable {
         let id: Int; let site: String; let title: String; let author: String; let ago: String; let read: String
-        let excerpt: String; let body: [String]; let likes: Int; let comments: [Comment]; let xpost: XPost?
+        let excerpt: String; let body: [String]; let likes: Int; let comments: [Comment]; let xpost: XPost?; let views: String?
     }
     private struct NoteData: Decodable {
         let num: Int; let kind: String; let who: String; let action: String
@@ -94,13 +94,17 @@ final class DemoAPI {
             if parts.count == 2 { return json(["icon": ["img": icon(site: key)]]) }
             if parts.count >= 4, parts[2] == "posts", let (_, p) = post(id: parts[3]) {
                 if parts.count == 5 { return json(["comments": comments(p)]) }
-                return json(["title": p.title, "content": html(p.body), "date": date(p.ago), "URL": url(p),
+                return json(["title": p.title, "excerpt": p.excerpt, "content": html(p.body), "date": date(p.ago), "URL": url(p),
                              "author": author(p.author), "like_count": p.likes, "i_like": false])
             }
             if parts.count == 4, parts[2] == "comments", let id = Int(parts[3]),
                let (p, c) = d.posts.values.lazy.compactMap({ p in p.comments.first { $0.id == id }.map { (p, $0) } }).first {
+                // A reply's parent is the closest comment above it, one level up.
+                let i = p.comments.firstIndex { $0.id == c.id } ?? 0
+                let parent = c.depth == 0 ? nil : p.comments[..<i].last { $0.depth == c.depth - 1 }
                 return json(["content": "<p>\(ReaderPage.escape(c.text))</p>", "date": date(c.ago), "URL": url(p) + "#comment-\(c.id)",
-                             "author": author(c.who), "post": ["title": p.title]])
+                             "author": author(c.who), "post": ["ID": p.id, "title": p.title],
+                             "parent": parent.map { ["ID": $0.id] as Any } ?? false])
             }
         }
         return json([:])
@@ -152,6 +156,7 @@ final class DemoAPI {
             "author": author(p.author), "word_count": words * 230, "like_count": p.likes, "i_like": false,
             "discussion": ["comment_count": p.comments.count],
         ]
+        if let v = p.views { out["views"] = v }
         // An x-post is a snippet on the destination P2 that points at the original.
         if let x = p.xpost, let to = d.sites[x.to], let from = d.sites[x.from] {
             out["ID"] = p.id + 10_000
@@ -359,6 +364,7 @@ enum DemoRender {
         let notes = c.store.notes
         switch scene {
         case "note-open": if let n = notes.first(where: { $0.id == 2 }) { c.select(n) }
+        case "reply-open": if let n = notes.first(where: { $0.id == 4 }) { c.select(n) }
         case "comments-open":
             if let n = notes.first(where: { $0.id == 1 }) { c.select(n) }
             c.commentsOpen = true

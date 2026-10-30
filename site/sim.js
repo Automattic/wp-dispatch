@@ -29,7 +29,8 @@
     const I = {
       w: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6Zm-7.6 8.8c0-1.1.2-2.1.6-3.1l3.6 9.9A7.6 7.6 0 0 1 2.4 10Zm7.6 7.6c-.7 0-1.5-.1-2.1-.3l2.3-6.6 2.3 6.4.1.1c-.8.3-1.7.4-2.6.4Zm1-11.2c.5 0 .9-.1.9-.1.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1-.8 0-2-.1-2-.1-.4 0-.5.7 0 .7l.8.1 1.2 3.2-1.7 5-2.8-8.2.9-.1c.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1h-.5A7.6 7.6 0 0 1 15.3 4.6h-.1c-.8 0-1.3.7-1.3 1.4 0 .6.4 1.2.8 1.8.3.5.6 1.2.6 2.2 0 .7-.3 1.5-.6 2.6l-.8 2.7-2.9-8.9Zm2.8 10.2 2.3-6.7c.4-1.1.6-2 .6-2.7l-.1-.8a7.6 7.6 0 0 1-2.8 10.2Z"/></svg>`,
       refresh: svg(`<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/>`),
-      putBack: svg(`<rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 4.8h13M8 12V7.4M5.8 9.4 8 7.2l2.2 2.2"/>`),
+      eye: svg(`<path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/>`),
+    putBack: svg(`<rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 4.8h13M8 12V7.4M5.8 9.4 8 7.2l2.2 2.2"/>`),
     popout: svg(`<rect x="1.5" y="3.5" width="10" height="8" rx="1.5"/><path d="M4.5 1.5h8a2 2 0 0 1 2 2v6"/>`),
       more: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="13" cy="8" r="1.3"/></svg>`,
       x: svg(`<path d="M4 4l8 8M12 4l-8 8"/>`),
@@ -97,7 +98,7 @@
     const siteIcon = (site, extra = "", attrs = "") => `<div class="sim-site ${extra}" style="--c:${S[site].color}" data-card="site:${site}"${attrs}>${S[site].name.replace("+", "")[0].toUpperCase()}</div>`;
     const marked = (text) => esc(text).replace(/@robin|Robin/g, (m) => `<mark>${m}</mark>`);
     const unreadCount = () => NOTES.filter((n) => n.unread && !st.read.has(n.id)).length;
-    const KIND = { comment: "#0a84ff", mention: "#ff9500", like: "#ff2d55", follow: "#34c759" };
+    const KIND = { comment: "#0a84ff", mention: "#ff9500", like: "#f5b000", follow: "#34c759" };
 
     root.innerHTML = `
       <div class="sim" tabindex="0" aria-label="Interactive demo of Dispatch">
@@ -190,14 +191,14 @@
         <div class="main">
           <div class="top"><div class="who"><span${r("who")}><b>${P[n.who][0]}</b> <span>${esc(action)}</span></span></div><div class="time"${r("time")}>${n.ago}</div></div>
           ${title ? `<div class="title"><span${r("title")}>${esc(title)}</span></div>` : ""}
-          ${n.text ? `<div class="ex"><span${r("excerpt")}>${marked(n.text)}</span></div>` : ""}
+          ${n.text ? `<div class="ex"><span${r("excerpt")}>${esc(n.text)}</span></div>` : ""}
         </div>
       </div>`;
     }
     function postRow(k, i) {
       const r = (name) => dt(`row.${i}.${name}`);
       const p = POSTS[k], on = st.sel === k ? "on" : "";
-      const saved = st.saved.has(k) ? `<span class="sim-saved">${I.markFill}</span>` : "";
+      const saved = st.saved.has(k) && st.feed !== "saved" ? `<span class="sim-saved">${I.markFill}</span>` : ""; // everything in Saved is saved
       if (p.xpost) {
         return `<div class="sim-row compact sim-xrow ${on}" data-a="select" data-v="${k}"${r("box")}>
           <div class="sim-avwrap x">${siteIcon(p.xpost.from, "small", r("icon"))}<div class="sim-xbadge"${r("kind")}>${I.xpost}</div></div>
@@ -210,7 +211,7 @@
           <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div><div class="time"${r("time")}>${p.ago}</div></div>
           <div class="title"><span${r("title")}>${esc(p.title)}</span></div>
           <div class="ex"><span${r("excerpt")}>${esc(p.excerpt)}</span></div>
-          <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
+          <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.views ? `<span class="sim-likes" title="${p.views} views">${I.eye}${p.views}</span>` : ""}${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
         </div></div>`;
     }
     function renderRows(swap) {
@@ -244,6 +245,7 @@
         return;
       }
       const p = postFor(s.item), page = pageFor(s.item, p);
+      if (page.thread) { renderThread(s, p, page); return; }
       const mentions = page.body.join(" ").match(/@robin|Robin/g)?.length ?? 0;
       const likers = page.likers.map((who) =>
         `<span class="sim-liker" data-card="person:${who}">${av(who, "sim-av mini", false)}${P[who][0]}</span>`).join("");
@@ -264,6 +266,34 @@
         ${p ? `<div class="sim-comments ${st.commentsOpen ? "open" : ""}"></div>` : ""}`;
       renderComments(true);
     }
+    // A comment notification, like ReaderPage.commentPage: the post (a preview, and the whole post a
+    // click away), the comment it replies to, then the comment itself, highlighted.
+    function renderThread(s, p, page) {
+      const { parent, comment } = page.thread;
+      const bubble = (cm, cls) => `<div class="sim-tcmt ${cls}">${av(cm.who)}<div class="sim-tbubble">
+        <div class="who"><b data-card="person:${cm.who}">${P[cm.who][0]}</b><span>${longAgo(cm.ago)}</span></div>${marked(cm.text)}</div></div>`;
+      const mentions = [parent, comment].filter(Boolean).map((cm) => cm.text).join(" ").match(/@robin|Robin/g)?.length ?? 0;
+      const likers = page.likers.map((who) =>
+        `<span class="sim-liker" data-card="person:${who}">${av(who, "sim-av mini", false)}${P[who][0]}</span>`).join("");
+      detail.innerHTML = toolbar(s, p) + `
+        <div class="sim-article">
+          <div class="head">
+          <div class="eyebrow">${page.eyebrow}</div>
+          <h3>${esc(page.title)}</h3>
+          <div class="sim-byline">${av(p.author, "sim-av tiny")} <b data-card="person:${p.author}">${P[p.author][0]}</b><i>·</i>${S[p.site].host}<i>·</i>${longAgo(p.ago)}</div>
+          ${st.postOpen ? "" : `<p class="sim-peek">${esc(p.excerpt)}</p>`}
+          <button class="sim-readpost" data-a="togglePost">Read the whole post ${st.postOpen ? "↑" : "↓"}</button>
+          ${st.postOpen ? `<div class="sim-full">${p.body.map((t) => `<p>${marked(t)}</p>`).join("")}</div>` : ""}
+          </div>
+          <div class="sim-label">${P[comment.who][0]} ${parent ? `replied to ${P[parent.who][0]}` : "commented"}</div>
+          <div class="sim-thread">${parent ? bubble(parent, "parent") : ""}${bubble(comment, "this")}</div>
+          ${mentions ? `<div class="sim-chips"><button class="sim-chip me" data-a="jump">You’re mentioned${mentions > 1 ? ` ${mentions}×` : ""}  ↓</button></div>` : ""}
+          ${likers ? `<div class="sim-likers">${likers}</div>` : ""}
+        </div>
+        <div class="sim-comments ${st.commentsOpen ? "open" : ""}"></div>`;
+      renderComments(true);
+    }
+
     // What the reader shows, built the way the app builds it (Store.buildPage, ReaderStore.page):
     // a comment notification shows the comment, a like or follow shows the notification itself,
     // a post shows the post, and an x-post shows the original under where it was cross-posted.
@@ -278,11 +308,14 @@
       }
       const n = item;
       const comment = n.kind === "comment"
-        ? { who: n.who, text: n.text, ago: n.ago }
+        ? p.comments.find((x) => x.who === n.who && x.text === n.text) ?? { who: n.who, text: n.text, ago: n.ago, depth: 0 }
         : n.comment && p.comments.find((x) => x.id === n.comment);
       if (comment) {
-        return page({ eyebrow: `Comment on ${siteLink(p.site, S[p.site].host)}`, title: p.title, author: comment.who,
-          host: S[p.site].host, ago: comment.ago, body: [comment.text], likers: n.people ?? [] });
+        // A reply's parent is the closest comment above it, one level up.
+        const above = p.comments.slice(0, p.comments.indexOf(comment));
+        const parent = comment.depth ? above.reverse().find((x) => x.depth === comment.depth - 1) : null;
+        return page({ eyebrow: `Comment on ${siteLink(p.site, S[p.site].host)}`, title: p.title,
+          thread: { parent, comment }, likers: n.people ?? [] });
       }
       if (p && n.kind !== "like") {
         return page({ eyebrow: siteLink(p.site, S[p.site].host), title: p.title, author: p.author, host: S[p.site].host, ago: p.ago, body: p.body });
@@ -370,8 +403,9 @@
         const tabs = ["blogs", "p2s", "saved"], next = tabs[Math.min(Math.max(tabs.indexOf(st.feed) + d, 0), 2)];
         if (next !== st.feed) A.feed(next);
       },
+      togglePost() { st.postOpen = !st.postOpen; renderDetail(); },
       select(v) {
-        st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = "";
+        st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = ""; st.postOpen = false;
         if (st.section === "notifications") st.read.add(v);
         render();
       },
@@ -582,6 +616,7 @@
       xposts() { Object.assign(st, { section: "reader", feed: "p2s", sel: "train" }); },
       // The rest are for the drift check (tools/drift), which renders the app in the same states.
       "note-open"() { st.sel = "n2"; st.read.add("n2"); },
+      "reply-open"() { st.sel = "n4"; st.read.add("n4"); },
       "comments-open"() { Object.assign(st, { sel: "n1", commentsOpen: true }); st.read.add("n1"); },
       reader() { st.section = "reader"; },
       "reader-post"() { Object.assign(st, { section: "reader", sel: "waits" }); },

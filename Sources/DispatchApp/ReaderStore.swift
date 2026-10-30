@@ -34,11 +34,13 @@ struct ReaderPost: Codable, Identifiable, Hashable {
     let comment_count: Int?
     /// RSS posts' item ID, which is what WordPress.com's saved posts key them by.
     let feed_item_ID: Int?
+    /// "19K": WordPress.com's own rounding. Only some posts in the Following feed have it.
+    let views: String?
 
     var isExternal: Bool { is_external ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count, feed_item_ID
+        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count, feed_item_ID, views
     }
     private enum FeedKeys: String, CodingKey { case discussion }
     private struct Discussion: Decodable { let comment_count: Int? }
@@ -67,6 +69,7 @@ struct ReaderPost: Codable, Identifiable, Hashable {
         comment_count = int(.comment_count)
             ?? (try? decoder.container(keyedBy: FeedKeys.self).decode(Discussion.self, forKey: .discussion))?.comment_count
         feed_item_ID = int(.feed_item_ID)
+        views = (try? c.decode(String.self, forKey: .views)) ?? int(.views).map { $0.formatted(.number.notation(.compactName)) }
     }
 
     // MARK: X-posts

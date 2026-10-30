@@ -187,7 +187,8 @@
           "likes": 0,
           "depth": 1
         }
-      ]
+      ],
+      "views": "412"
     },
     "crit": {
       "id": 2,
@@ -271,7 +272,8 @@
           "likes": 3,
           "depth": 1
         }
-      ]
+      ],
+      "views": "3.4K"
     },
     "waits": {
       "id": 4,
@@ -301,7 +303,8 @@
           "likes": 5,
           "depth": 0
         }
-      ]
+      ],
+      "views": "1.2K"
     },
     "scopes": {
       "id": 5,
@@ -320,7 +323,8 @@
         "Every one of these fits in a backpack, sets up in under five minutes, and will show you Saturn's rings from a city balcony.",
         "The winner isn't the sharpest. It's the one you'll actually carry outside on a weeknight."
       ],
-      "comments": []
+      "comments": [],
+      "views": "860"
     },
     "train": {
       "id": 6,
@@ -399,7 +403,8 @@
           "likes": 2,
           "depth": 0
         }
-      ]
+      ],
+      "views": "2.1K"
     },
     "material": {
       "id": 9,
@@ -419,7 +424,8 @@
         "Every ping is a decision someone made about your attention, usually without asking you.",
         "Treat notifications like any other material: choose them on purpose, and use as few as you can."
       ],
-      "comments": []
+      "comments": [],
+      "views": "5.6K"
     }
   },
   "notes": [

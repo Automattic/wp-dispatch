@@ -202,10 +202,27 @@ final class Store: ObservableObject {
     }
 
     private struct Author: Decodable { let name: String?; let avatar_URL: String? }
-    private struct Post: Decodable { let title: String?; let content: String?; let date: String?; let URL: String?; let author: Author? }
+    private struct Post: Decodable {
+        let title: String?; let excerpt: String?; let content: String?; let date: String?; let URL: String?; let author: Author?
+    }
     private struct Comment: Decodable {
-        struct Parent: Decodable { let title: String? }
-        let content: String?; let date: String?; let URL: String?; let author: Author?; let post: Parent?
+        struct PostRef: Decodable { let ID: Int?; let title: String? }
+        let content: String?; let date: String?; let URL: String?; let author: Author?; let post: PostRef?
+        /// `parent` is `false` for a comment on the post, an object for a reply.
+        let parentID: Int?
+
+        private enum Keys: String, CodingKey { case content, date, URL, author, post, parent }
+        private enum ParentKeys: String, CodingKey { case ID }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: Keys.self)
+            content = try? c.decode(String.self, forKey: .content)
+            date = try? c.decode(String.self, forKey: .date)
+            URL = try? c.decode(String.self, forKey: .URL)
+            author = try? c.decode(Author.self, forKey: .author)
+            post = try? c.decode(PostRef.self, forKey: .post)
+            parentID = (try? c.nestedContainer(keyedBy: ParentKeys.self, forKey: .parent))
+                .flatMap { try? $0.decode(Int.self, forKey: .ID) }
+        }
     }
 
     /// "a4ateam" from https://a4ateam.wordpress.com/…
@@ -217,14 +234,30 @@ final class Store: ObservableObject {
         let ids = note.meta?.ids
         let likers = note.kind == .like ? note.people : []
 
+        // A comment only makes sense with what it answers: show the post, the comment it replies to
+        // (if any), then the comment itself.
         if let site = ids?.site, let comment = ids?.comment,
-           let data = try? await request("sites/\(site)/comments/\(comment)?fields=content,date,URL,author,post"),
+           let data = try? await request("sites/\(site)/comments/\(comment)?fields=content,date,URL,author,post,parent"),
            let c = try? JSONDecoder().decode(Comment.self, from: data) {
-            return ReaderPage.html(
-                eyebrow: nil, title: c.post?.title ?? note.target ?? "",
-                author: c.author?.name, avatar: c.author?.avatar_URL, date: c.date, url: c.URL ?? note.url,
-                likers: likers, content: c.content ?? "", terms: mentionTerms,
-                eyebrowHTML: "Comment on " + ReaderPage.siteLink(site, label: Self.host(c.URL ?? note.url)))
+            let postID = ids?.post ?? c.post?.ID
+            let post = await postID.asyncMap { id in
+                (try? await request("sites/\(site)/posts/\(id)?fields=title,excerpt,content,date,URL,author"))
+                    .flatMap { try? JSONDecoder().decode(Post.self, from: $0) }
+            } ?? nil
+            let parent = await c.parentID.asyncMap { id in
+                (try? await request("sites/\(site)/comments/\(id)?fields=content,date,author"))
+                    .flatMap { try? JSONDecoder().decode(Comment.self, from: $0) }
+            } ?? nil
+            let speaker = { (x: Comment) in
+                ReaderPage.Speaker(name: x.author?.name, avatar: x.author?.avatar_URL, date: x.date, html: x.content ?? "")
+            }
+            return ReaderPage.commentPage(
+                eyebrowHTML: "Comment on " + ReaderPage.siteLink(site, label: Self.host(c.URL ?? note.url)),
+                title: post?.title ?? c.post?.title ?? note.target ?? "",
+                post: post.map { ReaderPage.Speaker(name: $0.author?.name, avatar: $0.author?.avatar_URL, date: $0.date, html: $0.content ?? "") },
+                postExcerpt: post?.excerpt, postURL: post?.URL,
+                parent: parent.map(speaker), comment: speaker(c), url: c.URL ?? note.url,
+                likers: likers, terms: mentionTerms)
         }
 
         if let site = ids?.site, let post = ids?.post, note.kind != .like,
@@ -278,4 +311,11 @@ final class Store: ObservableObject {
 struct APIError: LocalizedError {
     let message: String
     var errorDescription: String? { message }
+}
+
+private extension Optional {
+    func asyncMap<T>(_ transform: (Wrapped) async -> T) async -> T? {
+        guard let self else { return nil }
+        return await transform(self)
+    }
 }
