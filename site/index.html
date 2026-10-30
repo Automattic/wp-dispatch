@@ -37,7 +37,19 @@
     font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 1100px; margin: 0 auto; padding: 72px 20px 48px; }
+  /* Site nav. The release log (tools/release/log.mjs) has the same nav; keep the two in step. */
+  .nav { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 84%, transparent);
+         backdrop-filter: saturate(1.6) blur(16px); -webkit-backdrop-filter: saturate(1.6) blur(16px); border-bottom: 1px solid var(--line); }
+  .nav-in { max-width: 1100px; margin: 0 auto; padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  .nav nav { display: flex; align-items: center; gap: 22px; font-size: 15px; font-weight: 500; }
+  .nav nav a { color: var(--muted); text-decoration: none; }
+  .nav nav a:hover, .nav nav a[aria-current] { color: var(--text); }
+  .nav nav a.get { color: var(--accent-text); background: var(--accent); padding: 6px 14px; border-radius: 999px; font-weight: 600; }
+  .nav nav a.get:hover { filter: brightness(1.08); }
+  @media (max-width: 480px) { .nav nav { gap: 16px; } .nav nav a.home { display: none; } } /* the logo goes home */
+  main { max-width: 1100px; margin: 0 auto; padding: 56px 20px 48px; }
   .intro { max-width: 760px; }
   .app-icon { display: block; width: 96px; height: 96px; margin: 0 0 18px -8px; }
   h1 { font-size: clamp(36px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.025em; margin: 0; }
@@ -83,6 +95,10 @@
 </style>
 </head>
 <body>
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/icon.png" width="28" height="28" alt="">Dispatch</a>
+  <nav aria-label="Site"><a class="home" href="/" aria-current="page">Home</a><a href="/releases/">Releases</a><a class="get" href="/download">Download</a></nav>
+</div></header>
 <main>
   <div class="intro">
     <img class="app-icon" src="icon.png" width="96" height="96" alt="">
