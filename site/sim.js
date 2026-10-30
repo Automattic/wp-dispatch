@@ -14,10 +14,14 @@
  *   DispatchSim.do.section("reader"), .feed("p2s"), .site("kettle"), .select("waits"), .move(1), .comments(), .likePost(), …
  */
 (() => {
-  document.querySelectorAll("[data-dispatch-sim]").forEach(mount);
+  const roots = document.querySelectorAll("[data-dispatch-sim]");
+  if (!roots.length) return;
+  fetch(new URL("demo-data.json", document.currentScript.src))
+    .then((r) => r.json())
+    .then((data) => roots.forEach((root) => mount(root, data)));
 
   // One stage. Everything below, made-up data included, is per stage, so stages don't share likes or replies.
-  function mount(root) {
+  function mount(root, data) {
     // ---------------------------------------------------------------- icons
     const svg = (d, w = 1.5) =>
       `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -56,132 +60,13 @@
     const DESK_H = 690; // the desk (wallpaper, menu bar, panel and Dock) is 1000 wide; match .sim in sim.css
 
     // ---------------------------------------------------------------- made-up data
-    const ME = { name: "Robin Park", handle: "robin" };
-    const P = {
-      maya: ["Maya Chen", "#e5397a"], theo: ["Theo Brandt", "#2f9e72"], priya: ["Priya Raman", "#d9822b"],
-      sam: ["Sam Ortiz", "#7a5af8"], jules: ["Jules Okafor", "#0e9fb5"], ana: ["Ana Lima", "#c0503a"],
-      robin: ["Robin Park", "#3858e9"], lena: ["Lena Vogel", "#8a6d3b"], kofi: ["Kofi Mensah", "#4a7bd0"],
-    };
-    // What a hovercard shows: a Gravatar-style profile, or a site's Reader info.
-    const CARD = {
-      maya: { pronouns: "she/her", work: "Product designer", place: "Lisbon", bio: "Draws interfaces, bakes bread, answers email twice a day." },
-      theo: { pronouns: "he/him", work: "Design lead", place: "Berlin", bio: "Runs Thursday crit. Bring sketches, not slides." },
-      priya: { pronouns: "she/her", work: "Engineer", place: "Bengaluru", bio: "Writes code in the morning and about food at night." },
-      sam: { pronouns: "they/them", work: "Release manager", place: "Austin", bio: "Keeps the trains running on time." },
-      jules: { pronouns: "he/him", work: "Baker, writer", place: "Dublin", bio: "Kettle & Crumb. Lazy loaves for busy people." },
-      ana: { pronouns: "she/her", work: "Researcher", place: "São Paulo", bio: "Studies how people actually use their tabs." },
-      robin: { pronouns: "they/them", work: "Designer", place: "Portland", bio: "Writes Field Notes. Trying to make software quieter." },
-      lena: { pronouns: "she/her", work: "Illustrator", place: "Vienna", bio: "Icons, empty states and the occasional telescope review." },
-      kofi: { pronouns: "he/him", work: "Writer", place: "Accra", bio: "Essays about calm technology at The Slow Web." },
-    };
-    const S = {
-      field: { name: "Field Notes", host: "fieldnotes.blog", color: "#3858e9", about: "Notes on working calmly, by Robin Park.", subs: 1284, posts: 212 },
-      slow: { name: "The Slow Web", host: "theslowweb.com", color: "#2f9e72", about: "Essays on software that respects your attention.", subs: 18420, posts: 340 },
-      kettle: { name: "Kettle & Crumb", host: "kettleandcrumb.com", color: "#d9822b", about: "Forgiving recipes for people who forget about their dough.", subs: 6310, posts: 158 },
-      orbit: { name: "Orbit Weekly", host: "orbitweekly.net", color: "#7a5af8", about: "Backyard astronomy, one clear night at a time.", subs: 2975, posts: 96 },
-      design: { name: "+design", host: "design.p2", color: "#e5397a", about: "Crit notes, sketches and decisions from the design team.", posts: 640 },
-      mobile: { name: "+mobile", host: "mobile.p2", color: "#0e9fb5", about: "Release trains and mobile app news.", posts: 412 },
-    };
+    // From demo-data.json, which the app's demo mode reads too (see tools/drift). Copied per stage.
+    const D = structuredClone(data);
+    const ME = D.me;
+    const P = Object.fromEntries(Object.entries(D.people).map(([k, v]) => [k, [v.name, v.color]]));
+    const CARD = D.people, S = D.sites, POSTS = D.posts, NOTES = D.notes, FEEDS = D.feeds;
+    Object.values(POSTS).forEach((p) => { p.liked = false; p.comments.forEach((cm) => { cm.liked = false; }); });
     const c = (id, who, text, ago, likes = 0, depth = 0) => ({ id, who, text, ago, likes, liked: false, depth });
-
-    const POSTS = {
-      inbox: {
-        likes: 12, liked: false, likers: ["maya", "priya", "ana", "theo"],
-        site: "field", title: "Notes on a quieter inbox", author: "robin", ago: "2h", read: "3 min",
-        excerpt: "For a month I only opened notifications twice a day. Here's what changed, and what I'd keep.",
-        body: ["For a month I only opened notifications twice a day: once with coffee, once before signing off. Everything else waited.",
-          "The surprise wasn't how much I missed. It was how little. Most things that felt urgent at 10am were already answered by noon.",
-          "What I'd keep: skim first, read second. If a headline and two lines don't earn a click, the post can wait for the weekend."],
-        comments: [c(1, "maya", "Love this. The bit about batching replies changed my mornings already.", "1h", 3),
-          c(2, "robin", "Glad it helped! Coffee and notifications is a strong combo.", "48m", 1, 1),
-          c(3, "ana", "Do you keep the browser closed the rest of the day? That's where I slip.", "30m", 2),
-          c(4, "sam", "Same question. My tabs are a crime scene.", "12m", 0, 1)],
-      },
-      crit: {
-        likes: 4, liked: false, likers: ["lena", "sam"],
-        site: "design", title: "Design crit, week 42", author: "theo", ago: "3h", read: "2 min",
-        excerpt: "Agenda for Thursday: onboarding illustrations, the new empty states, and menu bar sketches.",
-        body: ["Agenda for Thursday's crit, in order:", "1. Onboarding illustrations, final pass. 2. Empty states for search and saved items.",
-          "3. @robin can you share the menu bar sketches before Thursday? Rough is fine. We mostly want to talk about density."],
-        comments: [c(11, "lena", "I'll bring the empty states. Two directions, one weird.", "2h", 4), c(12, "robin", "Sketches coming tomorrow morning.", "1h", 2, 1)],
-      },
-      sourdough: {
-        likes: 23, liked: false, likers: ["priya", "maya", "kofi", "ana"],
-        site: "kettle", title: "Sourdough, but lazier", author: "jules", ago: "1d", read: "4 min",
-        excerpt: "No stretch-and-folds, no schedule. A loaf that forgives you for forgetting about it.",
-        body: ["Every sourdough recipe wants you home all day. This one doesn't. Mix, leave it in the fridge, forget about it for two days.",
-          "The long cold rest does the work you'd normally do by hand. You lose a little height and gain a lot of flavor.",
-          "Bake it in a hot pot with the lid on for twenty minutes, then lid off until it's darker than you think it should be."],
-        comments: [c(21, "priya", "Made it this weekend. My kitchen smells like a bakery and I did nothing.", "20h", 6),
-          c(22, "robin", "Does it work with whole wheat?", "8h", 0), c(23, "jules", "Yes! Add a splash more water.", "6h", 3, 1)],
-      },
-      waits: {
-        likes: 9, liked: false, likers: ["ana", "jules", "maya"],
-        site: "slow", title: "The case for software that waits", author: "kofi", ago: "5h", read: "3 min",
-        excerpt: "Not every update needs a badge. Some of the best tools just wait until you come back.",
-        body: ["Not every update needs a badge. The tools I keep longest are the ones that wait patiently until I come back.",
-          "Waiting is a design choice. It says: you decide when this matters. The opposite is a slot machine with a settings page.",
-          "Try it for a week: turn the badges off and check in on your own schedule. You can always turn them back on."],
-        comments: [c(31, "ana", "Badges off is the best productivity tip nobody wants to hear.", "3h", 5)],
-      },
-      scopes: {
-        likes: 2, liked: false, likers: ["kofi", "theo"],
-        site: "orbit", title: "Seven small telescopes, ranked", author: "lena", ago: "1d", read: "6 min",
-        excerpt: "Under 3kg, under $500, and all of them will show you Saturn's rings from a balcony.",
-        body: ["Every one of these fits in a backpack, sets up in under five minutes, and will show you Saturn's rings from a city balcony.",
-          "The winner isn't the sharpest. It's the one you'll actually carry outside on a weeknight."],
-        comments: [],
-      },
-      train: {
-        likes: 6, liked: false, likers: ["kofi", "theo"],
-        site: "mobile", title: "Release train 4.2 is boarding", author: "sam", ago: "4h", read: "2 min",
-        excerpt: "Code freeze Friday. Release notes due Monday. Here's the checklist.",
-        body: ["Code freeze is Friday at noon. Anything not merged by then rides the next train, no hard feelings.",
-          "Release notes are due Monday. If your change is user-visible, a single plain sentence is perfect."],
-        comments: [c(41, "kofi", "Notes for the offline mode fix are in the doc.", "2h", 1)],
-        xpost: { from: "mobile", to: "design" },
-      },
-      icons: {
-        likes: 3, liked: false, likers: ["theo", "maya"],
-        site: "design", title: "Icon refresh: round two", author: "lena", ago: "6h", read: "2 min",
-        excerpt: "Thinner strokes, rounder joins. Feedback welcome until Wednesday.",
-        body: ["Round two of the icon refresh is up. Strokes are thinner and the joins are rounder.", "Feedback welcome until Wednesday."],
-        comments: [],
-      },
-    };
-
-    // Older posts, only seen when the Reader shows one site.
-    Object.assign(POSTS, {
-      focaccia: {
-        likes: 14, liked: false, likers: ["maya", "sam"],
-        site: "kettle", title: "Weeknight focaccia", author: "jules", ago: "4d", read: "2 min",
-        excerpt: "Stir it at breakfast, bake it at dinner. The fridge does the rest.",
-        body: ["Stir flour, water, salt and yeast together at breakfast. Cover it and put it in the fridge.",
-          "At dinner, tip it into an oiled pan, poke it all over and bake it hot until the top is deep gold."],
-        comments: [c(51, "priya", "Rosemary and flaky salt. That's the whole review.", "3d", 2)],
-      },
-      material: {
-        likes: 31, liked: false, likers: ["ana", "lena", "theo"],
-        site: "slow", title: "Notifications are a design material", author: "kofi", ago: "6d", read: "5 min",
-        excerpt: "Every ping is a decision someone made about your attention. We can make better ones.",
-        body: ["Every ping is a decision someone made about your attention, usually without asking you.",
-          "Treat notifications like any other material: choose them on purpose, and use as few as you can."],
-        comments: [],
-      },
-    });
-
-    const NOTES = [
-      { id: "n1", kind: "comment", who: "maya", action: "commented on", post: "inbox", ago: "1h", text: "Love this. The bit about batching replies changed my mornings already.", unread: true },
-      { id: "n2", kind: "mention", who: "theo", action: "mentioned you on", post: "crit", ago: "3h", text: "…@robin can you share the menu bar sketches before Thursday?", unread: true },
-      { id: "n3", kind: "like", who: "priya", action: "and 4 others liked", post: "inbox", ago: "4h", text: "", unread: true, people: ["priya", "maya", "ana", "theo", "kofi"] },
-      { id: "n4", kind: "comment", who: "jules", action: "replied to you on", post: "sourdough", ago: "6h", text: "Yes! Add a splash more water.", unread: false },
-      { id: "n5", kind: "follow", who: "ana", action: "followed", site: "field", ago: "1d", text: "", unread: false },
-      { id: "n6", kind: "like", who: "sam", action: "liked your comment on", post: "crit", comment: 12, ago: "1d", text: "", unread: false, people: ["sam"] },
-    ];
-    const FEEDS = {
-      blogs: ["waits", "sourdough", "scopes", "inbox"],
-      p2s: ["train", "crit", "icons"],
-    };
 
     // ---------------------------------------------------------------- state
     const st = {
@@ -203,9 +88,11 @@
     const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     const initials = (who) => P[who][0].split(" ").map((w) => w[0]).join("");
     // `data-card` opens a hovercard: person:<who> or site:<site>.
-    const av = (who, cls = "sim-av", card = true) =>
-      `<div class="${cls}" style="--c:${P[who][1]}"${card ? ` data-card="person:${who}"` : ""}>${initials(who)}</div>`;
-    const siteIcon = (site, extra = "") => `<div class="sim-site ${extra}" style="--c:${S[site].color}" data-card="site:${site}">${S[site].name.replace("+", "")[0].toUpperCase()}</div>`;
+    // `data-drift` names a part for the drift check (tools/drift), matching a `driftTag` in the app.
+    const dt = (name) => ` data-drift="${name}"`;
+    const av = (who, cls = "sim-av", card = true, attrs = "") =>
+      `<div class="${cls}" style="--c:${P[who][1]}"${card ? ` data-card="person:${who}"` : ""}${attrs}>${initials(who)}</div>`;
+    const siteIcon = (site, extra = "", attrs = "") => `<div class="sim-site ${extra}" style="--c:${S[site].color}" data-card="site:${site}"${attrs}>${S[site].name.replace("+", "")[0].toUpperCase()}</div>`;
     const marked = (text) => esc(text).replace(/@robin|Robin/g, (m) => `<mark>${m}</mark>`);
     const unreadCount = () => NOTES.filter((n) => n.unread && !st.read.has(n.id)).length;
     const KIND = { comment: "#0a84ff", mention: "#ff9500", like: "#ff2d55", follow: "#34c759" };
@@ -215,13 +102,13 @@
         <div class="sim-menubar"><span class="apple"></span><b>Finder</b><span>File</span><span>Edit</span><span>View</span>
           <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.w}</button><span>Tue 9:41</span></div>
         <div class="sim-panel">
-          <div class="sim-detail"></div>
-          <div class="sim-list">
+          <div class="sim-detail" data-drift="detail"></div>
+          <div class="sim-list" data-drift="list">
             <div class="sim-head"></div>
             <div class="sim-filters"></div>
             <div class="sim-rows"><div class="sim-rows-inner"></div></div>
           </div>
-          <div class="sim-handle"></div>
+          <div class="sim-handle" data-drift="grip"></div>
         </div>
         <div class="sim-dock">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de", "#ff375f", "#8e8e93", "#3858e9", "#ffd60a"]
           .map((c) => `<span style="--c:${c}"></span>`).join("")}</div>
@@ -237,12 +124,12 @@
     function renderHead() {
       const unread = unreadCount();
       $(".sim-head").innerHTML = `
-        <button class="sim-tab ${st.section === "notifications" ? "on" : ""}" data-a="section" data-v="notifications">Notifications${unread ? `<span class="sim-badge">${unread}</span>` : ""}</button>
-        <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader">Reader</button>
+        <button class="sim-tab ${st.section === "notifications" ? "on" : ""}" data-a="section" data-v="notifications"${dt("tab.notifications")}>Notifications${unread ? `<span class="sim-badge"${dt("badge.notifications")}>${unread}</span>` : ""}</button>
+        <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
         <span class="spacer"></span>
-        <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh">${I.refresh}</button>
-        <button class="sim-icon" data-a="toast" data-v="Pops out into its own window" title="Pop out into a window">${I.popout}</button>
-        <button class="sim-icon ${st.menu ? "on" : ""}" data-a="menu" title="More">${I.more}</button>`;
+        <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh"${dt("btn.refresh")}>${I.refresh}</button>
+        <button class="sim-icon" data-a="toast" data-v="Pops out into its own window" title="Pop out into a window"${dt("btn.popout")}>${I.popout}</button>
+        <button class="sim-icon more ${st.menu ? "on" : ""}" data-a="menu" title="More"${dt("btn.more")}>${I.more}</button>`;
     }
 
     // The ⋯ menu, as in the app.
@@ -270,10 +157,10 @@
         ? [["all", "All"], ["unread", `Unread${count(unread)}`]]
         : [["blogs", "Following"], ["p2s", "Automattic"], ["saved", `${I.markFill.replace("<svg", '<svg width="9" height="10"')} Saved${count(st.saved.size, true)}`]];
       const cur = st.section === "notifications" ? st.filter : st.feed;
-      box.innerHTML = `<div class="sim-pills"><div class="sim-pill-thumb"></div>${opts.map(([v, label]) =>
-        `<button class="sim-pill ${v === cur ? "on" : ""}" data-a="${st.section === "notifications" ? "filter" : "feed"}" data-v="${v}">${label}</button>`).join("")}</div>
+      box.innerHTML = `<div class="sim-pills"${dt("pills")}><div class="sim-pill-thumb"></div>${opts.map(([v, label], i) =>
+        `<button class="sim-pill ${v === cur ? "on" : ""}" data-a="${st.section === "notifications" ? "filter" : "feed"}" data-v="${v}"${dt(`pill.${i}`)}>${label}</button>`).join("")}</div>
         <span class="spacer"></span>
-        ${st.section === "notifications" ? `<button class="sim-icon" data-a="markAll" title="Mark all as read" ${unread ? "" : "disabled"}>${I.check}</button>` : ""}`;
+        ${st.section === "notifications" ? `<button class="sim-icon" data-a="markAll" title="Mark all as read"${dt("btn.markall")} ${unread ? "" : "disabled"}>${I.check}</button>` : ""}`;
       const on = box.querySelector(".sim-pill.on"), t = box.querySelector(".sim-pill-thumb");
       // Slide from where the thumb was, unless the pill set itself changed.
       if (thumb && thumb.section === st.section) { t.style.left = thumb.left + "px"; t.style.width = thumb.width + "px"; t.getBoundingClientRect(); }
@@ -281,42 +168,46 @@
       thumb = { section: st.section, left: on.offsetLeft, width: on.offsetWidth };
     }
 
-    function noteRow(n) {
+    function noteRow(n, i) {
+      const r = (name) => dt(`row.${i}.${name}`);
+      // A follow names a site, not a post, so like the app it all goes on one line with no title.
       const post = n.post && POSTS[n.post];
-      const title = post ? post.title : S[n.site].name;
+      const title = post ? post.title : null;
+      const action = post ? n.action : `${n.action} ${S[n.site].name}`;
       const unread = n.unread && !st.read.has(n.id);
-      return `<div class="sim-row note ${unread ? "unread" : ""} ${st.sel === n.id ? "on" : ""}" data-a="select" data-v="${n.id}">
-        <div class="sim-dot"></div>
-        <div class="sim-avwrap">${av(n.who, "sim-av big")}<span class="sim-kind" style="background:${KIND[n.kind]}">${I.kind[n.kind]}</span></div>
+      return `<div class="sim-row note ${unread ? "unread" : ""} ${st.sel === n.id ? "on" : ""}" data-a="select" data-v="${n.id}"${r("box")}>
+        <div class="sim-dot"${unread ? r("dot") : ""}></div>
+        <div class="sim-avwrap">${av(n.who, "sim-av big", true, r("icon"))}<span class="sim-kind" style="background:${KIND[n.kind]}"${r("kind")}>${I.kind[n.kind]}</span></div>
         <div class="main">
-          <div class="top"><div class="who"><b>${P[n.who][0]}</b> <span>${n.action}</span></div><div class="time">${n.ago}</div></div>
-          <div class="title">${esc(title)}</div>
-          ${n.text ? `<div class="ex">${marked(n.text)}</div>` : ""}
+          <div class="top"><div class="who"><span${r("who")}><b>${P[n.who][0]}</b> <span>${esc(action)}</span></span></div><div class="time"${r("time")}>${n.ago}</div></div>
+          ${title ? `<div class="title"><span${r("title")}>${esc(title)}</span></div>` : ""}
+          ${n.text ? `<div class="ex"><span${r("excerpt")}>${marked(n.text)}</span></div>` : ""}
         </div>
       </div>`;
     }
-    function postRow(k) {
+    function postRow(k, i) {
+      const r = (name) => dt(`row.${i}.${name}`);
       const p = POSTS[k], on = st.sel === k ? "on" : "";
       const saved = st.saved.has(k) ? `<span class="sim-saved">${I.markFill}</span>` : "";
       if (p.xpost) {
-        return `<div class="sim-row compact sim-xrow ${on}" data-a="select" data-v="${k}">
-          <div class="sim-avwrap x">${siteIcon(p.xpost.from, "small")}<div class="sim-xbadge">${I.xpost}</div></div>
-          <div class="main"><div class="top"><div class="who"><b>${S[p.xpost.from].name}</b> → ${S[p.xpost.to].name} ${saved}</div><div class="time">${p.ago}</div></div>
-          <div class="title">${esc(p.title)}</div></div></div>`;
+        return `<div class="sim-row compact sim-xrow ${on}" data-a="select" data-v="${k}"${r("box")}>
+          <div class="sim-avwrap x">${siteIcon(p.xpost.from, "small", r("icon"))}<div class="sim-xbadge"${r("kind")}>${I.xpost}</div></div>
+          <div class="main"><div class="top"${r("line")}><div class="who"><b>${S[p.xpost.from].name}</b> → ${S[p.xpost.to].name} ${saved}</div><div class="time"${r("time")}>${p.ago}</div></div>
+          <div class="title"><span${r("title")}>${esc(p.title)}</span></div></div></div>`;
       }
-      return `<div class="sim-row ${on}" data-a="select" data-v="${k}">
-        ${siteIcon(p.site)}
+      return `<div class="sim-row ${on}" data-a="select" data-v="${k}"${r("box")}>
+        ${siteIcon(p.site, "", r("icon"))}
         <div class="main">
-          <div class="top"><div class="who site">${S[p.site].name}</div><div class="time">${p.ago}</div></div>
-          <div class="title">${esc(p.title)}</div>
-          <div class="ex">${esc(p.excerpt)}</div>
-          <div class="foot"><span>${P[p.author][0]}</span><span>${p.read}</span>${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment}${p.comments.length}</span>` : ""}${saved}</div>
+          <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div><div class="time"${r("time")}>${p.ago}</div></div>
+          <div class="title"><span${r("title")}>${esc(p.title)}</span></div>
+          <div class="ex"><span${r("excerpt")}>${esc(p.excerpt)}</span></div>
+          <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
         </div></div>`;
     }
     function renderRows(swap) {
       const list = items();
       const html = list.length
-        ? list.map((it) => (st.section === "notifications" ? noteRow(it) : postRow(it))).join("")
+        ? list.map((it, i) => (st.section === "notifications" ? noteRow(it, i) : postRow(it, i))).join("")
         : `<div class="sim-placeholder" style="height:300px">${st.feed === "saved" ? "Nothing saved yet.<br>Press s on a post to save it." : "You're all caught up."}</div>`;
       if (!swap) { rows.innerHTML = html; return; }
       rows.classList.add("swap");
@@ -398,14 +289,14 @@
     function toolbar(s, p) {
       const reader = st.section === "reader" && p;
       return `<div class="sim-dhead">
-        <button class="sim-icon" data-a="close" title="Close (esc)">${I.x}</button>
-        ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)">${star(p)}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
-        <button class="sim-icon ${st.saved.has(s.item) ? "on" : ""}" data-a="save" title="Save (s)">${st.saved.has(s.item) ? I.markFill : I.mark}</button>` : ""}
-        <button class="sim-icon" data-a="toast" data-v="Opens in your browser" title="Open in browser (o)">${I.safari}</button>
+        <button class="sim-icon" data-a="close" title="Close (esc)"${dt("detail.close")}>${I.x}</button>
+        ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)"${dt("detail.like")}>${star(p)}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
+        <button class="sim-icon ${st.saved.has(s.item) ? "on" : ""}" data-a="save" title="Save (s)"${dt("detail.save")}>${st.saved.has(s.item) ? I.markFill : I.mark}</button>` : ""}
+        <button class="sim-icon" data-a="toast" data-v="Opens in your browser" title="Open in browser (o)"${dt("detail.open")}>${I.safari}</button>
         <span class="spacer"></span>
-        <span class="sim-pos">${s.index + 1} of ${s.count}</span>
-        <button class="sim-icon" data-a="move" data-v="-1" title="Previous (k)">${I.up}</button>
-        <button class="sim-icon" data-a="move" data-v="1" title="Next (j)">${I.down}</button>
+        <span class="sim-pos"${dt("detail.pos")}>${s.index + 1} of ${s.count}</span>
+        <button class="sim-icon" data-a="move" data-v="-1" title="Previous (k)"${dt("detail.prev")}>${I.up}</button>
+        <button class="sim-icon" data-a="move" data-v="1" title="Next (j)"${dt("detail.next")}>${I.down}</button>
       </div>`;
     }
 
@@ -417,14 +308,14 @@
       const list = p.comments;
       const n = list.length;
       box.classList.toggle("open", st.commentsOpen);
-      const head = `<button class="sim-chead" data-a="comments">${I.bubbles}<span>${n === 0 ? "Add a comment" : n === 1 ? "1 comment" : n + " comments"}</span><span class="spacer"></span>${I.chev}</button>`;
+      const head = `<button class="sim-chead" data-a="comments"${dt("comments.head")}>${I.bubbles}<span>${n === 0 ? "Add a comment" : n === 1 ? "1 comment" : n + " comments"}</span><span class="spacer"></span>${I.chev}</button>`;
       if (!st.commentsOpen) {
         box.innerHTML = head + (n ? `<div class="sim-strip">${list.map((cm, i) =>
-          `<div class="sim-cmt" style="animation-delay:${first ? i * 45 : 0}ms">${av(cm.who)}<div class="sim-bubble"><span class="clamp">${esc(cm.text)}</span></div></div>`).join("")}
-          <button class="sim-add" data-a="reply" data-v="" title="Add a comment">${I.plus}</button></div>` : "");
+          `<div class="sim-cmt" style="animation-delay:${first ? i * 45 : 0}ms"${dt(`comments.bubble.${i}`)}>${av(cm.who)}<div class="sim-bubble"><span class="clamp">${esc(cm.text)}</span></div></div>`).join("")}
+          <button class="sim-add" data-a="reply" data-v="" title="Add a comment"${dt("comments.add")}>${I.plus}</button></div>` : "");
         return;
       }
-      box.innerHTML = head + `<div class="sim-clist">${list.map((cm) => `
+      box.innerHTML = head + `<div class="sim-clist"${dt("comments.list")}>${list.map((cm) => `
         <div style="padding-left:${Math.min(cm.depth, 3) * 24}px">
           <div class="sim-cmt ${cm.fresh ? "" : "settled"}" style="${cm.fresh ? "" : "animation:none"}">${av(cm.who)}<div class="sim-bubble"><div class="name">${P[cm.who][0]}<span>${cm.ago}</span></div>${marked(cm.text)}</div></div>
           <div class="sim-acts"><button class="${cm.liked ? "liked" : ""}" data-a="like" data-v="${cm.id}">${star(cm)}${cm.likes ? cm.likes : ""}</button>
@@ -432,7 +323,7 @@
         </div>`).join("")}</div>
         <div class="sim-composer">
           ${st.replyTo ? `<div class="sim-replyto">↩ Replying to ${P[list.find((x) => x.id === st.replyTo).who][0]}</div>` : ""}
-          <div class="sim-field"><div class="sim-input ${st.typing ? "typing" : ""}">${st.draft ? esc(st.draft) : st.typing ? "" : st.replyTo ? "Write a reply…" : "Add a comment…"}</div>
+          <div class="sim-field"><div${dt("comments.field")} class="sim-input ${st.typing ? "typing" : ""}">${st.draft ? esc(st.draft) : st.typing ? "" : st.replyTo ? "Write a reply…" : "Add a comment…"}</div>
           <button class="sim-send ${st.draft ? "ready" : ""}" data-a="send" title="Send (⌘↩)">${I.send}</button></div>
         </div>`;
       list.forEach((cm) => delete cm.fresh);
@@ -666,6 +557,11 @@
     const SCENES = {
       notifications() {},
       xposts() { Object.assign(st, { section: "reader", feed: "p2s", sel: "train" }); },
+      // The rest are for the drift check (tools/drift), which renders the app in the same states.
+      "note-open"() { st.sel = "n2"; st.read.add("n2"); },
+      "comments-open"() { Object.assign(st, { sel: "n1", commentsOpen: true }); st.read.add("n1"); },
+      reader() { st.section = "reader"; },
+      "reader-post"() { Object.assign(st, { section: "reader", sel: "waits" }); },
     };
     let token = 0, playing = false, visible = false, handedOver = false;
     const Cancel = Symbol("cancel");

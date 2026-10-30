@@ -3,6 +3,7 @@ import Foundation
 /// `~/Library/Application Support/Dispatch`, user-only (0700).
 enum AppData {
     static let directory: URL = {
+        if Demo.isOn { return Demo.directory }
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Dispatch", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,

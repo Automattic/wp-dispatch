@@ -1,0 +1,10 @@
+<!doctype html>
+<!-- One demo stage at 1:1, for measure.mjs. Not part of the website. -->
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="/site/sim.css">
+<style>body { margin: 0; background: #fff; } .sim-scale { width: 1000px; border-radius: 0; }</style>
+</head><body>
+<div class="sim-scale" data-dispatch-sim></div>
+<script>document.querySelector("[data-dispatch-sim]").dataset.simStill = new URLSearchParams(location.search).get("scene");</script>
+<script src="/site/sim.js"></script>
+</body></html>

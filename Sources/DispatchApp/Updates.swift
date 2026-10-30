@@ -7,10 +7,11 @@ import Sparkle
 final class Updates {
     static let shared = Updates()
 
-    private let controller = SPUStandardUpdaterController(
+    /// None in demo mode, which must never check for or install anything.
+    private let controller = Demo.isOn ? nil : SPUStandardUpdaterController(
         startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
-    func checkForUpdates() { controller.checkForUpdates(nil) }
+    func checkForUpdates() { controller?.checkForUpdates(nil) }
 
     /// Quits and opens the app again, which picks up a freshly installed build.
     /// The helper shell outlives us and waits a moment so the new copy isn't refused as a duplicate.

@@ -39,7 +39,8 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     let detailWidth: CGFloat = 540
     private let minDetailWidth: CGFloat = 420
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    /// None while rendering the website's demo scenes, which stay out of the menu bar.
+    private let statusItem = Demo.isRendering ? nil : NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let panel: Panel
     private let panelBackground = PanelController.background(rounded: true)
     private var window: NSWindow?
@@ -103,7 +104,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         panel.contentView = panelBackground
         embed(hosting, in: panelBackground)
 
-        if let button = statusItem.button {
+        if let button = statusItem?.button {
             button.image = WordPressLogo.image
             button.imagePosition = .imageLeading
             button.target = self
@@ -145,7 +146,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     // MARK: Status item
 
     private func setBadge(_ count: Int) {
-        guard let button = statusItem.button else { return }
+        guard let button = statusItem?.button else { return }
         button.attributedTitle = NSAttributedString(
             string: count > 0 ? "\(count)" : "",
             attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)])
@@ -170,7 +171,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     /// The list sits centered under the menu bar icon; the reader grows out to its left.
     private func attachedFrame(width: CGFloat? = nil) -> NSRect {
-        guard let button = statusItem.button, let bw = button.window,
+        guard let button = statusItem?.button, let bw = button.window,
               let screen = bw.screen ?? NSScreen.main else { return panel.frame }
         let icon = bw.convertToScreen(button.convert(button.bounds, to: nil))
         let vis = screen.visibleFrame
@@ -192,7 +193,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         panel.orderFrontRegardless()
         panel.makeKey()
         animate(panel, to: target, alpha: 1, duration: 0.22)
-        statusItem.button?.highlight(true)
+        statusItem?.button?.highlight(true)
 
         clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             MainActor.assumeIsolated { self?.hidePanel() }
@@ -207,7 +208,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         Hovercard.shared.hide()
         guard panel.isVisible else { return }
         removeClickMonitor()
-        statusItem.button?.highlight(false)
+        statusItem?.button?.highlight(false)
         let generation = showGeneration
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.14
@@ -236,6 +237,20 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         if mode == .attached && showDetail { closeDetail() } else { clearSelection() }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { section = new }
         if new == .reader { Task { await reader.refresh() } }
+    }
+
+    /// Demo rendering: back to a fresh launch, with nothing open.
+    func resetForDemo() {
+        mode = .attached
+        showDetail = false
+        selectedID = nil
+        selectedPostID = nil
+        currentPost = nil
+        keptVisible = []
+        commentsOpen = false
+        unreadOnly = false
+        section = .notifications
+        reader.show(.blogs)
     }
 
     func select(_ note: Note) {
@@ -404,7 +419,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         }
 
         removeClickMonitor()
-        statusItem.button?.highlight(false)
+        statusItem?.button?.highlight(false)
         mode = .detached
         showDetail = true
         move(hosting, to: windowBackground!)

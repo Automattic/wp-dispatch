@@ -73,6 +73,7 @@ To sign out completely, use ⋯ → **Sign out**, or delete `credentials.json`. 
   screencapture -l<windowID> -x shot.png
   ```
   Afterwards, restart the app normally.
+- **The website demo:** `./tools/drift/check.sh` renders the app in demo mode and compares it with `site/sim.js`. See "The drift check" in [releasing.md](releasing.md).
 - **Sign-in:** sign out, then Connect. The flow and its constraints are in [auth.md](auth.md).
 - **Updates:** see "Testing an update" in [releasing.md](releasing.md).
 

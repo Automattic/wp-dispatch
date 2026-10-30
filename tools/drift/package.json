@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "description": "Drift check between the app and the website demo. See check.sh.",
+  "devDependencies": { "playwright": "1.64.1" }
+}

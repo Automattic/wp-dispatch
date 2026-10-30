@@ -1,6 +1,7 @@
 #!/bin/zsh
 # Cuts a release: ./release.sh 0.2.0 [--no-publish]
 #
+# 0. Checks that the website demo still matches the app (tools/drift/check.sh). Stops if not.
 # 1. Checks the Sparkle signing key and fetches the previous release zip if it's missing.
 # 2. Sets the version in Info.plist (marketing version + next build number).
 # 3. Builds and zips Dispatch.app into site/releases/.
@@ -18,6 +19,12 @@ SITE_URL=https://dispatchapp.space.fast
 SPACE_ID=spc_6f81e0c2ca994ef597cc94eb55f421d5 # the "dispatchapp" Space, as in site/.spacefast/space.json
 TOOLS=.build/artifacts/sparkle/Sparkle/bin
 PLIST=Info.plist
+
+# The website shows a working copy of the app. Don't ship if the two have drifted apart.
+if ! ./tools/drift/check.sh; then
+  echo "\nThe website demo no longer matches the app. Fix site/sim.js or site/sim.css (see build/drift/report.html), then release again."
+  exit 1
+fi
 
 # Sparkle's tools come with the SwiftPM package.
 [[ -x $TOOLS/generate_appcast ]] || swift package resolve

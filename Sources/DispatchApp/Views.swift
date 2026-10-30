@@ -15,11 +15,12 @@ struct RootView: View {
             HStack(spacing: 0) {
                 if c.showDetail {
                     DetailPane()
+                        .driftTag("detail")
                         .frame(width: c.mode == .attached ? c.detailWidth : nil)
                         .frame(maxWidth: c.mode == .detached ? .infinity : nil)
                     Divider()
                 }
-                ListPane().frame(width: c.listWidth)
+                ListPane().driftTag("list").frame(width: c.listWidth)
             }
             .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
             .clipped()
@@ -47,13 +48,16 @@ struct ListPane: View {
                 SectionTab("Notifications", badge: store.unreadCount, on: c.section == .notifications) {
                     c.switchSection(.notifications)
                 }
+                .driftTag("tab.notifications")
                 SectionTab("Reader", on: c.section == .reader) { c.switchSection(.reader) }
+                    .driftTag("tab.reader")
                     .padding(.leading, 10)
                 Spacer()
                 if loading { ProgressView().controlSize(.small).padding(.trailing, 2) }
-                IconButton("arrow.clockwise", help: "Refresh") { Task { await c.refreshCurrent() } }
+                IconButton("arrow.clockwise", help: "Refresh") { Task { await c.refreshCurrent() } }.driftTag("btn.refresh")
                 if c.mode == .attached {
                     IconButton("macwindow.on.rectangle", help: "Pop out into a window (or drag the header)") { c.detach() }
+                        .driftTag("btn.popout")
                 } else {
                     IconButton("menubar.arrow.up.rectangle", help: "Put back in the menu bar") { c.attach() }
                 }
@@ -75,6 +79,7 @@ struct ListPane: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
+                .driftTag("btn.more")
                 if c.mode == .detached {
                     IconButton("xmark", help: "Close (⌘W)") { c.attach(show: false) }
                 }
@@ -124,6 +129,7 @@ struct SectionTab: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(Capsule().fill(Color.accentColor.opacity(on ? 1 : 0.6)))
+                        .driftTag("badge.\(title.lowercased())")
                 }
             }
             .contentShape(Rectangle())
@@ -143,6 +149,7 @@ struct NotificationFilters: View {
             Spacer()
             BackToTopButton()
             IconButton("checkmark.circle", help: "Mark all as read") { Task { await store.markAllRead() } }
+                .driftTag("btn.markall")
                 .disabled(store.unreadCount == 0)
         }
     }
@@ -229,8 +236,9 @@ struct NotificationList: View {
                     VStack(spacing: 0) {
                         ListTop()
                         LazyVStack(spacing: 2) {
-                            ForEach(notes) { note in
+                            ForEach(Array(notes.enumerated()), id: \.element.id) { i, note in
                                 NoteRow(note: note, selected: note.id == c.selectedID, selection: selection).id(note.id)
+                                    .driftScope("row.\(i)")
                             }
                         }
                         .padding(.horizontal, 6)
@@ -275,7 +283,7 @@ struct PostList: View {
                     VStack(spacing: 0) {
                         ListTop()
                         LazyVStack(spacing: 2) {
-                            ForEach(reader.posts) { post in
+                            ForEach(Array(reader.posts.enumerated()), id: \.element.id) { i, post in
                                 Group {
                                     if post.isXPost {
                                         XPostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
@@ -283,6 +291,7 @@ struct PostList: View {
                                         PostRow(post: post, selected: post.id == c.selectedPostID, selection: selection)
                                     }
                                 }
+                                    .driftScope("row.\(i)")
                                     .id(post.id)
                                     .onAppear {
                                         if post == reader.posts.last { Task { await reader.loadMore() } }
@@ -346,6 +355,9 @@ struct SelectableRow<Content: View>: View {
             content
                 .padding(.horizontal, 12)
                 .padding(.vertical, compact ? 7 : 10)
+                .driftTag("box")
+                // The dot sits in an overlay, which doesn't report where it is; place it from the row.
+                .driftTag(unread ? "dot" : "", rect: CGRect(x: 3, y: (compact ? 7 : 10) + 17 - 3, width: 6, height: 6))
                 .background {
                     ZStack {
                         if hovering && !selected {
@@ -387,22 +399,27 @@ struct NoteRow: View {
     var body: some View {
         SelectableRow(selected: selected, selection: selection, unread: note.isUnread, action: { c.select(note) }) {
             HStack(alignment: .top, spacing: 11) {
-                if gravatarHash(note.icon) != nil {
-                    Avatar(url: note.icon, kind: note.kind)
-                        .hovercard { PersonCard(avatar: note.icon, name: note.actor) }
-                } else {
-                    Avatar(url: note.icon, kind: note.kind)
+                Group {
+                    if gravatarHash(note.icon) != nil {
+                        Avatar(url: note.icon, kind: note.kind)
+                            .hovercard { PersonCard(avatar: note.icon, name: note.actor) }
+                    } else {
+                        Avatar(url: note.icon, kind: note.kind)
+                    }
                 }
+                .driftTag("icon")
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         (Text(note.actor ?? "").fontWeight(.semibold)
                          + Text(note.actor == nil ? note.action : " " + note.action).foregroundStyle(.secondary))
                             .lineLimit(1)
+                            .driftTag("who")
                         Spacer(minLength: 4)
                         Text(note.date.map(shortTime) ?? "")
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(note.isUnread ? Color.accentColor : .secondary)
+                            .driftTag("time")
                     }
                     .font(.system(size: 12))
 
@@ -410,9 +427,11 @@ struct NoteRow: View {
                         Text(target.plainText)
                             .font(.system(size: 13, weight: note.isUnread ? .semibold : .medium))
                             .lineLimit(2)
+                            .driftTag("title")
                     }
                     if let excerpt = note.excerpt, !excerpt.isEmpty {
                         Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                            .driftTag("excerpt")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -433,29 +452,36 @@ struct PostRow: View {
         let site = post.site_name ?? reader.siteName(post.site_ID)
         SelectableRow(selected: selected, selection: selection, action: { c.select(post) }) {
             HStack(alignment: .top, spacing: 11) {
-                if post.isExternal {
-                    SiteIcon(url: reader.icon(for: post), name: site, size: 34)
-                } else {
-                    SiteIcon(url: reader.icon(for: post), name: site, size: 34)
-                        .hovercard { SiteCard(id: post.site_ID, name: site, icon: reader.icon(for: post)) }
+                Group {
+                    if post.isExternal {
+                        SiteIcon(url: reader.icon(for: post), name: site, size: 34)
+                    } else {
+                        SiteIcon(url: reader.icon(for: post), name: site, size: 34)
+                            .hovercard { SiteCard(id: post.site_ID, name: site, icon: reader.icon(for: post)) }
+                    }
                 }
+                .driftTag("icon")
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(site.plainText).fontWeight(.semibold).foregroundStyle(.secondary).lineLimit(1)
+                            .driftTag("who")
                         Spacer(minLength: 4)
                         Text(post.dateValue.map(shortTime) ?? "")
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
+                            .driftTag("time")
                     }
                     .font(.system(size: 12))
 
                     Text((post.title ?? "").plainText.isEmpty ? "Untitled" : (post.title ?? "").plainText)
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(2)
+                        .driftTag("title")
                     let excerpt = (post.excerpt ?? "").plainText
                     if !excerpt.isEmpty {
                         Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                            .driftTag("excerpt")
                     }
                     HStack(spacing: 6) {
                         if let name = post.author?.name, !name.isEmpty, name != site {
@@ -482,6 +508,7 @@ struct PostRow: View {
                     }
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
+                    .driftTag("foot")
                     .padding(.top, 1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -528,7 +555,9 @@ struct XPostRow: View {
                             .background(Color.gray.gradient, in: Circle())
                             .overlay(Circle().stroke(Color(nsColor: .windowBackgroundColor), lineWidth: 1.5))
                             .offset(x: 4, y: 4)
+                            .driftTag("kind", shift: CGSize(width: 4, height: 4))
                     }
+                    .driftTag("icon")
                     .hovercard {
                         if let origin = post.xpostOrigin {
                             SiteCard(id: origin.site, name: source.name ?? source.handle,
@@ -548,14 +577,17 @@ struct XPostRow: View {
                         }
                         Spacer(minLength: 4)
                         Text(post.dateValue.map(shortTime) ?? "").monospacedDigit()
+                            .driftTag("time")
                     }
                     .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .driftTag("line")
 
                     Text(post.xpostTitle)
                         .font(.system(size: 12.5, weight: .medium))
                         .lineLimit(2)
+                        .driftTag("title")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
@@ -634,6 +666,7 @@ struct Avatar: View {
                 .background(glyph.color.gradient, in: Circle())
                 .overlay(Circle().stroke(Color(nsColor: .windowBackgroundColor), lineWidth: 1.5))
                 .offset(x: 3, y: 3)
+                .driftTag("kind", shift: CGSize(width: 3, height: 3))
         }
     }
 
@@ -658,19 +691,22 @@ struct DetailPane: View {
         VStack(spacing: 0) {
             HStack(spacing: 4) {
                 if c.mode == .attached {
-                    IconButton("xmark", help: "Close reader (esc)") { c.closeDetail() }
+                    IconButton("xmark", help: "Close reader (esc)") { c.closeDetail() }.driftTag("detail.close")
                 }
                 if c.section == .reader, let post = c.selectedPost {
                     if reader.canLike(post) {
                         LikeButton(state: reader.likeState(post)) { Task { await reader.toggleLike(post) } }
+                            .driftTag("detail.like")
                             .id(post.id) // a new post's like state shouldn't play the like animation
                             .task(id: post.id) { await reader.loadLikeState(for: post) }
                     }
                     IconButton(reader.isSaved(post) ? "bookmark.fill" : "bookmark",
                                help: reader.isSaved(post) ? "Remove from Saved (s)" : "Save post (s)",
                                tint: reader.isSaved(post) ? .accentColor : nil) { reader.toggleSave(post) }
+                        .driftTag("detail.save")
                 }
                 IconButton("safari", help: "Open in browser (o)") { c.openSelectedInBrowser() }
+                    .driftTag("detail.open")
                     .disabled(c.selectedNote == nil && c.selectedPost == nil)
                 Spacer()
                 // Prev/next sit on the right, next to the list they step through.
@@ -678,11 +714,14 @@ struct DetailPane: View {
                     Text("\(p.index + 1) of \(p.count)")
                         .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .driftTag("detail.pos")
                         .padding(.trailing, 4)
                 }
                 IconButton("chevron.up", help: "Previous (k)") { c.move(-1) }
+                    .driftTag("detail.prev")
                     .disabled((c.position?.index ?? 0) == 0)
                 IconButton("chevron.down", help: "Next (j)") { c.move(1) }
+                    .driftTag("detail.next")
                     .disabled(c.position.map { $0.index == $0.count - 1 } ?? true)
             }
             .padding(.horizontal, 12)
@@ -868,6 +907,7 @@ struct CommentsDrawer: View {
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.primary.opacity(0.06)))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(Color.accentColor.opacity(composing ? 0.5 : 0), lineWidth: 1))
+                    .driftTag("comments.field")
                 Button(action: send) {
                     if sending {
                         ProgressView().controlSize(.small).frame(width: 24, height: 24)
@@ -907,6 +947,7 @@ struct CommentsDrawer: View {
             .padding(.horizontal, 16)
             .frame(height: 34)
             .contentShape(Rectangle())
+            .driftTag("comments.head")
         }
         .buttonStyle(.plain)
         .help(c.commentsOpen ? "Hide comments" : "Show comments")
@@ -918,6 +959,7 @@ struct CommentsDrawer: View {
                 ForEach(Array(comments.enumerated()), id: \.element.id) { i, comment in
                     Button { toggle(focusing: comment.id) } label: {
                         CommentBubble(comment: comment, expanded: false, ns: ns)
+                            .driftTag("comments.bubble.\(i)")
                     }
                     .buttonStyle(.plain)
                     .help(comment.author?.name ?? "")
@@ -934,6 +976,7 @@ struct CommentsDrawer: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 34, height: 34)
                         .background(Circle().fill(Color.primary.opacity(0.06)))
+                        .driftTag("comments.add")
                 }
                 .buttonStyle(.plain)
                 .help("Add a comment")
@@ -969,6 +1012,7 @@ struct CommentsDrawer: View {
             }
             .id(key)
             .frame(maxHeight: .infinity)
+            .driftTag("comments.list")
             .onAppear {
                 if let focus { DispatchQueue.main.async { withAnimation(spring) { proxy.scrollTo(focus, anchor: .top) } } }
             }
@@ -1132,10 +1176,11 @@ struct PillPicker<T: Hashable>: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(options.indices, id: \.self) { i in segment(options[i]) }
+            ForEach(options.indices, id: \.self) { i in segment(options[i]).driftTag("pill.\(i)") }
         }
         .padding(2)
         .background(Capsule().fill(Color.primary.opacity(0.07)))
+        .driftTag("pills")
     }
 
     private func segment(_ o: Option) -> some View {
@@ -1319,6 +1364,7 @@ struct HeightHandle: View {
             Capsule()
                 .fill(Color.primary.opacity(hovering || dragging ? 0.4 : 0.14))
                 .frame(width: dragging ? 48 : 36, height: 4)
+                .driftTag("grip")
                 .frame(width: c.listWidth)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .allowsHitTesting(false)

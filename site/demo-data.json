@@ -1,0 +1,517 @@
+{
+  "me": {
+    "name": "Robin Park",
+    "handle": "robin"
+  },
+  "people": {
+    "maya": {
+      "name": "Maya Chen",
+      "color": "#e5397a",
+      "pronouns": "she/her",
+      "work": "Product designer",
+      "place": "Lisbon",
+      "bio": "Draws interfaces, bakes bread, answers email twice a day."
+    },
+    "theo": {
+      "name": "Theo Brandt",
+      "color": "#2f9e72",
+      "pronouns": "he/him",
+      "work": "Design lead",
+      "place": "Berlin",
+      "bio": "Runs Thursday crit. Bring sketches, not slides."
+    },
+    "priya": {
+      "name": "Priya Raman",
+      "color": "#d9822b",
+      "pronouns": "she/her",
+      "work": "Engineer",
+      "place": "Bengaluru",
+      "bio": "Writes code in the morning and about food at night."
+    },
+    "sam": {
+      "name": "Sam Ortiz",
+      "color": "#7a5af8",
+      "pronouns": "they/them",
+      "work": "Release manager",
+      "place": "Austin",
+      "bio": "Keeps the trains running on time."
+    },
+    "jules": {
+      "name": "Jules Okafor",
+      "color": "#0e9fb5",
+      "pronouns": "he/him",
+      "work": "Baker, writer",
+      "place": "Dublin",
+      "bio": "Kettle & Crumb. Lazy loaves for busy people."
+    },
+    "ana": {
+      "name": "Ana Lima",
+      "color": "#c0503a",
+      "pronouns": "she/her",
+      "work": "Researcher",
+      "place": "São Paulo",
+      "bio": "Studies how people actually use their tabs."
+    },
+    "robin": {
+      "name": "Robin Park",
+      "color": "#3858e9",
+      "pronouns": "they/them",
+      "work": "Designer",
+      "place": "Portland",
+      "bio": "Writes Field Notes. Trying to make software quieter."
+    },
+    "lena": {
+      "name": "Lena Vogel",
+      "color": "#8a6d3b",
+      "pronouns": "she/her",
+      "work": "Illustrator",
+      "place": "Vienna",
+      "bio": "Icons, empty states and the occasional telescope review."
+    },
+    "kofi": {
+      "name": "Kofi Mensah",
+      "color": "#4a7bd0",
+      "pronouns": "he/him",
+      "work": "Writer",
+      "place": "Accra",
+      "bio": "Essays about calm technology at The Slow Web."
+    }
+  },
+  "sites": {
+    "field": {
+      "id": 101,
+      "name": "Field Notes",
+      "host": "fieldnotes.blog",
+      "color": "#3858e9",
+      "about": "Notes on working calmly, by Robin Park.",
+      "subs": 1284,
+      "posts": 212
+    },
+    "slow": {
+      "id": 102,
+      "name": "The Slow Web",
+      "host": "theslowweb.com",
+      "color": "#2f9e72",
+      "about": "Essays on software that respects your attention.",
+      "subs": 18420,
+      "posts": 340
+    },
+    "kettle": {
+      "id": 103,
+      "name": "Kettle & Crumb",
+      "host": "kettleandcrumb.com",
+      "color": "#d9822b",
+      "about": "Forgiving recipes for people who forget about their dough.",
+      "subs": 6310,
+      "posts": 158
+    },
+    "orbit": {
+      "id": 104,
+      "name": "Orbit Weekly",
+      "host": "orbitweekly.net",
+      "color": "#7a5af8",
+      "about": "Backyard astronomy, one clear night at a time.",
+      "subs": 2975,
+      "posts": 96
+    },
+    "design": {
+      "id": 201,
+      "name": "+design",
+      "host": "design.p2",
+      "color": "#e5397a",
+      "about": "Crit notes, sketches and decisions from the design team.",
+      "posts": 640,
+      "p2": true
+    },
+    "mobile": {
+      "id": 202,
+      "name": "+mobile",
+      "host": "mobile.p2",
+      "color": "#0e9fb5",
+      "about": "Release trains and mobile app news.",
+      "posts": 412,
+      "p2": true
+    }
+  },
+  "posts": {
+    "inbox": {
+      "id": 1,
+      "likes": 12,
+      "likers": [
+        "maya",
+        "priya",
+        "ana",
+        "theo"
+      ],
+      "site": "field",
+      "title": "Notes on a quieter inbox",
+      "author": "robin",
+      "ago": "2h",
+      "read": "3 min",
+      "excerpt": "For a month I only opened notifications twice a day. Here's what changed, and what I'd keep.",
+      "body": [
+        "For a month I only opened notifications twice a day: once with coffee, once before signing off. Everything else waited.",
+        "The surprise wasn't how much I missed. It was how little. Most things that felt urgent at 10am were already answered by noon.",
+        "What I'd keep: skim first, read second. If a headline and two lines don't earn a click, the post can wait for the weekend."
+      ],
+      "comments": [
+        {
+          "id": 1,
+          "who": "maya",
+          "text": "Love this. The bit about batching replies changed my mornings already.",
+          "ago": "1h",
+          "likes": 3,
+          "depth": 0
+        },
+        {
+          "id": 2,
+          "who": "robin",
+          "text": "Glad it helped! Coffee and notifications is a strong combo.",
+          "ago": "48m",
+          "likes": 1,
+          "depth": 1
+        },
+        {
+          "id": 3,
+          "who": "ana",
+          "text": "Do you keep the browser closed the rest of the day? That's where I slip.",
+          "ago": "30m",
+          "likes": 2,
+          "depth": 0
+        },
+        {
+          "id": 4,
+          "who": "sam",
+          "text": "Same question. My tabs are a crime scene.",
+          "ago": "12m",
+          "likes": 0,
+          "depth": 1
+        }
+      ]
+    },
+    "crit": {
+      "id": 2,
+      "likes": 4,
+      "likers": [
+        "lena",
+        "sam"
+      ],
+      "site": "design",
+      "title": "Design crit, week 42",
+      "author": "theo",
+      "ago": "3h",
+      "read": "2 min",
+      "excerpt": "Agenda for Thursday: onboarding illustrations, the new empty states, and menu bar sketches.",
+      "body": [
+        "Agenda for Thursday's crit, in order:",
+        "1. Onboarding illustrations, final pass. 2. Empty states for search and saved items.",
+        "3. @robin can you share the menu bar sketches before Thursday? Rough is fine. We mostly want to talk about density."
+      ],
+      "comments": [
+        {
+          "id": 11,
+          "who": "lena",
+          "text": "I'll bring the empty states. Two directions, one weird.",
+          "ago": "2h",
+          "likes": 4,
+          "depth": 0
+        },
+        {
+          "id": 12,
+          "who": "robin",
+          "text": "Sketches coming tomorrow morning.",
+          "ago": "1h",
+          "likes": 2,
+          "depth": 1
+        }
+      ]
+    },
+    "sourdough": {
+      "id": 3,
+      "likes": 23,
+      "likers": [
+        "priya",
+        "maya",
+        "kofi",
+        "ana"
+      ],
+      "site": "kettle",
+      "title": "Sourdough, but lazier",
+      "author": "jules",
+      "ago": "1d",
+      "read": "4 min",
+      "excerpt": "No stretch-and-folds, no schedule. A loaf that forgives you for forgetting about it.",
+      "body": [
+        "Every sourdough recipe wants you home all day. This one doesn't. Mix, leave it in the fridge, forget about it for two days.",
+        "The long cold rest does the work you'd normally do by hand. You lose a little height and gain a lot of flavor.",
+        "Bake it in a hot pot with the lid on for twenty minutes, then lid off until it's darker than you think it should be."
+      ],
+      "comments": [
+        {
+          "id": 21,
+          "who": "priya",
+          "text": "Made it this weekend. My kitchen smells like a bakery and I did nothing.",
+          "ago": "20h",
+          "likes": 6,
+          "depth": 0
+        },
+        {
+          "id": 22,
+          "who": "robin",
+          "text": "Does it work with whole wheat?",
+          "ago": "8h",
+          "likes": 0,
+          "depth": 0
+        },
+        {
+          "id": 23,
+          "who": "jules",
+          "text": "Yes! Add a splash more water.",
+          "ago": "6h",
+          "likes": 3,
+          "depth": 1
+        }
+      ]
+    },
+    "waits": {
+      "id": 4,
+      "likes": 9,
+      "likers": [
+        "ana",
+        "jules",
+        "maya"
+      ],
+      "site": "slow",
+      "title": "The case for software that waits",
+      "author": "kofi",
+      "ago": "5h",
+      "read": "3 min",
+      "excerpt": "Not every update needs a badge. Some of the best tools just wait until you come back.",
+      "body": [
+        "Not every update needs a badge. The tools I keep longest are the ones that wait patiently until I come back.",
+        "Waiting is a design choice. It says: you decide when this matters. The opposite is a slot machine with a settings page.",
+        "Try it for a week: turn the badges off and check in on your own schedule. You can always turn them back on."
+      ],
+      "comments": [
+        {
+          "id": 31,
+          "who": "ana",
+          "text": "Badges off is the best productivity tip nobody wants to hear.",
+          "ago": "3h",
+          "likes": 5,
+          "depth": 0
+        }
+      ]
+    },
+    "scopes": {
+      "id": 5,
+      "likes": 2,
+      "likers": [
+        "kofi",
+        "theo"
+      ],
+      "site": "orbit",
+      "title": "Seven small telescopes, ranked",
+      "author": "lena",
+      "ago": "1d",
+      "read": "6 min",
+      "excerpt": "Under 3kg, under $500, and all of them will show you Saturn's rings from a balcony.",
+      "body": [
+        "Every one of these fits in a backpack, sets up in under five minutes, and will show you Saturn's rings from a city balcony.",
+        "The winner isn't the sharpest. It's the one you'll actually carry outside on a weeknight."
+      ],
+      "comments": []
+    },
+    "train": {
+      "id": 6,
+      "likes": 6,
+      "likers": [
+        "kofi",
+        "theo"
+      ],
+      "site": "mobile",
+      "title": "Release train 4.2 is boarding",
+      "author": "sam",
+      "ago": "4h",
+      "read": "2 min",
+      "excerpt": "Code freeze Friday. Release notes due Monday. Here's the checklist.",
+      "body": [
+        "Code freeze is Friday at noon. Anything not merged by then rides the next train, no hard feelings.",
+        "Release notes are due Monday. If your change is user-visible, a single plain sentence is perfect."
+      ],
+      "comments": [
+        {
+          "id": 41,
+          "who": "kofi",
+          "text": "Notes for the offline mode fix are in the doc.",
+          "ago": "2h",
+          "likes": 1,
+          "depth": 0
+        }
+      ],
+      "xpost": {
+        "from": "mobile",
+        "to": "design"
+      }
+    },
+    "icons": {
+      "id": 7,
+      "likes": 3,
+      "likers": [
+        "theo",
+        "maya"
+      ],
+      "site": "design",
+      "title": "Icon refresh: round two",
+      "author": "lena",
+      "ago": "6h",
+      "read": "2 min",
+      "excerpt": "Thinner strokes, rounder joins. Feedback welcome until Wednesday.",
+      "body": [
+        "Round two of the icon refresh is up. Strokes are thinner and the joins are rounder.",
+        "Feedback welcome until Wednesday."
+      ],
+      "comments": []
+    },
+    "focaccia": {
+      "id": 8,
+      "likes": 14,
+      "likers": [
+        "maya",
+        "sam"
+      ],
+      "site": "kettle",
+      "title": "Weeknight focaccia",
+      "author": "jules",
+      "ago": "4d",
+      "read": "2 min",
+      "excerpt": "Stir it at breakfast, bake it at dinner. The fridge does the rest.",
+      "body": [
+        "Stir flour, water, salt and yeast together at breakfast. Cover it and put it in the fridge.",
+        "At dinner, tip it into an oiled pan, poke it all over and bake it hot until the top is deep gold."
+      ],
+      "comments": [
+        {
+          "id": 51,
+          "who": "priya",
+          "text": "Rosemary and flaky salt. That's the whole review.",
+          "ago": "3d",
+          "likes": 2,
+          "depth": 0
+        }
+      ]
+    },
+    "material": {
+      "id": 9,
+      "likes": 31,
+      "likers": [
+        "ana",
+        "lena",
+        "theo"
+      ],
+      "site": "slow",
+      "title": "Notifications are a design material",
+      "author": "kofi",
+      "ago": "6d",
+      "read": "5 min",
+      "excerpt": "Every ping is a decision someone made about your attention. We can make better ones.",
+      "body": [
+        "Every ping is a decision someone made about your attention, usually without asking you.",
+        "Treat notifications like any other material: choose them on purpose, and use as few as you can."
+      ],
+      "comments": []
+    }
+  },
+  "notes": [
+    {
+      "id": "n1",
+      "kind": "comment",
+      "who": "maya",
+      "action": "commented on",
+      "post": "inbox",
+      "ago": "1h",
+      "text": "Love this. The bit about batching replies changed my mornings already.",
+      "unread": true,
+      "num": 1
+    },
+    {
+      "id": "n2",
+      "kind": "mention",
+      "who": "theo",
+      "action": "mentioned you on",
+      "post": "crit",
+      "ago": "3h",
+      "text": "…@robin can you share the menu bar sketches before Thursday?",
+      "unread": true,
+      "num": 2
+    },
+    {
+      "id": "n3",
+      "kind": "like",
+      "who": "priya",
+      "action": "and 4 others liked",
+      "post": "inbox",
+      "ago": "4h",
+      "text": "",
+      "unread": true,
+      "people": [
+        "priya",
+        "maya",
+        "ana",
+        "theo",
+        "kofi"
+      ],
+      "num": 3
+    },
+    {
+      "id": "n4",
+      "kind": "comment",
+      "who": "jules",
+      "action": "replied to you on",
+      "post": "sourdough",
+      "ago": "6h",
+      "text": "Yes! Add a splash more water.",
+      "unread": false,
+      "num": 4
+    },
+    {
+      "id": "n5",
+      "kind": "follow",
+      "who": "ana",
+      "action": "followed",
+      "site": "field",
+      "ago": "1d",
+      "text": "",
+      "unread": false,
+      "num": 5
+    },
+    {
+      "id": "n6",
+      "kind": "like",
+      "who": "sam",
+      "action": "liked your comment on",
+      "post": "crit",
+      "comment": 12,
+      "ago": "1d",
+      "text": "",
+      "unread": false,
+      "people": [
+        "sam"
+      ],
+      "num": 6
+    }
+  ],
+  "feeds": {
+    "blogs": [
+      "waits",
+      "sourdough",
+      "scopes",
+      "inbox"
+    ],
+    "p2s": [
+      "train",
+      "crit",
+      "icons"
+    ]
+  }
+}

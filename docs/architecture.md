@@ -95,6 +95,10 @@ Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed
 - In the article, elements with `data-person` post their rect to the `hovercard` script handler in `HTMLView`, and the card anchors to that rect inside the web view.
 - Likes are stars (`LikeStar`): liking spins and pops the star with a burst of sparks, unliking squashes it. Only real toggles animate.
 
+## Demo mode: `Demo.swift`
+
+For the website's drift check. `DISPATCH_DEMO=<site/demo-data.json>` makes `Store.request` answer from `DemoAPI`, which turns the website's made-up data into WordPress.com-shaped responses, so the app's real decoding and views run on it. App data (sign-in, saves) goes to a temporary folder, and Sparkle is off. `DISPATCH_RENDER=<folder>` also skips the status item, draws each scene in `Demo.scenes` into an offscreen window, and writes `<scene>.png` plus `<scene>.json`, the frames of every `.driftTag`. `driftTag` and `driftScope` do nothing in a normal run.
+
 ## Sign-in and updates
 
 - **Sign-in:** an implicit-grant OAuth flow over a localhost listener. See [auth.md](auth.md).

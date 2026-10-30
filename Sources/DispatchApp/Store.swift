@@ -78,7 +78,7 @@ final class Store: ObservableObject {
     @Published var notes: [Note] = []
     @Published var isLoading = false
     @Published var error: String?
-    @Published private(set) var token: String? = Credentials.get("token")
+    @Published private(set) var token: String? = Demo.isOn ? "demo" : Credentials.get("token")
 
     /// True when a token we had stopped working (expired or revoked), so setup says "reconnect".
     @Published private(set) var sessionExpired = false
@@ -94,6 +94,7 @@ final class Store: ObservableObject {
     private var timer: Timer?
 
     init() {
+        guard !Demo.isOn else { return }
         // Left over from older builds: the code-exchange secret and a user-entered app ID.
         Credentials.set("clientSecret", nil)
         Credentials.set("clientID", nil)
@@ -246,6 +247,7 @@ final class Store: ObservableObject {
     }
 
     func request(_ path: String, version: String = "v1.1", method: String = "GET", body: Data? = nil) async throws -> Data {
+        if Demo.isOn { return DemoAPI.shared.respond(path, method: method) }
         var req = URLRequest(url: URL(string: "https://public-api.wordpress.com/rest/\(version)/\(path)")!)
         req.httpMethod = method
         req.setValue("Bearer \(token ?? "")", forHTTPHeaderField: "Authorization")

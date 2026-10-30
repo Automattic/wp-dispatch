@@ -10,3 +10,6 @@ site/releases/*.delta
 .spacefast/state.json
 site/.spacefast/state.json
 .claude/
+
+# The drift check's Playwright (tools/drift/package.json).
+tools/drift/node_modules/

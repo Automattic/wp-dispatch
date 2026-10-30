@@ -83,19 +83,20 @@
 .sim-list { position: absolute; top: 0; right: 0; width: 380px; height: 100%; display: flex; flex-direction: column; }
 .sim-detail {
   position: absolute; top: 0; right: 381px; width: 540px; height: 100%; display: flex; flex-direction: column;
-  background: var(--s-reader); border-right: 1px solid var(--s-line);
+  background: var(--s-reader); box-shadow: 1px 0 0 var(--s-line); /* the divider, outside the pane like the app's */
 }
 
 /* List chrome */
 .sim-head { position: relative; height: 48px; display: flex; align-items: center; padding: 0 10px 0 16px; gap: 4px; flex: none; }
-.sim-tab { font-size: 15px; font-weight: 600; color: var(--s-faint); margin-right: 10px; display: flex; align-items: center; gap: 5px; }
+.sim-tab { font-size: 15px; line-height: 19px; font-weight: 600; color: var(--s-faint); margin-right: 10px; display: flex; align-items: center; gap: 5px; }
 .sim-tab.on { color: var(--s-text); }
-.sim-badge { font-size: 10px; font-weight: 700; color: #fff; background: var(--s-accent); border-radius: 99px; padding: 1px 5px; font-variant-numeric: tabular-nums; }
+.sim-badge { font-size: 10px; line-height: 13px; font-weight: 700; color: #fff; background: var(--s-accent); border-radius: 99px; padding: 1px 5px; font-variant-numeric: tabular-nums; }
 .sim-tab:not(.on) .sim-badge { opacity: .6; }
 .sim-head .spacer { flex: 1; }
 .sim-icon { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--s-muted); transition: background .1s; }
 .sim-icon:hover { background: var(--s-fill-2); }
 .sim-icon svg { width: 14px; height: 14px; }
+.sim-icon.more { width: 20px; height: 14px; } /* the app's ⋯ is a borderless Menu, sized to its glyph */
 .sim-filters { height: 36px; padding: 0 12px 6px; display: flex; align-items: center; gap: 4px; flex: none; }
 .sim-filters .spacer { flex: 1; }
 .sim-icon[disabled] { opacity: .35; }
@@ -104,13 +105,13 @@
 .sim-back { width: 22px; height: 22px; border-radius: 50%; background: var(--s-fill-2); display: grid; place-items: center; }
 .sim-back svg { width: 11px; height: 11px; }
 .sim-pills { display: flex; padding: 2px; border-radius: 99px; background: var(--s-fill-pill); position: relative; }
-.sim-pill { position: relative; z-index: 1; padding: 4px 10px; border-radius: 99px; font-weight: 500; color: var(--s-muted); display: flex; gap: 4px; align-items: center; transition: color .2s; }
+.sim-pill { line-height: 15px; position: relative; z-index: 1; padding: 4px 10px; border-radius: 99px; font-weight: 500; color: var(--s-muted); display: flex; gap: 4px; align-items: center; transition: color .2s; }
 .sim-pill.on { color: var(--s-text); }
 .sim-pill .sim-badge { font-size: 10px; padding: 0 5px; line-height: 15px; }
 .sim-badge.quiet { background: var(--s-fill-2); color: var(--s-muted); }
 .sim-pill-thumb { position: absolute; top: 2px; bottom: 2px; border-radius: 99px; background: var(--s-control); box-shadow: 0 .5px 1.5px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); transition: left .28s cubic-bezier(.2,.9,.25,1), width .28s cubic-bezier(.2,.9,.25,1); }
 .sim-rows { flex: 1; overflow: hidden; border-top: 1px solid var(--s-line); padding: 6px 6px 18px; }
-.sim-rows-inner { transition: opacity .18s; }
+.sim-rows-inner { display: flex; flex-direction: column; gap: 2px; transition: opacity .18s; } /* LazyVStack(spacing: 2) */
 .sim-rows-inner.swap { opacity: 0; }
 
 .sim-row {
@@ -122,16 +123,17 @@
 .sim-row.compact { padding: 7px 12px; }
 .sim-row .main { flex: 1; min-width: 0; }
 .sim-row .top { display: flex; gap: 6px; align-items: baseline; }
-.sim-row .who { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Line heights are SwiftUI's for each size, so rows stack to the same heights as the app's. */
+.sim-row .who { line-height: 15px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sim-row .who b { font-weight: 600; }
 .sim-row .who span { color: var(--s-muted); }
 .sim-row .who.site { color: var(--s-muted); font-weight: 600; }
-.sim-row .time { color: var(--s-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sim-row .time { line-height: 14px; color: var(--s-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .sim-row.unread .time { color: var(--s-accent); }
-.sim-row .title { font-size: 13px; font-weight: 600; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sim-row .title { font-size: 13px; line-height: 16px; font-weight: 600; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sim-row.note:not(.unread) .title { font-weight: 500; }
-.sim-row .ex { color: var(--s-muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.sim-row .foot { color: var(--s-faint); margin-top: 3px; font-size: 11px; display: flex; gap: 6px; align-items: center; }
+.sim-row .ex { line-height: 15px; color: var(--s-muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sim-row .foot { line-height: 14px; color: var(--s-faint); margin-top: 3px; font-size: 11px; width: fit-content; display: flex; gap: 6px; align-items: center; }
 .sim-saved { display: inline-flex; color: var(--s-accent); }
 .sim-saved svg { width: 9px; height: 10px; }
 /* Unread: a dot on the row's leading edge, level with the avatar's center (as in the app). */
@@ -150,28 +152,30 @@
 .sim-site.tiny { width: 20px; height: 20px; border-radius: 5px; font-size: 9px; }
 .sim-site.big { width: 44px; height: 44px; border-radius: 10.5px; font-size: 20px; }
 .sim-avwrap { position: relative; flex: none; align-self: flex-start; display: flex; }
-.sim-avwrap.x { width: 34px; }
+.sim-avwrap.x { width: 34px; justify-content: center; }
+.sim-avwrap.x .sim-xbadge { left: 21px; }
 .sim-kind, .sim-xbadge { position: absolute; display: grid; place-items: center; border-radius: 50%; color: #fff; box-shadow: 0 0 0 1.5px var(--s-ring); }
 .sim-kind { right: -3px; bottom: -3px; width: 15px; height: 15px; background-image: linear-gradient(rgba(255,255,255,.18), transparent); }
 .sim-kind svg { width: 7.5px; height: 7.5px; }
 .sim-kind b { font: 800 9.5px/1 -apple-system, sans-serif; margin-top: -1px; }
 .sim-xbadge { left: 17px; top: 17px; width: 13px; height: 13px; background: linear-gradient(#a1a1a6, #8e8e93); }
 .sim-xbadge svg { width: 7px; height: 7px; }
-.sim-xrow .who { color: var(--s-muted); font-size: 11.5px; }
+.sim-xrow .who { color: var(--s-muted); font-size: 11.5px; line-height: 14px; }
 .sim-xrow .who b { color: var(--s-muted); }
-.sim-xrow .title { font-size: 12.5px; font-weight: 500; }
+.sim-xrow .title { font-size: 12.5px; line-height: 15px; font-weight: 500; margin-top: 1px; }
 
 /* Reader */
 .sim-dhead { height: 48px; display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--s-line); flex: none; }
 .sim-dhead .spacer { flex: 1; }
 .sim-pos { color: var(--s-muted); font-size: 11px; font-variant-numeric: tabular-nums; margin-right: 4px; }
 .sim-icon.on { color: var(--s-accent); }
-.sim-like { height: 26px; min-width: 26px; padding: 0 5px; border-radius: 6px; display: flex; align-items: center; gap: 3px; color: var(--s-muted); font-size: 11px; font-weight: 600; }
+.sim-like { height: 26px; min-width: 26px; padding: 0 5px; border-radius: 7px; display: flex; align-items: center; gap: 3px; color: var(--s-muted); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .sim-like:hover { background: var(--s-fill); }
-.sim-like svg { width: 15px; height: 15px; }
+.sim-like svg { width: 19px; height: 19px; } /* SF "star" at 14pt semibold */
 .sim-like.liked { color: var(--s-pink); }
 .sim-likes { display: inline-flex; align-items: center; gap: 2px; vertical-align: -1px; }
-.sim-likes svg { width: 10px; height: 10px; }
+.sim-likes svg { width: 11.5px; height: 11.5px; } /* the SF Symbols' size at 11pt */
+.sim-likes svg.cm { width: 12.5px; height: 12.5px; }
 .sim-likes.liked { color: var(--s-pink); }
 .sim-article { flex: 1; overflow: hidden; padding: 18px 24px 10px; }
 .sim-article .eyebrow { color: var(--s-muted); font-weight: 600; font-size: 11.5px; }
@@ -207,13 +211,13 @@
 .sim-strip { display: flex; gap: 14px; padding: 2px 16px 14px; overflow: hidden; }
 .sim-cmt { display: flex; gap: 8px; align-items: flex-start; }
 .sim-bubble { background: var(--s-fill-2); border-radius: 4px 14px 14px 14px; padding: 7px 11px; }
-.sim-strip .sim-bubble { width: 190px; line-height: 1.45; }
+.sim-strip .sim-bubble { box-sizing: border-box; width: 190px; line-height: 1.45; }
 .sim-strip .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sim-strip .sim-cmt { animation: sim-rise .42s cubic-bezier(.3,1.5,.5,1) both; }
 @keyframes sim-rise { from { opacity: 0; transform: translateY(10px) scale(.85); } }
 .sim-add { width: 34px; height: 34px; border-radius: 50%; background: var(--s-fill-2); display: grid; place-items: center; color: var(--s-muted); flex: none; }
 .sim-add svg { width: 15px; height: 15px; }
-.sim-clist { height: 196px; overflow: hidden; padding: 4px 16px 0; }
+.sim-clist { box-sizing: border-box; height: 160px; overflow: hidden; padding: 4px 16px 0; } /* the app's minHeight */
 .sim-clist .sim-cmt { margin-bottom: 4px; animation: sim-in .35s ease both; }
 @keyframes sim-in { from { opacity: 0; transform: translateY(6px); } }
 .sim-clist .sim-bubble { flex: 0 1 auto; line-height: 1.55; font-size: 12.5px; } /* short comments, short bubbles */
@@ -243,11 +247,12 @@
 .sim-composer { padding: 8px 16px 18px; }
 .sim-replyto { color: var(--s-muted); font-size: 11px; margin-bottom: 5px; }
 .sim-field { display: flex; gap: 8px; align-items: center; }
-.sim-input { flex: 1; min-height: 32px; border-radius: 14px; background: var(--s-fill-2); padding: 8px 11px; font-size: 12.5px; color: var(--s-faint); border: 1px solid transparent; }
-.sim-input.typing { color: var(--s-text); border-color: var(--s-accent-line); }
+.sim-input { box-sizing: border-box; flex: 1; min-height: 31px; border-radius: 14px; background: var(--s-fill-2); padding: 8px 11px; font-size: 12.5px; line-height: 15px; color: var(--s-faint); }
+.sim-input.typing { color: var(--s-text); box-shadow: inset 0 0 0 1px var(--s-accent-line); }
 .sim-input.typing:after { content: ""; display: inline-block; width: 1px; height: 13px; margin-left: 1px; background: var(--s-accent); vertical-align: -2px; animation: sim-caret 1s steps(1) infinite; }
 @keyframes sim-caret { 50% { opacity: 0; } }
-.sim-send { width: 24px; height: 24px; color: var(--s-faint); }
+.sim-send { width: 28px; height: 28px; display: grid; place-items: center; color: var(--s-faint); }
+.sim-send svg { width: 24px; height: 24px; }
 .sim-send.ready { color: var(--s-accent); }
 
 /* Resize handle, key hints, toast, cursor */

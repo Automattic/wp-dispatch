@@ -7,6 +7,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: PanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if Demo.isRendering {
+            let controller = PanelController(store: Store())
+            self.controller = controller
+            Task {
+                await DemoRender.run(controller)
+                NSApp.terminate(nil)
+            }
+            return
+        }
         AppData.migrateFromOldName()
         controller = PanelController(store: Store())
         _ = Updates.shared // starts the daily background check
