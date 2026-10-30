@@ -15,7 +15,8 @@
   --s-accent: #3858e9; --s-accent-soft: rgba(56, 88, 233, 0.14); --s-accent-line: rgba(56, 88, 233, 0.35);
   --s-pink: #e5397a; --s-mark: rgba(255, 196, 0, 0.32);
   --s-menubar: rgba(255, 255, 255, 0.55);
-  --s-ring: #f4f4f6; --s-popover: rgba(250, 250, 252, 0.9);
+  --s-ring: #ececec; --s-popover: rgba(250, 250, 252, 0.9);
+  --s-control: #fff; --s-fill-pill: rgba(0, 0, 0, 0.07); --s-grip: rgba(0, 0, 0, 0.14); --s-accent-sel: rgba(56, 88, 233, 0.16);
   position: absolute; top: 0; left: 0; width: 1000px; height: 690px; /* DESK_H in sim.js */
   transform-origin: 0 0;
   background: radial-gradient(120% 90% at 10% 0%, var(--s-bg-desk-1), transparent 60%),
@@ -38,7 +39,8 @@
     --s-accent: #7b90ff; --s-accent-soft: rgba(123, 144, 255, 0.18); --s-accent-line: rgba(123, 144, 255, 0.4);
     --s-mark: rgba(255, 196, 0, 0.25);
     --s-menubar: rgba(20, 20, 24, 0.5);
-    --s-ring: #2d2d31; --s-popover: rgba(48, 48, 52, 0.92);
+    --s-ring: #323232; --s-popover: rgba(48, 48, 52, 0.92);
+    --s-control: #3a3a3d; --s-fill-pill: rgba(255, 255, 255, 0.08); --s-grip: rgba(255, 255, 255, 0.16); --s-accent-sel: rgba(123, 144, 255, 0.2);
   }
 }
 /* :where keeps this reset weaker than the component classes below. */
@@ -86,13 +88,14 @@
 
 /* List chrome */
 .sim-head { position: relative; height: 48px; display: flex; align-items: center; padding: 0 10px 0 16px; gap: 4px; flex: none; }
-.sim-tab { font-size: 15px; font-weight: 700; color: var(--s-faint); margin-right: 10px; display: flex; align-items: center; gap: 5px; }
+.sim-tab { font-size: 15px; font-weight: 600; color: var(--s-faint); margin-right: 10px; display: flex; align-items: center; gap: 5px; }
 .sim-tab.on { color: var(--s-text); }
-.sim-badge { font-size: 10px; font-weight: 700; color: #fff; background: var(--s-accent); border-radius: 99px; padding: 1px 6px; }
+.sim-badge { font-size: 10px; font-weight: 700; color: #fff; background: var(--s-accent); border-radius: 99px; padding: 1px 5px; font-variant-numeric: tabular-nums; }
+.sim-tab:not(.on) .sim-badge { opacity: .6; }
 .sim-head .spacer { flex: 1; }
-.sim-icon { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; color: var(--s-muted); }
-.sim-icon:hover { background: var(--s-fill); }
-.sim-icon svg { width: 15px; height: 15px; }
+.sim-icon { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--s-muted); transition: background .1s; }
+.sim-icon:hover { background: var(--s-fill-2); }
+.sim-icon svg { width: 14px; height: 14px; }
 .sim-filters { height: 36px; padding: 0 12px 6px; display: flex; align-items: center; gap: 4px; flex: none; }
 .sim-filters .spacer { flex: 1; }
 .sim-icon[disabled] { opacity: .35; }
@@ -100,22 +103,22 @@
 .sim-sitebar { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .sim-back { width: 22px; height: 22px; border-radius: 50%; background: var(--s-fill-2); display: grid; place-items: center; }
 .sim-back svg { width: 11px; height: 11px; }
-.sim-pills { display: flex; padding: 2px; border-radius: 99px; background: var(--s-fill-2); position: relative; }
-.sim-pill { position: relative; z-index: 1; padding: 4px 11px; border-radius: 99px; font-weight: 600; color: var(--s-muted); display: flex; gap: 4px; align-items: center; transition: color .2s; }
+.sim-pills { display: flex; padding: 2px; border-radius: 99px; background: var(--s-fill-pill); position: relative; }
+.sim-pill { position: relative; z-index: 1; padding: 4px 10px; border-radius: 99px; font-weight: 500; color: var(--s-muted); display: flex; gap: 4px; align-items: center; transition: color .2s; }
 .sim-pill.on { color: var(--s-text); }
 .sim-pill .sim-badge { font-size: 10px; padding: 0 5px; line-height: 15px; }
 .sim-badge.quiet { background: var(--s-fill-2); color: var(--s-muted); }
-.sim-pill-thumb { position: absolute; top: 2px; bottom: 2px; border-radius: 99px; background: var(--s-panel); box-shadow: 0 1px 3px rgba(0,0,0,.15); transition: left .28s cubic-bezier(.2,.9,.25,1), width .28s cubic-bezier(.2,.9,.25,1); }
+.sim-pill-thumb { position: absolute; top: 2px; bottom: 2px; border-radius: 99px; background: var(--s-control); box-shadow: 0 .5px 1.5px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); transition: left .28s cubic-bezier(.2,.9,.25,1), width .28s cubic-bezier(.2,.9,.25,1); }
 .sim-rows { flex: 1; overflow: hidden; border-top: 1px solid var(--s-line); padding: 6px 6px 18px; }
 .sim-rows-inner { transition: opacity .18s; }
 .sim-rows-inner.swap { opacity: 0; }
 
 .sim-row {
-  position: relative; display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid transparent;
-  transition: background .15s, border-color .15s;
+  position: relative; display: flex; gap: 11px; padding: 10px 12px; border-radius: 10px;
+  transition: background .12s;
 }
 .sim-row:hover { background: var(--s-fill); }
-.sim-row.on { background: var(--s-accent-soft); border-color: var(--s-accent-line); }
+.sim-row.on { background: var(--s-accent-sel); box-shadow: inset 0 0 0 1px var(--s-accent-line); }
 .sim-row.compact { padding: 7px 12px; }
 .sim-row .main { flex: 1; min-width: 0; }
 .sim-row .top { display: flex; gap: 6px; align-items: baseline; }
@@ -128,7 +131,7 @@
 .sim-row .title { font-size: 13px; font-weight: 600; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sim-row.note:not(.unread) .title { font-weight: 500; }
 .sim-row .ex { color: var(--s-muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.sim-row .foot { color: var(--s-faint); margin-top: 4px; font-size: 11px; display: flex; gap: 6px; align-items: center; }
+.sim-row .foot { color: var(--s-faint); margin-top: 3px; font-size: 11px; display: flex; gap: 6px; align-items: center; }
 .sim-saved { display: inline-flex; color: var(--s-accent); }
 .sim-saved svg { width: 9px; height: 10px; }
 /* Unread: a dot on the row's leading edge. */
@@ -146,11 +149,12 @@
 .sim-site.small { width: 26px; height: 26px; border-radius: 6px; font-size: 12px; }
 .sim-site.tiny { width: 20px; height: 20px; border-radius: 5px; font-size: 9px; }
 .sim-site.big { width: 44px; height: 44px; border-radius: 10.5px; font-size: 20px; }
-.sim-avwrap { position: relative; flex: none; }
+.sim-avwrap { position: relative; flex: none; align-self: flex-start; display: flex; }
 .sim-avwrap.x { width: 34px; }
 .sim-kind, .sim-xbadge { position: absolute; display: grid; place-items: center; border-radius: 50%; color: #fff; box-shadow: 0 0 0 1.5px var(--s-ring); }
-.sim-kind { right: -3px; bottom: -3px; width: 15px; height: 15px; }
-.sim-kind svg { width: 8px; height: 8px; }
+.sim-kind { right: -3px; bottom: -3px; width: 15px; height: 15px; background-image: linear-gradient(rgba(255,255,255,.18), transparent); }
+.sim-kind svg { width: 7.5px; height: 7.5px; }
+.sim-kind b { font: 800 9.5px/1 -apple-system, sans-serif; margin-top: -1px; }
 .sim-xbadge { left: 17px; top: 17px; width: 13px; height: 13px; background: linear-gradient(#a1a1a6, #8e8e93); }
 .sim-xbadge svg { width: 7px; height: 7px; }
 .sim-xrow .who { color: var(--s-muted); font-size: 11.5px; }
@@ -169,10 +173,11 @@
 .sim-likes { display: inline-flex; align-items: center; gap: 2px; vertical-align: -1px; }
 .sim-likes svg { width: 10px; height: 10px; }
 .sim-likes.liked { color: var(--s-pink); }
-.sim-article { flex: 1; overflow: hidden; padding: 22px 28px 10px; }
+.sim-article { flex: 1; overflow: hidden; padding: 18px 24px 10px; }
 .sim-article .eyebrow { color: var(--s-muted); font-weight: 600; font-size: 11.5px; }
 .sim-article .eyebrow a { color: inherit; text-decoration: none; }
-.sim-article .eyebrow a:after { content: " ›"; }
+.sim-article .eyebrow a { cursor: pointer; }
+.sim-article .eyebrow a:after { content: " ›"; opacity: .6; }
 .sim-article h3 { font-size: 18px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; margin: 4px 0 10px; }
 .sim-byline { display: flex; align-items: center; gap: 8px; color: var(--s-muted); }
 .sim-byline b { color: var(--s-text); font-weight: 600; }
@@ -182,13 +187,15 @@
 .sim-chip.me { background: var(--s-mark); color: var(--s-text); white-space: pre; }
 .sim-likers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .sim-liker { display: flex; align-items: center; gap: 6px; padding: 3px 9px 3px 3px; border-radius: 99px; background: var(--s-fill-2); }
-.sim-article .body { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--s-line); font-size: 13.5px; line-height: 1.62; }
+.sim-article .head { padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--s-line); }
+.sim-article .body { font-size: 13.5px; line-height: 1.55; }
 .sim-article .body p { margin: 0 0 10px; }
 .sim-article mark { background: var(--s-mark); color: inherit; border-radius: 3px; padding: 0 2px; }
 .sim-article mark.on { animation: sim-flash 1.4s ease; }
 @keyframes sim-flash { 15%, 60% { background: rgba(255, 150, 0, .75); } }
-.sim-notice { padding: 9px 12px; border-radius: 8px; background: var(--s-fill); color: var(--s-muted); margin-bottom: 12px; }
-.sim-placeholder { flex: 1; display: grid; place-items: center; color: var(--s-faint); text-align: center; }
+.sim-placeholder { flex: 1; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--s-muted); text-align: center; font-size: 13px; font-weight: 500; }
+.sim-placeholder svg { width: 40px; height: 40px; opacity: .18; color: var(--s-text); }
+.sim-placeholder small { margin-top: -6px; color: var(--s-faint); font-size: 11px; font-weight: 400; }
 
 /* Comments drawer */
 .sim-comments { flex: none; border-top: 1px solid var(--s-line); background: var(--s-fill); }
@@ -245,7 +252,7 @@
 
 /* Resize handle, key hints, toast, cursor */
 /* The grip stays centered under the list, even with the reader open. */
-.sim-handle { position: absolute; bottom: 5px; right: 172px; width: 36px; height: 4px; border-radius: 9px; background: var(--s-fill-2); }
+.sim-handle { position: absolute; bottom: 5px; right: 172px; width: 36px; height: 4px; border-radius: 9px; background: var(--s-grip); }
 
 /* ⋯ menu and hovercards */
 .sim-menu, .sim-card {

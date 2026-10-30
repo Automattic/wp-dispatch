@@ -4,7 +4,8 @@
  * Every [data-dispatch-sim] element becomes its own stage. Its value names the tour chapters
  * it plays (all of them when empty), on a loop while it's on screen. Visitors can click and
  * use j/k/esc/s/o; a real click or key hands the stage over until Play is pressed again.
- * The stage's caption and Play button are found inside its [data-sim-row].
+ * The stage's caption and Play button are found inside its [data-sim-row]. A stage with
+ * data-sim-still="<scene>" skips the tour: it shows that scene and waits for clicks.
  *
  * Programmatic control lives on window.DispatchSims (one per stage; DispatchSim is the first):
  *   DispatchSim.play()               start (or restart) the tour
@@ -44,7 +45,7 @@
       pin: svg(`<path d="M8 14.5s4.5-4.2 4.5-8a4.5 4.5 0 0 0-9 0c0 3.8 4.5 8 4.5 8z"/><circle cx="8" cy="6.5" r="1.6"/>`),
       kind: {
         comment: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4.2A2.7 2.7 0 0 1 4.7 1.5h6.6A2.7 2.7 0 0 1 14 4.2v4.6a2.7 2.7 0 0 1-2.7 2.7H7.4L4 14.5v-3A2.7 2.7 0 0 1 2 8.8z"/></svg>`,
-        mention: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.6"/><path d="M10.6 5.6v3.3c0 1.3 1 2 2 2s1.9-.9 1.9-2.9A6.5 6.5 0 1 0 11 13.7"/></svg>`,
+        mention: `<b>@</b>`,
         like: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .9l2.2 4.5 5 .7-3.6 3.5.9 4.9L8 12.2l-4.5 2.3.9-4.9L.8 6.1l5-.7z"/></svg>`,
         follow: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="4.6" r="3.3"/><path d="M1.5 15c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6z"/></svg>`,
       },
@@ -172,10 +173,10 @@
     const NOTES = [
       { id: "n1", kind: "comment", who: "maya", action: "commented on", post: "inbox", ago: "1h", text: "Love this. The bit about batching replies changed my mornings already.", unread: true },
       { id: "n2", kind: "mention", who: "theo", action: "mentioned you on", post: "crit", ago: "3h", text: "…@robin can you share the menu bar sketches before Thursday?", unread: true },
-      { id: "n3", kind: "like", who: "priya", action: "and 4 others liked", post: "inbox", ago: "4h", text: "", unread: true },
+      { id: "n3", kind: "like", who: "priya", action: "and 4 others liked", post: "inbox", ago: "4h", text: "", unread: true, people: ["priya", "maya", "ana", "theo", "kofi"] },
       { id: "n4", kind: "comment", who: "jules", action: "replied to you on", post: "sourdough", ago: "6h", text: "Yes! Add a splash more water.", unread: false },
       { id: "n5", kind: "follow", who: "ana", action: "followed", site: "field", ago: "1d", text: "", unread: false },
-      { id: "n6", kind: "like", who: "sam", action: "liked your comment on", post: "crit", ago: "1d", text: "", unread: false },
+      { id: "n6", kind: "like", who: "sam", action: "liked your comment on", post: "crit", comment: 12, ago: "1d", text: "", unread: false, people: ["sam"] },
     ];
     const FEEDS = {
       blogs: ["waits", "sourdough", "scopes", "inbox"],
@@ -337,29 +338,58 @@
 
     function renderDetail() {
       const s = selected();
-      if (!s) { detail.innerHTML = `<div class="sim-placeholder">Pick something to read</div>`; return; }
-      const p = postFor(s.item);
-      if (!p) { // a follow: there's no post to read
-        detail.innerHTML = toolbar(s, null) + `<div class="sim-article"><div class="eyebrow">${S[s.item.site].name}</div><h3>${P[s.item.who][0]} followed your blog</h3><div class="sim-byline">${av(s.item.who, "sim-av tiny")} <b data-card="person:${s.item.who}">${P[s.item.who][0]}</b></div></div>`;
+      if (!s) {
+        detail.innerHTML = `<div class="sim-placeholder">${I.w}Pick something to read<small>${st.section === "reader"
+          ? "↑ ↓ or j k to move · l to like · s to save · o to open" : "↑ ↓ or j k to move · o to open in browser"}</small></div>`;
         return;
       }
-      const origin = p.xpost ? `<div class="sim-notice">X-post from <b>${S[p.xpost.from].name}</b>. You're reading the original.</div>` : "";
-      const mentions = p.body.join(" ").match(/@robin|Robin/g)?.length ?? 0;
-      const likers = (p.liked ? ["robin", ...p.likers] : p.likers).map((who) =>
+      const p = postFor(s.item), page = pageFor(s.item, p);
+      const mentions = page.body.join(" ").match(/@robin|Robin/g)?.length ?? 0;
+      const likers = page.likers.map((who) =>
         `<span class="sim-liker" data-card="person:${who}">${av(who, "sim-av mini", false)}${P[who][0]}</span>`).join("");
+      const byline = [page.author && `${av(page.author, "sim-av tiny")} <b data-card="person:${page.author}">${P[page.author][0]}</b>`,
+        page.host, longAgo(page.ago)].filter(Boolean).join("<i>·</i>");
       detail.innerHTML = toolbar(s, p) + `
         <div class="sim-article">
-          ${origin}
-          <div class="eyebrow"><a data-a="site" data-v="${p.site}" title="Read this site">${S[p.site].name}</a></div>
-          <h3>${esc(p.title)}</h3>
-          <div class="sim-byline">${av(p.author, "sim-av tiny")} <b data-card="person:${p.author}">${P[p.author][0]}</b><i>·</i>${S[p.site].host}<i>·</i>${longAgo(p.ago)}</div>
-          <div class="sim-chips"><span class="sim-chip">${p.read === "2 min" || p.read === "3 min" ? "Quick read" : p.read + " read"}</span>${mentions
+          <div class="head">
+          <div class="eyebrow">${page.eyebrow}</div>
+          <h3>${esc(page.title)}</h3>
+          <div class="sim-byline">${byline}</div>
+          <div class="sim-chips"><span class="sim-chip">${page.read}</span>${mentions
             ? `<button class="sim-chip me" data-a="jump">You’re mentioned${mentions > 1 ? ` ${mentions}×` : ""}  ↓</button>` : ""}</div>
           ${likers ? `<div class="sim-likers">${likers}</div>` : ""}
-          <div class="body">${p.body.map((t) => `<p>${marked(t)}</p>`).join("")}</div>
+          </div>
+          <div class="body">${page.body.map((t) => `<p>${marked(t)}</p>`).join("")}</div>
         </div>
-        <div class="sim-comments ${st.commentsOpen ? "open" : ""}"></div>`;
+        ${p ? `<div class="sim-comments ${st.commentsOpen ? "open" : ""}"></div>` : ""}`;
       renderComments(true);
+    }
+    // What the reader shows, built the way the app builds it (Store.buildPage, ReaderStore.page):
+    // a comment notification shows the comment, a like or follow shows the notification itself,
+    // a post shows the post, and an x-post shows the original under where it was cross-posted.
+    function pageFor(item, p) {
+      const siteLink = (site, label = S[site].name) => `<a data-a="site" data-v="${site}" title="Read this site">${esc(label)}</a>`;
+      const readTime = (words) => (words < 120 ? "Quick read" : `${Math.max(1, Math.round(words / 230))} min read`);
+      const page = (o) => ({ likers: [], body: [], ...o, read: readTime(o.body?.join(" ").split(/\s+/).length ?? 0) });
+      if (st.section === "reader") {
+        const read = p.read === "2 min" || p.read === "3 min" ? "Quick read" : `${p.read} read`;
+        const eyebrow = p.xpost ? `Cross-posted ${siteLink(p.xpost.from)} → ${siteLink(p.xpost.to)}` : siteLink(p.site);
+        return { ...page({ eyebrow, title: p.title, author: p.author, host: S[p.site].host, ago: p.ago, body: p.body }), read };
+      }
+      const n = item;
+      const comment = n.kind === "comment"
+        ? { who: n.who, text: n.text, ago: n.ago }
+        : n.comment && p.comments.find((x) => x.id === n.comment);
+      if (comment) {
+        return page({ eyebrow: `Comment on ${siteLink(p.site, S[p.site].host)}`, title: p.title, author: comment.who,
+          host: S[p.site].host, ago: comment.ago, body: [comment.text], likers: n.people ?? [] });
+      }
+      if (p && n.kind !== "like") {
+        return page({ eyebrow: siteLink(p.site, S[p.site].host), title: p.title, author: p.author, host: S[p.site].host, ago: p.ago, body: p.body });
+      }
+      // Likes on a post, follows: the notification is the whole story.
+      return page({ eyebrow: `${P[n.who][0]} ${n.action}`, title: p ? p.title : S[n.site].name, ago: n.ago, host: S[p ? p.site : n.site].host,
+        likers: n.kind === "like" ? n.people : [] });
     }
     const longAgo = (ago) => {
       const n = parseInt(ago), unit = { m: "minute", h: "hour", d: "day" }[ago.slice(-1)];
@@ -631,6 +661,12 @@
     const captionEl = scope.querySelector("[data-sim-caption]");
     const playBtn = scope.querySelector("[data-sim-play]");
     const NAMES = root.dataset.dispatchSim ? root.dataset.dispatchSim.split(/[\s,]+/) : null;
+    // A still sets up one scene and leaves it for visitors to click around in, with no tour.
+    const STILL = root.dataset.simStill;
+    const SCENES = {
+      notifications() {},
+      xposts() { Object.assign(st, { section: "reader", feed: "p2s", sel: "train" }); },
+    };
     let token = 0, playing = false, visible = false, handedOver = false;
     const Cancel = Symbol("cancel");
     const sleep = (ms, t) => new Promise((ok, fail) => setTimeout(() => (t === token ? ok() : fail(Cancel)), ms));
@@ -775,10 +811,12 @@
       const now = entries[entries.length - 1].isIntersecting;
       if (now === visible) return;
       visible = now;
+      if (STILL) return;
       if (visible && !handedOver && !calm) runTour(NAMES || ORDER, true);
       else if (!visible && playing) halt();
     }, { threshold: 0.45 }).observe(root);
 
+    if (STILL) SCENES[STILL]();
     render();
     setPlaying(false);
     const api = { play, pause: stopTour, chapter: (n) => runTour([n], false), do: A, state: st };
