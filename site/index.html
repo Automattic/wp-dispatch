@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dispatch for WordPress.com</title>
 <meta name="description" content="A menu bar app for skimming your WordPress.com notifications, blogs and P2s.">
-<link rel="stylesheet" href="sim.css?v=6ed06603d1">
+<link rel="stylesheet" href="sim.css?v=809d2499b5">
 <style>
   :root {
     --bg: #fbfaf8;
@@ -64,6 +64,16 @@
     font: 600 0.82em/1 -apple-system, BlinkMacSystemFont, sans-serif; padding: 3px 6px; border-radius: 5px;
     border: 1px solid var(--line); border-bottom-width: 2px; background: var(--bg); color: var(--text);
   }
+  .callout {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start;
+    margin: 0 0 64px; padding: 28px 32px; border: 1px solid var(--line); border-radius: 18px; background: var(--hover);
+  }
+  .callout-icon { width: 40px; height: 40px; color: var(--accent); }
+  .callout h2 { margin: 2px 0 8px; font-size: 22px; letter-spacing: -0.01em; }
+  .callout p { margin: 0; color: var(--muted); }
+  .callout p.fine { margin-top: 10px; font-size: 15px; }
+  .callout strong { color: var(--text); font-weight: 600; }
+  @media (max-width: 820px) { .callout { grid-template-columns: minmax(0, 1fr); padding: 22px 20px; } }
   .demo-note { margin: 0; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
   @media (max-width: 820px) {
     .row, .row:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 48px 0; }
@@ -166,6 +176,15 @@
     </figure>
   </section>
 
+  <section class="callout">
+    <svg class="callout-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="26" height="21" rx="4"/><path d="M10 4h22a4 4 0 0 1 4 4v16"/><path d="M4 15h26"/></svg>
+    <div>
+      <h2>Rather have a window?</h2>
+      <p>Drag Dispatch away from the menu bar, or click its pop-out button, and it becomes a regular Mac window: in the Dock and ⌘-Tab, ready to resize, tile or move to another desktop. Close it and it tucks back into the menu bar.</p>
+      <p class="fine">In the ⋯ menu, <strong>Open as a Window</strong> makes that the default, and <strong>Show in Dock</strong> keeps a Dock icon either way.</p>
+    </div>
+  </section>
+
   <div class="rest">
     <p class="demo-note">Every demo on this page is the real layout with made-up people and posts. Click around in any of them, or press play to watch again.</p>
 
@@ -181,6 +200,6 @@
   </div>
 </main>
 <footer>Dispatch isn't an official WordPress.com app. It signs in with your WordPress.com account and keeps your sign-in only on your Mac. Everyone in the demos is made up.</footer>
-<script src="sim.js?v=824e1b3326"></script>
+<script src="sim.js?v=6e4e9477f3"></script>
 </body>
 </html>

@@ -32,6 +32,14 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published var unreadOnly = UserDefaults.standard.bool(forKey: "unreadOnly") {
         didSet { UserDefaults.standard.set(unreadOnly, forKey: "unreadOnly") }
     }
+    /// A Dock icon even while Dispatch lives in the menu bar. As a window it always has one.
+    @Published var showInDock = UserDefaults.standard.bool(forKey: "showInDock") {
+        didSet { UserDefaults.standard.set(showInDock, forKey: "showInDock"); updateDockIcon() }
+    }
+    /// Launch as a window instead of in the menu bar.
+    @Published var opensAsWindow = UserDefaults.standard.bool(forKey: "opensAsWindow") {
+        didSet { UserDefaults.standard.set(opensAsWindow, forKey: "opensAsWindow") }
+    }
 
     let store: Store
     let reader: ReaderStore
@@ -141,6 +149,35 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
                 return self.handleKey(event)
             }
         }
+    }
+
+    // MARK: Dock
+
+    /// A window should act like any other app's: in the Dock, in ⌘-Tab, with a menu bar.
+    /// In the menu bar Dispatch is an accessory app, unless the Dock icon is turned on.
+    func updateDockIcon() {
+        guard !Demo.isOn else { return }
+        let policy: NSApplication.ActivationPolicy = showInDock || mode == .detached ? .regular : .accessory
+        guard NSApp.activationPolicy() != policy else { return }
+        NSApp.setActivationPolicy(policy)
+        if policy == .regular, mode == .detached { NSApp.activate(ignoringOtherApps: true) }
+    }
+
+    /// The Dock icon was clicked, or Dispatch was picked in ⌘-Tab, with nothing of it on screen.
+    func reopen() {
+        switch mode {
+        case .detached:
+            NSApp.activate(ignoringOtherApps: true)
+            if window?.isMiniaturized == true { window?.deminiaturize(nil) }
+            window?.makeKeyAndOrderFront(nil)
+        case .attached:
+            if !panel.isVisible || panel.alphaValue == 0 { showPanel() }
+        }
+    }
+
+    /// At launch: open as a window if that's the setting.
+    func applyLaunchMode() {
+        if opensAsWindow && store.isConnected { detach() } else { updateDockIcon() }
     }
 
     // MARK: Status item
@@ -407,8 +444,9 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     /// `dropped` is where the panel was let go; otherwise reuse the last window frame.
     func detach(dropped: NSRect? = nil) {
         let window = self.window ?? makeWindow()
-        let start = dropped ?? panel.frame
-        var target = dropped ?? savedWindowFrame ?? panel.frame
+        // From the panel when it's open; otherwise (at launch) straight to the window's spot.
+        var target = dropped ?? savedWindowFrame ?? centeredWindowFrame()
+        let start = dropped ?? (panel.isVisible ? panel.frame : target)
         let wanted = listWidth + 1 + detailWidth
         if target.width < wanted {
             target.origin.x -= wanted - target.width
@@ -423,6 +461,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         mode = .detached
         showDetail = true
         move(hosting, to: windowBackground!)
+        updateDockIcon()
 
         window.setFrame(start, display: true)
         NSApp.activate(ignoringOtherApps: true)
@@ -437,6 +476,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         savedWindowFrame = window.frame
         window.orderOut(nil)
         mode = .attached
+        updateDockIcon()
         move(hosting, to: panelBackground)
         showDetail = show && hasSelection
         if !show { clearSelection() }
@@ -448,10 +488,18 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         return false
     }
 
+    /// A first window, before there's a saved spot: list and reader at full size, centered.
+    private func centeredWindowFrame() -> NSRect {
+        let vis = (NSScreen.main ?? panel.screen)?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
+        let size = NSSize(width: listWidth + 1 + detailWidth, height: min(panelHeight, vis.height - 80))
+        return NSRect(x: vis.midX - size.width / 2, y: vis.midY - size.height / 2, width: size.width, height: size.height)
+    }
+
     private func makeWindow() -> NSWindow {
         let w = NSWindow(contentRect: .zero,
                          styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                          backing: .buffered, defer: false)
+        w.title = "Dispatch" // for the Window menu and Mission Control; the title bar stays hidden
         w.titlebarAppearsTransparent = true
         w.titleVisibility = .hidden
         for b in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {

@@ -129,7 +129,7 @@
         <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
         <span class="spacer"></span>
         <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh"${dt("btn.refresh")}>${I.refresh}</button>
-        <button class="sim-icon" data-a="toast" data-v="Pops out into its own window" title="Pop out into a window"${dt("btn.popout")}>${I.popout}</button>
+        <button class="sim-icon" data-a="toast" data-v="Pops out into a window, in the Dock and ⌘-Tab" title="Pop out into a window (or drag the header)"${dt("btn.popout")}>${I.popout}</button>
         <button class="sim-icon more ${st.menu ? "on" : ""}" data-a="menu" title="More"${dt("btn.more")}>${I.more}</button>`;
     }
 
@@ -138,7 +138,9 @@
       menu.classList.toggle("show", st.menu);
       if (!st.menu) return;
       const item = (label, tip) => `<button data-a="menuItem" data-v="${tip}">${label}</button>`;
+      const toggle = (key, label) => `<button class="check ${st[key] ? "on" : ""}" data-a="menuToggle" data-v="${key}">${label}</button>`;
       menu.innerHTML = item("Open on WordPress.com", "Opens WordPress.com in your browser") + "<hr>"
+        + toggle("dock", "Show in Dock") + toggle("window", "Open as a Window") + "<hr>"
         + item("Check for Updates…", "You're on the latest version") + `<div class="dim">Dispatch ${VERSION}</div><hr>`
         + item("Sign out", "Signs out of WordPress.com") + item("Restart", "Restarts Dispatch") + item("Quit", "Quits Dispatch");
     }
@@ -424,6 +426,11 @@
       },
       menu() { st.menu = !st.menu; renderHead(); renderMenu(); },
       menuItem(v) { st.menu = false; renderHead(); renderMenu(); hint(v, 1800); },
+      menuToggle(v) {
+        st[v] = !st[v]; st.menu = false; renderHead(); renderMenu();
+        hint(v === "dock" ? (st.dock ? "Dispatch keeps a Dock icon" : "Dock icon only while it's a window")
+          : (st.window ? "Dispatch opens as a window" : "Dispatch opens in the menu bar"), 1800);
+      },
       toast(v) { hideCard(); hint(v, 1800); },
     };
 

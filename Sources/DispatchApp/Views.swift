@@ -100,6 +100,9 @@ struct MoreMenu: View {
                     ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
             }
             Divider()
+            Toggle("Show in Dock", isOn: $c.showInDock)
+            Toggle("Open as a Window", isOn: $c.opensAsWindow)
+            Divider()
             Button("Check for Updates…") { Updates.shared.checkForUpdates() }
             Text("Dispatch \(Updates.shared.versionLabel)")
             Divider()

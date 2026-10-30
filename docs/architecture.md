@@ -18,6 +18,8 @@ The interface lives in one `NSHostingView` (`sizingOptions = []`) that moves bet
 - **Attached panel.** A borderless, non-activating `NSPanel` hanging under the status item. The list (380pt) is centered under the icon, and the reader (540pt) grows out to its left. The window frame animates with `NSAnimationContext`. A global mouse-down monitor closes the panel on outside clicks. You drag the bottom edge to set the height, which is saved as `panelHeight`.
 - **Detached window.** A titled `NSWindow` with a full-size content view and hidden traffic lights. You tear it off by dragging the header (`dragWindow`), or with the pop-out button. ⌘W or the close button puts it back in the menu bar.
 
+Dispatch is an accessory app (no Dock icon, not in ⌘-Tab) while it's in the menu bar, and a regular app while it's a window, so the window shows up in the Dock, ⌘-Tab and Mission Control like any other (`updateDockIcon`). Two settings in the ⋯ menu and the app menu change that: **Show in Dock** (`showInDock`) keeps the Dock icon in menu bar mode too, and **Open as a Window** (`opensAsWindow`) detaches at launch (`applyLaunchMode`). A Dock click or ⌘-Tab with nothing showing calls `reopen()`, which brings back the window or opens the panel. `AppDelegate` builds the menu bar (Dispatch, Edit, Window), seen whenever Dispatch is a regular app.
+
 Both homes share an `NSVisualEffectView` background with a stretchable rounded mask. `PanelController` also owns:
 - the section (Notifications or Reader),
 - the selection and `showDetail`,

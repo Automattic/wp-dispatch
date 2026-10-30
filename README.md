@@ -13,7 +13,7 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 - **Hovercards.** Rest the pointer on an avatar (notifications, comments, the article byline, likers) for a person's Gravatar profile, or on a site icon for the site, with Read and Visit buttons.
 - **Reader pane.** Clean typography, an estimated reading time, and highlighting of mentions of you.
 - **Comments.** When closed, the drawer shows a horizontal strip of avatars and chat bubbles. When open, it becomes a threaded list where you can like comments, reply to them, or comment on the post.
-- **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window.
+- **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window, which sits in the Dock and ⌘-Tab like any app. In ⋯, **Open as a Window** starts it that way, and **Show in Dock** keeps a Dock icon in the menu bar too.
 - **Keyboard.** `↑`/`↓` or `j`/`k` move between items, `⌘↑` jumps back to the top of the list, `l` likes, `o` opens in the browser, `s` saves, `esc` closes the reader, and `⌘W` closes the window.
 - **Updates.** Dispatch checks for updates once a day, or on demand from ⋯ → Check for Updates…
 
