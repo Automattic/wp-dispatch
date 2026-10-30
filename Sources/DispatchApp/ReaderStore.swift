@@ -329,6 +329,28 @@ final class ReaderStore: ObservableObject {
         extraIcons[id] = img
     }
 
+    // MARK: Views
+
+    /// View counts the feeds leave out (P2s, Saved): from the post's stats, which WordPress.com
+    /// shares with anyone who can read the post. Nil means we looked and there's none to show.
+    @Published private(set) var viewCounts: [String: Int?] = [:]
+
+    /// "19K": the feed's own figure, or the one looked up for it.
+    func views(_ post: ReaderPost) -> String? {
+        if let v = post.views { return v }
+        guard let n = viewCounts[post.id] ?? nil, n > 0 else { return nil }
+        return n.formatted(.number.notation(.compactName))
+    }
+
+    func loadViews(_ post: ReaderPost) async {
+        guard post.views == nil, !post.isExternal, viewCounts[post.id] == nil else { return }
+        viewCounts[post.id] = .some(nil) // asked; don't ask again
+        struct Stats: Decodable { let views: Int? }
+        guard let data = try? await store.request("sites/\(post.site_ID)/stats/post/\(post.postID)?fields=views"),
+              let views = (try? JSONDecoder().decode(Stats.self, from: data))?.views else { return }
+        viewCounts[post.id] = views
+    }
+
     // MARK: Comments
 
     private var commentCache: [String: [PostComment]] = [:]

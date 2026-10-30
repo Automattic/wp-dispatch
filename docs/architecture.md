@@ -48,7 +48,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (`read/saved`, paged by `page_handle`), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
 - Each feed shows a story once (`oneCopyEach`). A post x-posted to several P2s you follow keeps the newest spot, and becomes the original post once that has loaded.
 - Each feed is cached, with pagination through `before=`.
-- Rows show the reading time, views (`views`, a preformatted string like "19K", only on some Following posts), likes and comments.
+- Rows show the reading time, views, likes and comments. Following posts usually carry `views` ("19K"); for the rest (P2s, Saved) `loadViews` asks `sites/{id}/stats/post/{id}?fields=views` once per post and caches it in `viewCounts`, misses included.
 - The response decoding is lenient because the API is inconsistent:
   - `site_ID` is sometimes a string.
   - `site_icon` is sometimes `[]`.

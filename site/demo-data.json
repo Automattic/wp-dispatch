@@ -225,7 +225,8 @@
           "likes": 2,
           "depth": 1
         }
-      ]
+      ],
+      "views": "96"
     },
     "sourdough": {
       "id": 3,
@@ -356,7 +357,8 @@
       "xpost": {
         "from": "mobile",
         "to": "design"
-      }
+      },
+      "views": "240"
     },
     "icons": {
       "id": 7,
@@ -375,7 +377,8 @@
         "Round two of the icon refresh is up. Strokes are thinner and the joins are rounder.",
         "Feedback welcome until Wednesday."
       ],
-      "comments": []
+      "comments": [],
+      "views": "58"
     },
     "focaccia": {
       "id": 8,

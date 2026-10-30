@@ -510,9 +510,9 @@ struct PostRow: View {
                             Text(name)
                         }
                         if let time = post.readingTime { Text(time) }
-                        if let views = post.views {
+                        if let views = reader.views(post) {
                             HStack(spacing: 2) {
-                                Image(systemName: "eye").foregroundStyle(Color.secondary.opacity(0.6))
+                                Image(systemName: "gauge.with.needle").foregroundStyle(Color.secondary.opacity(0.6))
                                 Text(views)
                             }
                             .help("\(views) views")
@@ -539,6 +539,7 @@ struct PostRow: View {
                     .foregroundStyle(.tertiary)
                     .driftTag("foot")
                     .padding(.top, 1)
+                    .task(id: post.id) { await reader.loadViews(post) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
