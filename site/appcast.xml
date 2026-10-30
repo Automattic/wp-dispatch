@@ -3,6 +3,30 @@
     <channel>
         <title>Dispatch</title>
         <item>
+            <title>0.6.0</title>
+            <pubDate>Fri, 30 Oct 2026 16:08:04 -0400</pubDate>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Dispatch 0.6.0</h2>
+<ul>
+  <li><strong>Comments make sense on their own.</strong> A comment notification opens on the post it's about, with a short preview and the whole post a click away, then the comment it replies to, then the comment itself.</li>
+  <li><strong>Views on every post.</strong> Reader rows show how many people have read a post, including P2 and saved posts.</li>
+  <li><strong>Longer previews.</strong> Post rows show three lines of the post, and their details are easier to read.</li>
+  <li><strong>Yellow stars.</strong> Likes are WordPress.com's yellow now.</li>
+  <li>Saved no longer shows a bookmark on every row, since everything there is saved.</li>
+</ul>
+]]></description>
+            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.6.0.zip" length="3214763" type="application/octet-stream" sparkle:edSignature="P+zn4CrLx0EwQ4oI13dFuQdS36L1BixJLEsCLAjjV5Hs0hf2K+ekzpl4JLsxylpn2KBfHlgEzOL5Rv/8hUj8BA=="/>
+            <sparkle:deltas>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch8-7.delta" sparkle:deltaFrom="7" length="431074" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="xen9gNCXf0FTfvFUHiMtZauWtmdQnqdYbVIREJx6iqwOxih2LX1vtmstiiXYiszZRYS/9c26x7Ri3M6km5dvAQ=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch8-6.delta" sparkle:deltaFrom="6" length="1104162" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="+qUUY7GdDKm7Ugu1XY0oPdtxrMaS4QZSylSjZebeSRR0L2cZrVEkWezIlxijcrS7v1qJbzM9C5Sjcf7ub465AA=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch8-5.delta" sparkle:deltaFrom="5" length="1251994" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="vfKsl1DrjALmSJ9TSQdlaH55X1XDLc3UzhQ+lZvH5czk06tWpUrWgp99tBxUmZlasEifm3hYuHF9XE6B4sKFAQ=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch8-4.delta" sparkle:deltaFrom="4" length="1280598" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="NpuPYwCwNbCx59aFnzM1PqyP6w7ZQOBf/hVaxUqWb5YJyRaJFMWJKvpV86ZN4MVj57qlMZ/Ut7mdiOJLJ4T6DQ=="/>
+                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch8-3.delta" sparkle:deltaFrom="3" length="1340394" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="/IBUWMxFIi9LfHcKpzOehXk2Augd8HIwzDS2/rpJ/68zROG2zI9jDpD4JQfA+U0MOQjq20eYM9LYpNvPDLRxCg=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>0.5.0</title>
             <pubDate>Fri, 30 Oct 2026 12:47:00 -0400</pubDate>
             <sparkle:version>7</sparkle:version>
@@ -91,22 +115,6 @@
             <sparkle:deltas>
                 <enclosure url="https://dispatchapp.space.fast/releases/Dispatch4-3.delta" sparkle:deltaFrom="3" length="420470" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="01SmFbOpgLwfLF3hcJQtBQGrefmf7HDGYSDmBkbW+duzybjSUHXZoIVFvsMUflYoOGNFr5GWAWPX464k1funCQ=="/>
                 <enclosure url="https://dispatchapp.space.fast/releases/Dispatch4-2.delta" sparkle:deltaFrom="2" length="419370" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="F9nfStI4Exybe0flrsD4STAlzqtNAtqqV/r+TupUtHS0S1LTKRXBH/S/jhQ4Rp+es7n+/EvFkhYFhnuLF24gAw=="/>
-            </sparkle:deltas>
-        </item>
-        <item>
-            <title>0.1.1</title>
-            <pubDate>Wed, 28 Oct 2026 19:36:28 -0400</pubDate>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Dispatch 0.1.1</h2>
-<ul>
-  <li>Dispatch now updates itself. You'll get a prompt like this one whenever there's a new version.</li>
-</ul>
-]]></description>
-            <enclosure url="https://dispatchapp.space.fast/releases/Dispatch-0.1.1.zip" length="2043527" type="application/octet-stream" sparkle:edSignature="dUmXo+raVH4pXwJcFM5YXtIMw/ZxuY1TaTxACmQnSgE6MzLyq2f+qD69+7qU/6ZTq15XW8gmLxiyR0i8LUc3CQ=="/>
-            <sparkle:deltas>
-                <enclosure url="https://dispatchapp.space.fast/releases/Dispatch3-2.delta" sparkle:deltaFrom="2" length="1322" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="941872" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="C/vhLgOtngtj/ipXIl06YG9YjwW/D5TfrqoGXx3T1CiQZq44d/fyFEGipbthjgQnp2tFk5tyh1bt1ciKwtiFBQ=="/>
             </sparkle:deltas>
         </item>
     </channel>
