@@ -58,7 +58,7 @@
       cursor: `<svg viewBox="0 0 18 24"><path d="M1.5 1.5v17.2l4.4-4.1 2.9 6.6 2.9-1.3-2.8-6.4h6.2z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
     };
 
-    const VERSION = "0.4.0"; // release.sh keeps this in step with the app
+    const VERSION = "0.5.0"; // release.sh keeps this in step with the app
     const DESK_H = 690; // the desk (wallpaper, menu bar, panel and Dock) is 1000 wide; match .sim in sim.css
 
     // ---------------------------------------------------------------- made-up data
