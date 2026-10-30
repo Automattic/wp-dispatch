@@ -360,11 +360,13 @@ struct SelectableRow<Content: View>: View {
                         }
                     }
                 }
-                .overlay(alignment: .leading) {
+                // Level with the avatar's center (row padding + half the 34pt avatar), not the row's:
+                // rows grow with their text, and a centered dot drifted from row to row.
+                .overlay(alignment: .topLeading) {
                     Circle()
                         .fill(Color.accentColor)
                         .frame(width: 6, height: 6)
-                        .offset(x: 3)
+                        .offset(x: 3, y: (compact ? 7 : 10) + 17 - 3)
                         .opacity(unread ? 1 : 0)
                         .scaleEffect(unread ? 1 : 0.3)
                         .animation(.spring(response: 0.3), value: unread)

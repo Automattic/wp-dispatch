@@ -134,8 +134,8 @@
 .sim-row .foot { color: var(--s-faint); margin-top: 3px; font-size: 11px; display: flex; gap: 6px; align-items: center; }
 .sim-saved { display: inline-flex; color: var(--s-accent); }
 .sim-saved svg { width: 9px; height: 10px; }
-/* Unread: a dot on the row's leading edge. */
-.sim-dot { position: absolute; left: 3px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--s-accent); opacity: 0; transform: scale(.3); transition: opacity .2s, transform .3s cubic-bezier(.3,1.5,.5,1); }
+/* Unread: a dot on the row's leading edge, level with the avatar's center (as in the app). */
+.sim-dot { position: absolute; left: 3px; top: 24px; width: 6px; height: 6px; border-radius: 50%; background: var(--s-accent); opacity: 0; transform: scale(.3); transition: opacity .2s, transform .3s cubic-bezier(.3,1.5,.5,1); }
 .sim-row.unread .sim-dot { opacity: 1; transform: none; }
 
 /* People are circles; sites are rounded squares. --c is their color. */
