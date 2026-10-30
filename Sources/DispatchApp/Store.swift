@@ -248,7 +248,9 @@ final class Store: ObservableObject {
 
     func request(_ path: String, version: String = "v1.1", method: String = "GET", body: Data? = nil) async throws -> Data {
         if Demo.isOn { return DemoAPI.shared.respond(path, method: method) }
-        var req = URLRequest(url: URL(string: "https://public-api.wordpress.com/rest/\(version)/\(path)")!)
+        // "v1.1"/"v1.2" live under /rest; "wpcom/v2" sits beside it.
+        let base = version.hasPrefix("wpcom/") ? version : "rest/\(version)"
+        var req = URLRequest(url: URL(string: "https://public-api.wordpress.com/\(base)/\(path)")!)
         req.httpMethod = method
         req.setValue("Bearer \(token ?? "")", forHTTPHeaderField: "Authorization")
         if let body {

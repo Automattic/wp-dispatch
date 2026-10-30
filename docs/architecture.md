@@ -44,7 +44,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Session expiry: a 401 or `invalid_token` signs out and shows "Session expired". A 403 from a private P2 doesn't.
 
 **`ReaderStore.swift`**
-- Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (local), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
+- Feeds: `.blogs` (`read/following`), `.p2s` (`read/a8c`), `.saved` (`read/saved`, paged by `page_handle`), and `.site(id, isFeed:)` (`read/sites/{id}/posts`, or `read/feed/{id}/posts` for RSS-only feeds).
 - Each feed shows a story once (`oneCopyEach`). A post x-posted to several P2s you follow keeps the newest spot, and becomes the original post once that has loaded.
 - Each feed is cached, with pagination through `before=`.
 - The response decoding is lenient because the API is inconsistent:
@@ -62,7 +62,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
   - `likes` holds what's changed since a feed loaded.
   - X-posts like the original post and fetch its count on open.
   - RSS-only posts can't be liked.
-- Saved posts persist to `reader.json`. There used to be a local "Starred sites" feature; it was removed because it was easy to mistake for likes. Old `starred` entries in the file are ignored.
+- Saves are WordPress.com's "Save to read later", shared with the web Reader and the Chrome extension (the mobile apps still save locally until they move over). `wpcom/v2/read/saved/keys` says what's saved, `…/new` and `…/delete` change it, and the Saved tab lists `rest/v1.2/read/saved`. A post is keyed by blog and post ID, an RSS post by its feed item ID, and an x-post by its original. These endpoints are undocumented and new, so check them if saves break. `toggleSave` flips the bookmark right away and puts it back if WordPress.com says no. The Saved list and keys are cached in `reader.json`, so the tab opens instantly and offline; the first launch after the switch uploads that file's older, local-only saves once (`uploaded` marks it done). There used to be a local "Starred sites" feature; it was removed because it was easy to mistake for likes. Old `starred` entries in the file are ignored.
 
 **`Credentials.swift`** stores the token as a JSON file and defines `AppData.directory`.
 

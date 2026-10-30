@@ -200,7 +200,7 @@ struct ReaderFilters: View {
                 PillPicker(options: [
                     .init("Following", ReaderStore.Feed.blogs),
                     .init("Automattic", .p2s),
-                    .init("Saved", .saved, badge: reader.saved.count, symbol: "bookmark.fill", quietBadge: true),
+                    .init("Saved", .saved, badge: reader.savedCount, symbol: "bookmark.fill", quietBadge: true),
                 ], selection: reader.feed) { reader.show($0) }
                 Spacer()
                 BackToTopButton()

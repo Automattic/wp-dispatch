@@ -32,11 +32,13 @@ struct ReaderPost: Codable, Identifiable, Hashable {
     let i_like: Bool?
     /// From the feed's `discussion.comment_count`; kept flat so saved posts store it too.
     let comment_count: Int?
+    /// RSS posts' item ID, which is what WordPress.com's saved posts key them by.
+    let feed_item_ID: Int?
 
     var isExternal: Bool { is_external ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count
+        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count, feed_item_ID
     }
     private enum FeedKeys: String, CodingKey { case discussion }
     private struct Discussion: Decodable { let comment_count: Int? }
@@ -64,6 +66,7 @@ struct ReaderPost: Codable, Identifiable, Hashable {
         i_like = (try? c.decode(Bool.self, forKey: .i_like)) ?? int(.i_like).map { $0 != 0 } // sometimes 0/1
         comment_count = int(.comment_count)
             ?? (try? decoder.container(keyedBy: FeedKeys.self).decode(Discussion.self, forKey: .discussion))?.comment_count
+        feed_item_ID = int(.feed_item_ID)
     }
 
     // MARK: X-posts
@@ -150,7 +153,8 @@ struct ReaderSite: Codable, Hashable, Identifiable {
 }
 
 /// Followed blogs, Automattic P2s and saved posts.
-/// Saves are local to this app (WordPress.com has no API for them); likes are real WordPress.com likes.
+/// Saves and likes are WordPress.com's own, so they match the web Reader. Saved posts are also kept
+/// on disk, so the Saved tab opens instantly and offline.
 @MainActor
 final class ReaderStore: ObservableObject {
     enum Feed: Hashable { case blogs, p2s, saved, site(Int, isFeed: Bool) }
@@ -160,6 +164,10 @@ final class ReaderStore: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var error: String?
     @Published private(set) var saved: [ReaderPost] = []
+    /// What's saved on WordPress.com (`SaveKey.id`s), for the bookmark on every row. Nil until loaded.
+    @Published private(set) var savedKeys: Set<String>?
+    /// Saves from before they lived on WordPress.com, uploaded once.
+    private var savesUploaded: Bool
     @Published private(set) var sites: [Int: ReaderSite] = [:]
     /// Icons for sites we don't follow (x-post origins), looked up on demand.
     @Published private(set) var extraIcons: [Int: String] = [:]
@@ -174,8 +182,10 @@ final class ReaderStore: ObservableObject {
 
     init(store: Store) {
         self.store = store
-        let saved = Self.loadFile()
-        self.saved = saved.saved
+        let file = Self.loadFile()
+        saved = file.saved
+        savedKeys = file.keys.map(Set.init)
+        savesUploaded = file.uploaded ?? false
     }
 
     // MARK: Feeds
@@ -183,18 +193,18 @@ final class ReaderStore: ObservableObject {
     func show(_ feed: Feed) {
         if case .site = feed, !isSiteFeed { previousFeed = self.feed }
         self.feed = feed
-        posts = feed == .saved ? saved : cache[feed]?.posts ?? []
+        posts = cache[feed]?.posts ?? (feed == .saved ? saved : [])
         Task { await refresh() }
     }
 
     /// False until the current feed's first page arrives (so we show a spinner, not "No posts").
-    var hasLoaded: Bool { feed == .saved || cache[feed] != nil }
+    var hasLoaded: Bool { cache[feed] != nil || (feed == .saved && !saved.isEmpty) }
 
     var isSiteFeed: Bool { if case .site = feed { return true } else { return false } }
 
     func refresh() async {
         if sites.isEmpty { await loadSubscriptions() }
-        guard feed != .saved else { posts = saved; return }
+        await syncSaves()
         let feed = self.feed
         isLoading = true
         defer { isLoading = false }
@@ -203,6 +213,7 @@ final class ReaderStore: ObservableObject {
             page.posts = Self.oneCopyEach(page.posts)
             cache[feed] = page
             if self.feed == feed { posts = page.posts }
+            if feed == .saved { saved = page.posts; persist() }
             error = nil
         } catch {
             self.error = error.localizedDescription
@@ -211,32 +222,41 @@ final class ReaderStore: ObservableObject {
 
     func loadMore() async {
         let feed = self.feed
-        guard !isLoading, feed != .saved, let current = cache[feed], !current.done else { return }
+        guard !isLoading, let current = cache[feed], !current.done else { return }
         isLoading = true
         defer { isLoading = false }
         guard let next = try? await fetch(feed, before: current.before) else { return }
         let merged = Self.oneCopyEach(current.posts + next.posts)
         cache[feed] = Page(posts: merged, before: next.before, done: next.done)
         if self.feed == feed { posts = merged }
+        if feed == .saved { saved = merged; persist() }
     }
 
+    /// `before` is where the next page starts: a date, or for Saved, the server's page handle.
     private func fetch(_ feed: Feed, before: String?) async throws -> Page {
-        struct Response: Decodable { let posts: [ReaderPost] }
-        let paging = before.map { "&before=\($0.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? $0)" } ?? ""
+        struct Response: Decodable { let posts: [ReaderPost]; let next_page_handle: String? }
+        let escaped = before.map { $0.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? $0 }
 
-        func get(_ path: String) async throws -> [ReaderPost] {
-            let data = try await store.request("\(path)\(paging)", version: "v1.2")
-            return try JSONDecoder().decode(Response.self, from: data).posts
+        func get(_ path: String, paging key: String = "before") async throws -> Response {
+            let data = try await store.request("\(path)\(escaped.map { "&\(key)=\($0)" } ?? "")", version: "v1.2")
+            return try JSONDecoder().decode(Response.self, from: data)
         }
 
-        let posts: [ReaderPost]
         switch feed {
-        case .blogs: posts = try await get("read/following?number=20")
-        case .p2s: posts = try await get("read/a8c?number=20")
-        case .site(let id, let isFeed): posts = try await get(Self.streamPath(id, isFeed: isFeed, number: 20))
-        case .saved: posts = saved
+        case .saved:
+            // Newest save first. The last page has no handle; don't page on by date.
+            let r = try await get("read/saved?number=40", paging: "page_handle")
+            return Page(posts: r.posts, before: r.next_page_handle, done: r.next_page_handle == nil)
+        case .blogs, .p2s, .site:
+            let path = switch feed {
+            case .blogs: "read/following?number=20"
+            case .p2s: "read/a8c?number=20"
+            case .site(let id, let isFeed): Self.streamPath(id, isFeed: isFeed, number: 20)
+            case .saved: ""
+            }
+            let posts = try await get(path).posts
+            return Page(posts: posts, before: posts.last?.date, done: posts.isEmpty)
         }
-        return Page(posts: posts, before: posts.last?.date, done: posts.isEmpty || feed == .saved)
     }
 
     /// One row per story. A post x-posted to several P2s you follow shows up once per P2, plus the
@@ -448,11 +468,101 @@ final class ReaderStore: ObservableObject {
 
     // MARK: Saves
 
-    func isSaved(_ post: ReaderPost) -> Bool { saved.contains { $0.id == post.id } }
+    // WordPress.com's "Save to read later": `GET rest/v1.2/read/saved` lists the posts, and
+    // `wpcom/v2/read/saved/{keys,new,delete}` read and change the set. A post is keyed by blog and
+    // post ID, or by feed item ID for RSS; a Jetpack post can be saved under either, so check both.
 
+    struct SaveKey: Hashable {
+        var blog: Int?, post: Int?, feedItem: Int?
+        var id: String { feedItem.map { "f\($0)" } ?? "b\(blog ?? 0)-\(post ?? 0)" }
+        var body: [String: Int] { feedItem.map { ["feed_item_id": $0] } ?? ["blog_id": blog ?? 0, "post_id": post ?? 0] }
+
+        init(blog: Int, post: Int) { self.blog = blog; self.post = post }
+        init(feedItem: Int) { self.feedItem = feedItem }
+        init?(_ json: [String: Any]) {
+            if let f = json["feed_item_id"] as? Int { feedItem = f }
+            else if let b = json["blog_id"] as? Int, let p = json["post_id"] as? Int { blog = b; post = p }
+            else { return nil }
+        }
+    }
+
+    /// The key a save is made under. An x-post saves the original, which is what the reader shows.
+    private func saveKey(_ post: ReaderPost) -> SaveKey {
+        if let origin = post.xpostOrigin { return SaveKey(blog: origin.site, post: origin.post) }
+        if post.isExternal { return SaveKey(feedItem: post.feed_item_ID ?? post.postID) }
+        return SaveKey(blog: post.site_ID, post: post.postID)
+    }
+
+    private func saveKeys(_ post: ReaderPost) -> [SaveKey] {
+        [saveKey(post)] + (post.feed_item_ID.map { [SaveKey(feedItem: $0)] } ?? [])
+    }
+
+    func isSaved(_ post: ReaderPost) -> Bool {
+        guard let savedKeys else { return saved.contains { $0.id == post.id } }
+        return saveKeys(post).contains { savedKeys.contains($0.id) }
+    }
+
+    /// For the Saved tab's badge.
+    var savedCount: Int { savedKeys?.count ?? saved.count }
+
+    /// Flips it here right away, then tells WordPress.com; puts it back if that fails.
     func toggleSave(_ post: ReaderPost) {
-        if let i = saved.firstIndex(where: { $0.id == post.id }) { saved.remove(at: i) } else { saved.insert(post, at: 0) }
+        let wasSaved = isSaved(post)
+        let keys = wasSaved ? saveKeys(post).filter { savedKeys?.contains($0.id) ?? true } : [saveKey(post)]
+        let before = (saved, savedKeys)
+        if wasSaved {
+            saved.removeAll { $0.id == post.id || saveKeys($0).contains(where: keys.contains) }
+            savedKeys?.subtract(keys.map(\.id))
+        } else {
+            saved.insert(post, at: 0)
+            savedKeys?.insert(keys[0].id)
+        }
+        cache[.saved] = nil
         if feed == .saved { posts = saved }
+        persist()
+
+        Task {
+            do {
+                for key in keys {
+                    let r = try await send(wasSaved ? "delete" : "new", key)
+                    // The server may store it under another key (an RSS item that's really a WordPress.com post).
+                    if !wasSaved, let stored = (r["key"] as? [String: Any]).flatMap(SaveKey.init), stored != key {
+                        savedKeys?.remove(key.id)
+                        savedKeys?.insert(stored.id)
+                    }
+                }
+                persist()
+            } catch {
+                (saved, savedKeys) = before
+                if feed == .saved { posts = saved }
+                persist()
+                self.error = wasSaved ? "Couldn’t remove it from Saved: \(error.localizedDescription)"
+                    : "Couldn’t save it: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func send(_ action: String, _ key: SaveKey) async throws -> [String: Any] {
+        let body = try JSONSerialization.data(withJSONObject: key.body)
+        let data = try await store.request("read/saved/\(action)", version: "wpcom/v2", method: "POST", body: body)
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+    }
+
+    /// Loads which posts are saved, after uploading this Mac's older, local-only saves the first time.
+    private func syncSaves() async {
+        if !savesUploaded {
+            var failed = false
+            for post in saved {
+                do { _ = try await send("new", saveKey(post)) }
+                catch is APIError {} // deleted, or over the limit: nothing to retry
+                catch { failed = true } // offline: try again next time
+            }
+            if !failed { savesUploaded = true; persist() }
+        }
+        guard let data = try? await store.request("read/saved/keys", version: "wpcom/v2"),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let keys = json["keys"] as? [[String: Any]] else { return }
+        savedKeys = Set(keys.compactMap(SaveKey.init).map(\.id))
         persist()
     }
 
@@ -524,8 +634,13 @@ final class ReaderStore: ObservableObject {
 
     // MARK: Persistence
 
-    // Older builds also stored `starred` sites here; decoding ignores it.
-    private struct File: Codable { var saved: [ReaderPost] = [] }
+    // Older builds also stored `starred` sites here; decoding ignores it. `uploaded` is missing
+    // in files from before saves lived on WordPress.com, which is what triggers the upload.
+    private struct File: Codable {
+        var saved: [ReaderPost] = []
+        var keys: [String]?
+        var uploaded: Bool?
+    }
 
     private static let fileURL: URL = {
         AppData.directory.appendingPathComponent("reader.json")
@@ -537,7 +652,7 @@ final class ReaderStore: ObservableObject {
     }
 
     private func persist() {
-        guard let data = try? JSONEncoder().encode(File(saved: saved)) else { return }
+        guard let data = try? JSONEncoder().encode(File(saved: saved, keys: savedKeys.map { Array($0) }, uploaded: savesUploaded)) else { return }
         try? data.write(to: Self.fileURL, options: .atomic)
     }
 }

@@ -72,6 +72,8 @@ final class DemoAPI {
         case "notifications/": return json(["notes": d.notes.map(note)])
         case "read/following": return json(["posts": d.feeds["blogs", default: []].compactMap(readerPost)])
         case "read/a8c": return json(["posts": d.feeds["p2s", default: []].compactMap(readerPost)])
+        case "read/saved": return json(["posts": [], "found": 0])
+        case "read/saved/keys": return json(["keys": [], "total": 0])
         case "read/following/mine":
             return json(["subscriptions": d.sites.map { key, s in
                 ["blog_ID": "\(s.id)", "name": s.name, "site_icon": icon(site: key), "is_wpforteams_site": s.p2 ?? false] as [String: Any]
