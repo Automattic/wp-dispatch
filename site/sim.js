@@ -29,7 +29,7 @@
     const I = {
       w: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6Zm-7.6 8.8c0-1.1.2-2.1.6-3.1l3.6 9.9A7.6 7.6 0 0 1 2.4 10Zm7.6 7.6c-.7 0-1.5-.1-2.1-.3l2.3-6.6 2.3 6.4.1.1c-.8.3-1.7.4-2.6.4Zm1-11.2c.5 0 .9-.1.9-.1.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1-.8 0-2-.1-2-.1-.4 0-.5.7 0 .7l.8.1 1.2 3.2-1.7 5-2.8-8.2.9-.1c.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1h-.5A7.6 7.6 0 0 1 15.3 4.6h-.1c-.8 0-1.3.7-1.3 1.4 0 .6.4 1.2.8 1.8.3.5.6 1.2.6 2.2 0 .7-.3 1.5-.6 2.6l-.8 2.7-2.9-8.9Zm2.8 10.2 2.3-6.7c.4-1.1.6-2 .6-2.7l-.1-.8a7.6 7.6 0 0 1-2.8 10.2Z"/></svg>`,
       refresh: svg(`<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/>`),
-      gauge: svg(`<circle cx="8" cy="8" r="6.2"/><path d="M8 8.6 5.4 5.6"/><circle cx="8" cy="8.6" r=".9" fill="currentColor"/>`), // SF "gauge.with.needle"
+    signal: `<svg viewBox="0 0 16 16" fill="currentColor"><rect x="1.5" y="10" width="2.4" height="4.5" rx="1.2"/><rect x="5.1" y="7.5" width="2.4" height="7" rx="1.2"/><rect x="8.7" y="4.8" width="2.4" height="9.7" rx="1.2"/><rect x="12.3" y="1.5" width="2.4" height="13" rx="1.2"/></svg>`, // SF "cellularbars"
     putBack: svg(`<rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 4.8h13M8 12V7.4M5.8 9.4 8 7.2l2.2 2.2"/>`),
     popout: svg(`<rect x="1.5" y="3.5" width="10" height="8" rx="1.5"/><path d="M4.5 1.5h8a2 2 0 0 1 2 2v6"/>`),
       more: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="13" cy="8" r="1.3"/></svg>`,
@@ -211,7 +211,7 @@
           <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div><div class="time"${r("time")}>${p.ago}</div></div>
           <div class="title"><span${r("title")}>${esc(p.title)}</span></div>
           <div class="ex"><span${r("excerpt")}>${esc(p.excerpt)}</span></div>
-          <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.views ? `<span class="sim-likes" title="${p.views} views">${I.gauge}${p.views}</span>` : ""}${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
+          <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.views ? `<span class="sim-likes" title="${p.views} views">${I.signal}${p.views}</span>` : ""}${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
         </div></div>`;
     }
     function renderRows(swap) {

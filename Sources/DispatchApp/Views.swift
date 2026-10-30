@@ -512,21 +512,21 @@ struct PostRow: View {
                         if let time = post.readingTime { Text(time) }
                         if let views = reader.views(post) {
                             HStack(spacing: 2) {
-                                Image(systemName: "gauge.with.needle").foregroundStyle(Color.secondary.opacity(0.6))
+                                Image(systemName: "cellularbars")
                                 Text(views)
                             }
                             .help("\(views) views")
                         }
                         if let like = reader.likeState(post), like.count > 0 {
                             HStack(spacing: 2) {
-                                LikeStar(liked: like.liked, size: 10, idle: Color.secondary.opacity(0.6))
+                                LikeStar(liked: like.liked, size: 10, idle: .secondary)
                                 Text("\(like.count)")
                                     .contentTransition(.numericText(value: Double(like.count)))
                             }
                         }
                         if let comments = post.comment_count, comments > 0 {
                             HStack(spacing: 2) {
-                                Image(systemName: "bubble.left").foregroundStyle(Color.secondary.opacity(0.6))
+                                Image(systemName: "bubble.left")
                                 Text("\(comments)")
                             }
                             .help(comments == 1 ? "1 comment" : "\(comments) comments")
@@ -536,7 +536,7 @@ struct PostRow: View {
                         }
                     }
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary) // tertiary was too faint to read over the panel's material
                     .driftTag("foot")
                     .padding(.top, 1)
                     .task(id: post.id) { await reader.loadViews(post) }
