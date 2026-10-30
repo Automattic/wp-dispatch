@@ -20,29 +20,40 @@ Dispatch ships as a zip on its website and updates itself with [Sparkle](https:/
    ```bash
    ./build.sh --install
    ```
-2. Optionally, write release notes in `site/releases/Dispatch-<version>.html`, for example `<h2>Dispatch 0.2.0</h2><ul><li>…</li></ul>`. Sparkle shows them in the update window.
-3. Release:
+2. Review everything since the last release:
+   ```bash
+   ./tools/release/changes.sh
+   ```
+   It lists every commit since the last `Release x.y.z` commit, with its message, and the files touched.
+3. Write the release notes in `site/releases/Dispatch-<version>.html`. They're required: `release.sh` stops without them. Sparkle shows them in the update window, and they go on the public release log at https://dispatchapp.space.fast/releases/.
+   - Format: `<h2>Dispatch 0.5.0</h2><ul><li><strong>Short headline.</strong> A sentence on what's better for you.</li></ul>`.
+   - Lead with what people get, not how it was built. Leave out work that doesn't change the app (website, tooling, docs), and anything internal to Automattic: the notes are public.
+   - Patch versions for fixes, minor versions for new features.
+4. Release:
    ```bash
    ./release.sh 0.2.0
    ```
    The script:
+   - checks for the release notes (and shows what's changed if they're missing),
+   - runs the drift check (`tools/drift/check.sh`),
    - checks the signing key,
    - downloads the current release's zip if it's missing,
    - bumps `CFBundleShortVersionString` and `CFBundleVersion` (+1),
    - builds, zips and signs the app,
    - regenerates `appcast.xml`, including a delta from the previous build,
+   - rebuilds the release log, `site/releases/index.html` (`tools/release/log.mjs`),
    - rewrites `/download`,
    - publishes `site/` to the Space.
 
    The first run on a Mac may show a Keychain prompt for `generate_appcast`. Click **Always Allow**.
-4. Check that it's live:
+5. Check that it's live:
    ```bash
    curl -s https://dispatchapp.space.fast/appcast.xml | grep shortVersionString
    ```
    ```bash
    curl -sI https://dispatchapp.space.fast/download | grep -i location
    ```
-5. Commit what the release changed and push:
+6. Commit what the release changed and push:
    ```bash
    git add Info.plist site/appcast.xml site/_redirects site/index.html site/sim.js site/releases/*.html
    ```

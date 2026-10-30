@@ -9,7 +9,9 @@
 #    login Keychain (account "dispatch", made by Sparkle's generate_keys).
 # 5. Points /download at the new zip and publishes site/ to the Dispatch Space.
 #
-# Optional release notes: write site/releases/Dispatch-<version>.html before running.
+# Release notes are required: run tools/release/changes.sh to review what's changed since the
+# last release, then write site/releases/Dispatch-<version>.html. Sparkle shows them in the update
+# window, and they go on the public release log at /releases/.
 # Full runbook: docs/releasing.md
 set -e
 cd "$(dirname "$0")"
@@ -19,6 +21,15 @@ SITE_URL=https://dispatchapp.space.fast
 SPACE_ID=spc_6f81e0c2ca994ef597cc94eb55f421d5 # the "dispatchapp" Space, as in site/.spacefast/space.json
 TOOLS=.build/artifacts/sparkle/Sparkle/bin
 PLIST=Info.plist
+
+# Every release gets notes. Without them, show what's changed and stop.
+NOTES=site/releases/Dispatch-$VERSION.html
+if [[ ! -f $NOTES ]]; then
+  ./tools/release/changes.sh
+  echo "\nNo release notes yet. Review the changes above, write $NOTES"
+  echo "(like the others: <h2>Dispatch $VERSION</h2><ul><li><strong>What's better.</strong> Why it matters.</li></ul>), then release again."
+  exit 1
+fi
 
 # The website shows a working copy of the app. Don't ship if the two have drifted apart.
 if ! ./tools/drift/check.sh; then
@@ -67,10 +78,13 @@ $TOOLS/generate_appcast --account dispatch \
 sed -i '' -E "s#(const VERSION = )\"[^\"]*\"#\1\"$VERSION\"#" site/sim.js
 ./bust-site.sh
 
+# The public release log, from every release's notes.
+node tools/release/log.mjs
+
 # The website's Download button always gets the newest zip.
 print -r -- "/download /releases/Dispatch-$VERSION.zip 302" > site/_redirects
 
 if [[ "$2" != "--no-publish" ]]; then
   (cd site && sf publish --space $SPACE_ID --yes --wait -m "Dispatch $VERSION")
 fi
-echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects, site/index.html, site/sim.js and any release notes."
+echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects, site/index.html, site/sim.js, site/releases/*.html and the notes."
