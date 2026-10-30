@@ -111,7 +111,7 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 - Every `[data-dispatch-sim]` element is its own stage with its own made-up data. Its value names the tour chapter it plays, for example `data-dispatch-sim="comments"`.
 - A stage plays its chapter on a loop with a pretend cursor while it's on screen, and rests when it scrolls away.
 - Hovering a made-up person or site opens a hovercard, as in the app.
-- Stages narrower than 900px (the page's columns, phones) get a camera that follows the list or the reader.
+- The page's columns frame the whole screen: a close-up on the menu bar and list, and when the reader opens the camera pulls back to show the full panel, menu bar and Dock. Phone-width stages are too narrow for that wide shot, so their camera follows the list or the reader instead.
 - A real click or key hands that stage to the visitor until they press its play button.
 - It can be driven from code through `window.DispatchSims` (one per stage; `window.DispatchSim` is the first): `play()`, `pause()`, `chapter(name)`, and `do.*` for individual actions. See the header comment in `sim.js`.
 

@@ -52,6 +52,7 @@
     };
 
     const VERSION = "0.4.0"; // release.sh keeps this in step with the app
+    const DESK_H = 690; // the desk (wallpaper, menu bar, panel and Dock) is 1000 wide; match .sim in sim.css
 
     // ---------------------------------------------------------------- made-up data
     const ME = { name: "Robin Park", handle: "robin" };
@@ -221,6 +222,8 @@
           </div>
           <div class="sim-handle"></div>
         </div>
+        <div class="sim-dock">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de", "#ff375f", "#8e8e93", "#3858e9", "#ffd60a"]
+          .map((c) => `<span style="--c:${c}"></span>`).join("")}</div>
         <div class="sim-menu"></div>
         <div class="sim-card"></div>
         <div class="sim-key"></div>
@@ -583,15 +586,27 @@
     });
 
     // ---------------------------------------------------------------- scale to fit
-    // Stages 900px and wider show the whole 1000×600 desk. Narrower ones (the page's columns,
-    // phones) get a camera that follows the action: the list, then the reader when something is open.
+    // Stages 900px and wider show the top 1000×600 of the desk. The page's columns get a fixed
+    // frame the shape of the whole screen: a close-up of the menu bar and list, then the camera
+    // pulls back to the whole screen when the reader opens. Phones are too narrow for that wide shot, so their camera follows the action
+    // instead: the list, then the reader.
     const CAMERA = { list: { x: 570, y: 26, w: 420, h: 570 }, reader: { x: 30, y: 26, w: 560, h: 570 } };
+    const SHOT = { list: { x: 570, y: 0, w: 420, h: 520 }, panel: { x: 0, y: 0, w: 1000, h: DESK_H } };
     function fit() {
       const width = root.clientWidth;
       let scale, x = 0, y = 0, h;
       if (width >= 900) {
         scale = Math.min(1, width / 1000); h = 600 * scale;
         st.view = { x: 0, w: 1000 };
+      } else if (width >= 560) {
+        const wide = st.open && st.sel !== null, f = wide ? SHOT.panel : SHOT.list;
+        h = width * DESK_H / 1000;
+        scale = wide ? width / f.w : h / f.h;
+        const w = width / scale, tall = h / scale;
+        const left = Math.min(Math.max(f.x + f.w / 2 - w / 2, 0), 1000 - w);
+        const top = Math.min(Math.max(f.y + f.h / 2 - tall / 2, 0), DESK_H - tall);
+        x = -left * scale; y = -top * scale;
+        st.view = { x: left, w };
       } else {
         // Centered on the list or reader; a stage with room to spare shows more desk, never past its edges.
         const r = st.open && st.sel !== null ? CAMERA.reader : CAMERA.list;

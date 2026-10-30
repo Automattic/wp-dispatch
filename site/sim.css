@@ -3,7 +3,8 @@
    fit, or follows the action with a camera when it's narrow. */
 
 .sim-scale { position: relative; width: 100%; overflow: hidden; border-radius: 14px; transition: height .45s cubic-bezier(.2,.9,.25,1); }
-.sim.ready { transition: transform .45s cubic-bezier(.2,.9,.25,1); }
+/* The camera: a slow push in or pull back, like a dolly. */
+.sim.ready { transition: transform .7s cubic-bezier(.45,.05,.2,1); }
 .sim {
   --s-bg-desk-1: #c9d6ff; --s-bg-desk-2: #f3d9e8; --s-bg-desk-3: #e7f0d9;
   --s-panel: rgba(246, 246, 248, 0.86);
@@ -15,7 +16,7 @@
   --s-pink: #e5397a; --s-mark: rgba(255, 196, 0, 0.32);
   --s-menubar: rgba(255, 255, 255, 0.55);
   --s-ring: #f4f4f6; --s-popover: rgba(250, 250, 252, 0.9);
-  position: absolute; top: 0; left: 0; width: 1000px; height: 600px;
+  position: absolute; top: 0; left: 0; width: 1000px; height: 690px; /* DESK_H in sim.js */
   transform-origin: 0 0;
   background: radial-gradient(120% 90% at 10% 0%, var(--s-bg-desk-1), transparent 60%),
               radial-gradient(90% 90% at 100% 100%, var(--s-bg-desk-2), transparent 60%),
@@ -58,6 +59,14 @@
 }
 .sim-w.on { background: var(--s-fill-2); }
 .sim-w svg { width: 15px; height: 15px; }
+
+/* Dock: fills the bottom of the wide shot, so it reads as a whole Mac screen. */
+.sim-dock {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 8px; padding: 6px;
+  border-radius: 18px; background: var(--s-menubar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 0 0 .5px rgba(0,0,0,.12);
+}
+.sim-dock span { width: 44px; height: 44px; border-radius: 11px; background: linear-gradient(color-mix(in srgb, var(--c) 70%, #fff), var(--c)); }
 
 /* Panel: trailing-anchored, so the reader is revealed from behind the list */
 .sim-panel {
