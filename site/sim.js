@@ -10,12 +10,13 @@
  * Programmatic control lives on window.DispatchSims (one per stage; DispatchSim is the first):
  *   DispatchSim.play()               start (or restart) the tour
  *   DispatchSim.pause()
- *   DispatchSim.chapter("comments")  play one chapter: notifications, read, keys, reader, cards, xposts, comments
+ *   DispatchSim.chapter("comments")  play one chapter: notifications, read, keys, reader, saved, cards, xposts, comments, window
  *   DispatchSim.do.section("reader"), .feed("p2s"), .site("kettle"), .select("waits"), .move(1), .comments(), .likePost(), …
  */
 (() => {
   const roots = document.querySelectorAll("[data-dispatch-sim]");
   if (!roots.length) return;
+  const ICON = new URL("icon.png", document.currentScript.src).href; // the app icon, for the Dock and ⌘-Tab
   fetch(new URL("demo-data.json", document.currentScript.src))
     .then((r) => r.json())
     .then((data) => roots.forEach((root) => mount(root, data)));
@@ -28,7 +29,8 @@
     const I = {
       w: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6Zm-7.6 8.8c0-1.1.2-2.1.6-3.1l3.6 9.9A7.6 7.6 0 0 1 2.4 10Zm7.6 7.6c-.7 0-1.5-.1-2.1-.3l2.3-6.6 2.3 6.4.1.1c-.8.3-1.7.4-2.6.4Zm1-11.2c.5 0 .9-.1.9-.1.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1-.8 0-2-.1-2-.1-.4 0-.5.7 0 .7l.8.1 1.2 3.2-1.7 5-2.8-8.2.9-.1c.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1h-.5A7.6 7.6 0 0 1 15.3 4.6h-.1c-.8 0-1.3.7-1.3 1.4 0 .6.4 1.2.8 1.8.3.5.6 1.2.6 2.2 0 .7-.3 1.5-.6 2.6l-.8 2.7-2.9-8.9Zm2.8 10.2 2.3-6.7c.4-1.1.6-2 .6-2.7l-.1-.8a7.6 7.6 0 0 1-2.8 10.2Z"/></svg>`,
       refresh: svg(`<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/>`),
-      popout: svg(`<rect x="1.5" y="3.5" width="10" height="8" rx="1.5"/><path d="M4.5 1.5h8a2 2 0 0 1 2 2v6"/>`),
+      putBack: svg(`<rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 4.8h13M8 12V7.4M5.8 9.4 8 7.2l2.2 2.2"/>`),
+    popout: svg(`<rect x="1.5" y="3.5" width="10" height="8" rx="1.5"/><path d="M4.5 1.5h8a2 2 0 0 1 2 2v6"/>`),
       more: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="13" cy="8" r="1.3"/></svg>`,
       x: svg(`<path d="M4 4l8 8M12 4l-8 8"/>`),
       mark: svg(`<path d="M4 1.8h8v12.4l-4-2.8-4 2.8z"/>`),
@@ -78,7 +80,7 @@
     const items = () => {
       if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || (n.unread && !st.read.has(n.id)));
       if (st.site) return Object.keys(POSTS).filter((k) => POSTS[k].site === st.site && !POSTS[k].xpost);
-      if (st.feed === "saved") return [...st.saved];
+      if (st.feed === "saved") return [...st.saved].reverse(); // newest save first, like WordPress.com
       return FEEDS[st.feed];
     };
     const postFor = (item) => (st.section === "notifications" ? POSTS[item.post] : POSTS[item]);
@@ -111,7 +113,8 @@
           <div class="sim-handle" data-drift="grip"></div>
         </div>
         <div class="sim-dock">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de", "#ff375f", "#8e8e93", "#3858e9", "#ffd60a"]
-          .map((c) => `<span style="--c:${c}"></span>`).join("")}</div>
+          .map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="app" src="${ICON}" alt=""></div>
+        <div class="sim-switcher">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de"].map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="on" src="${ICON}" alt=""><b>Dispatch</b></div>
         <div class="sim-menu"></div>
         <div class="sim-card"></div>
         <div class="sim-key"></div>
@@ -129,8 +132,11 @@
         <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
         <span class="spacer"></span>
         <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh"${dt("btn.refresh")}>${I.refresh}</button>
-        <button class="sim-icon" data-a="toast" data-v="Pops out into a window, in the Dock and ⌘-Tab" title="Pop out into a window (or drag the header)"${dt("btn.popout")}>${I.popout}</button>
-        <button class="sim-icon more ${st.menu ? "on" : ""}" data-a="menu" title="More"${dt("btn.more")}>${I.more}</button>`;
+        ${st.detached
+          ? `<button class="sim-icon" data-a="attach" title="Put back in the menu bar">${I.putBack}</button>`
+          : `<button class="sim-icon" data-a="detach" title="Pop out into a window (or drag the header)"${dt("btn.popout")}>${I.popout}</button>`}
+        <button class="sim-icon more ${st.menu ? "on" : ""}" data-a="menu" title="More"${dt("btn.more")}>${I.more}</button>
+        ${st.detached ? `<button class="sim-icon" data-a="closeWindow" title="Close (⌘W)">${I.x}</button>` : ""}`;
     }
 
     // The ⋯ menu, as in the app.
@@ -337,10 +343,12 @@
 
     function render(swapRows) {
       panel.classList.toggle("hidden", !st.open);
-      $(".sim-w").classList.toggle("on", st.open);
+      $(".sim-w").classList.toggle("on", st.open && !st.detached);
+      panel.classList.toggle("window", !!st.detached);
+      $(".sim-dock").classList.toggle("running", !!(st.detached || st.dock));
       // Like the app's status item: the W, then the unread count beside it.
       $(".sim-wcount").textContent = unreadCount() || "";
-      panel.classList.toggle("wide", st.sel !== null);
+      panel.classList.toggle("wide", st.sel !== null || !!st.detached); // a window always has room for the reader
       renderHead(); renderFilters(); renderRows(swapRows); renderDetail(); renderMenu();
       if (cardFor && !sim.contains(cardFor)) hideCard();
       fit();
@@ -375,8 +383,13 @@
       },
       close() {
         if (st.sel !== null) { st.sel = null; st.commentsOpen = false; render(); }
-        else { st.open = false; render(); }
+        else if (!st.detached) { st.open = false; render(); }
       },
+      // Pop out into a window, and back. As a window Dispatch is in the Dock and ⌘-Tab.
+      detach() { Object.assign(st, { detached: true, menu: false }); hideCard(); render(); },
+      attach() { st.detached = false; render(); },
+      closeWindow() { Object.assign(st, { detached: false, open: false, sel: null, commentsOpen: false }); render(); },
+      switcher(on) { sim.querySelector(".sim-switcher").classList.toggle("show", !!on); },
       comments() { st.commentsOpen = !st.commentsOpen; st.replyTo = null; renderComments(true); },
       like(v) {
         const s = selected(); const cm = s && postFor(s.item).comments.find((x) => x.id === Number(v)); if (!cm) return;
@@ -530,7 +543,7 @@
         scale = Math.min(1, width / 1000); h = 600 * scale;
         st.view = { x: 0, w: 1000 };
       } else if (width >= 560) {
-        const wide = st.open && st.sel !== null, f = wide ? SHOT.panel : SHOT.list;
+        const wide = st.open && (st.sel !== null || !!st.detached), f = wide ? SHOT.panel : SHOT.list;
         h = width * DESK_H / 1000;
         scale = wide ? width / f.w : h / f.h;
         const w = width / scale, tall = h / scale;
@@ -621,8 +634,8 @@
       for (let i = 1; i <= text.length; i++) { A.type(text.slice(0, i)); await sleep(32 + Math.random() * 40, t); }
     }
     function reset() {
-      Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false });
-      hideCard();
+      Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false, detached: false });
+      hideCard(); A.switcher(false);
       st.read.clear(); st.saved.clear();
       Object.values(POSTS).forEach((p) => { if (p.liked) { p.liked = false; p.likes--; } });
       POSTS.inbox.comments = POSTS.inbox.comments.filter((x) => x.id < 1000);
@@ -657,10 +670,30 @@
         caption("The Reader: the blogs you follow, with reading times so you know what you're getting into.");
         await point('.sim-tab[data-v="reader"]', t); await sleep(900, t);
         await point(rowSel("waits"), t); await sleep(1500, t);
-        caption("Like a post with a click (or l). Save it for later with s.");
-        await point('[data-a="likePost"]', t); await sleep(900, t);
-        await point('[data-a="save"]', t); await sleep(900, t);
-        await point('.sim-pill[data-v="saved"]', t); await sleep(1200, t);
+        caption("Like a post with a click (or l), the same as liking it on WordPress.com.");
+        await point('[data-a="likePost"]', t); await sleep(1600, t);
+      },
+      async saved(t) {
+        st.saved.add("focaccia"); render(); // saved the other day, so the list isn't empty
+        caption("Save a post with s, and it's on your WordPress.com saved list.");
+        await point('.sim-tab[data-v="reader"]', t); await sleep(800, t);
+        await point(rowSel("sourdough"), t); await sleep(1300, t);
+        await key("s", t); await sleep(700, t);
+        caption("Saved keeps it until you have a minute, here or on the web.");
+        await point('.sim-pill[data-v="saved"]', t); await sleep(2400, t);
+      },
+      async window(t) {
+        caption("Drag Dispatch off the menu bar and it becomes a window.");
+        await point(".sim-head .spacer", t, { click: false });
+        A.detach();
+        cy += 68; cursor.style.transform = `translate(${cx - 2}px, ${cy - 2}px)`; // carried along with the header
+        await sleep(1400, t);
+        caption("It's in the Dock and ⌘-Tab, like any other app.");
+        await point(".sim-dock .app", t, { click: false }); await sleep(900, t);
+        hint("<kbd>⌘</kbd><kbd>Tab</kbd>", 1500); A.switcher(true); await sleep(1700, t); A.switcher(false);
+        await sleep(500, t);
+        caption("Close it, and it tucks back into the menu bar.");
+        await point('[data-a="closeWindow"]', t); await sleep(1400, t);
       },
       async cards(t) {
         caption("Rest on a face or a site icon and a card tells you who they are.");
@@ -692,7 +725,7 @@
         await point('[data-a="send"]', t); await sleep(2200, t);
       },
     };
-    const ORDER = ["notifications", "read", "keys", "reader", "cards", "xposts", "comments"];
+    const ORDER = ["notifications", "read", "keys", "reader", "saved", "cards", "xposts", "comments", "window"];
 
     async function runTour(names, loop) {
       const t = ++token;

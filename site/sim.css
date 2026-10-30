@@ -70,6 +70,20 @@
   border-radius: 18px; background: var(--s-menubar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 0 0 .5px rgba(0,0,0,.12);
 }
+.sim-dock img.app { width: 0; height: 44px; margin-left: -8px; opacity: 0; transition: width .35s, margin .35s, opacity .35s; }
+.sim-dock.running img.app { width: 44px; margin-left: 0; opacity: 1; }
+.sim-dock.running::after { content: ""; position: absolute; right: 27px; bottom: 1px; width: 4px; height: 4px; border-radius: 50%; background: var(--s-text); opacity: .55; }
+/* ⌘-Tab */
+.sim-switcher {
+  position: absolute; z-index: 7; left: 50%; top: 300px; transform: translate(-50%, -50%) scale(.96); display: flex; gap: 14px; align-items: center;
+  padding: 16px 18px 30px; border-radius: 22px; background: rgba(40,40,44,.55); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none;
+}
+.sim-switcher.show { opacity: 1; transform: translate(-50%, -50%); }
+.sim-switcher span, .sim-switcher img { width: 64px; height: 64px; border-radius: 15px; }
+.sim-switcher span { background: linear-gradient(color-mix(in srgb, var(--c) 70%, #fff), var(--c)); }
+.sim-switcher img.on { outline: 6px solid rgba(255,255,255,.28); outline-offset: 2px; border-radius: 14px; }
+.sim-switcher b { position: absolute; bottom: 8px; right: 18px; width: 72px; text-align: center; color: #fff; font-size: 11px; font-weight: 600; }
 .sim-dock span { width: 44px; height: 44px; border-radius: 11px; background: linear-gradient(color-mix(in srgb, var(--c) 70%, #fff), var(--c)); }
 
 /* Panel: trailing-anchored, so the reader is revealed from behind the list */
@@ -78,9 +92,12 @@
   border-radius: 14px; overflow: hidden;
   background: var(--s-panel); backdrop-filter: blur(30px) saturate(1.4); -webkit-backdrop-filter: blur(30px) saturate(1.4);
   box-shadow: 0 0 0 0.5px rgba(0,0,0,.18), 0 18px 50px rgba(0,0,0,.22);
-  transition: width .34s cubic-bezier(.2,.9,.25,1), opacity .2s, transform .2s;
+  transition: width .34s cubic-bezier(.2,.9,.25,1), top .5s cubic-bezier(.2,.9,.25,1), height .5s cubic-bezier(.2,.9,.25,1), opacity .2s, transform .2s;
 }
 .sim-panel.wide { width: 921px; }
+/* Popped out: a window in the middle of the desk, clear of the menu bar and the Dock. */
+.sim-panel.window { top: 92px; height: 500px; border-radius: 12px; box-shadow: 0 0 0 0.5px rgba(0,0,0,.2), 0 24px 60px rgba(0,0,0,.3); }
+.sim-panel.window .sim-handle { display: none; }
 .sim-panel.hidden { opacity: 0; transform: translateY(-6px); pointer-events: none; }
 .sim-list { position: absolute; top: 0; right: 0; width: 380px; height: 100%; display: flex; flex-direction: column; }
 .sim-detail {

@@ -110,6 +110,7 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 - Visitors can click and use `j`, `k`, `←`, `→`, `l`, `s`, `o` and `esc`.
 - Every `[data-dispatch-sim]` element is its own stage with its own made-up data. Its value names the tour chapter it plays, for example `data-dispatch-sim="comments"`.
 - A stage plays its chapter on a loop with a pretend cursor while it's on screen, and rests when it scrolls away.
+- The demo can also pop out into a window (`detach`/`attach`/`closeWindow`), which puts Dispatch in the desk's Dock, and show a ⌘-Tab switcher (`switcher`), for the Window row.
 - Use motion only where it shows something a still can't. A stage with `data-sim-still="<scene>"` skips the tour and shows one scene (see `SCENES` in `sim.js`) that visitors can click around in. Notifications and P2s are stills.
 - Copy the app exactly: sizes, weights and colors from the SwiftUI views, and reader pages built the way `Store.buildPage` and `ReaderStore.page` build them. The drift check (below) holds the layout to that.
 - The made-up people, sites, posts and notifications live in `site/demo-data.json`. The app's demo mode reads the same file.

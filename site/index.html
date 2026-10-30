@@ -7,7 +7,7 @@
 <meta name="description" content="A menu bar app for skimming your WordPress.com notifications, blogs and P2s.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="stylesheet" href="sim.css?v=809d2499b5">
+<link rel="stylesheet" href="sim.css?v=a5e475e6da">
 <style>
   :root {
     --bg: #fbfaf8;
@@ -61,22 +61,14 @@
   .row:nth-of-type(even) .copy { order: 2; }
   .kicker { margin: 0 0 10px; color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
   .row h2 { margin: 0 0 14px; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.12; letter-spacing: -0.02em; }
-  .row .copy p:last-child { margin: 0; color: var(--muted); font-size: 18px; }
+  .row .copy p:not(.kicker) { margin: 0; color: var(--muted); font-size: 18px; }
   .stage { margin: 0; min-width: 0; }
   kbd {
     font: 600 0.82em/1 -apple-system, BlinkMacSystemFont, sans-serif; padding: 3px 6px; border-radius: 5px;
     border: 1px solid var(--line); border-bottom-width: 2px; background: var(--bg); color: var(--text);
   }
-  .callout {
-    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start;
-    margin: 0 0 64px; padding: 28px 32px; border: 1px solid var(--line); border-radius: 18px; background: var(--hover);
-  }
-  .callout-icon { width: 40px; height: 40px; color: var(--accent); }
-  .callout h2 { margin: 2px 0 8px; font-size: 22px; letter-spacing: -0.01em; }
-  .callout p { margin: 0; color: var(--muted); }
-  .callout p.fine { margin-top: 10px; font-size: 15px; }
-  .callout strong { color: var(--text); font-weight: 600; }
-  @media (max-width: 820px) { .callout { grid-template-columns: minmax(0, 1fr); padding: 22px 20px; } }
+  .row .copy p.fine { margin-top: 12px; font-size: 15px; }
+  .row .copy strong { color: var(--text); font-weight: 600; }
   .demo-note { margin: 0; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
   @media (max-width: 820px) {
     .row, .row:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 48px 0; }
@@ -139,11 +131,22 @@
     <div class="copy">
       <p class="kicker">Following</p>
       <h2>Catch up on the blogs you love.</h2>
-      <p>The sites you follow are one tab over. Like a post with <kbd>l</kbd> just as you would on WordPress.com, or save it for later with <kbd>s</kbd>. Saves are your WordPress.com saves, so they're there on the web too.</p>
+      <p>The sites you follow are one tab over, each post with its reading time up front. Like one with <kbd>l</kbd>, just as you would on WordPress.com.</p>
     </div>
     <figure class="stage">
       <div class="sim-scale" data-dispatch-sim="reader"></div>
       <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>The blogs you follow, with reading times.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Saved</p>
+      <h2>Save it now, read it whenever.</h2>
+      <p>Press <kbd>s</kbd> and the post goes on your WordPress.com saved list, the same one the web Reader keeps. Saved holds it until you have a minute.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="saved"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Save a post with s.</span></figcaption>
     </figure>
   </section>
   <section class="row" data-sim-row>
@@ -180,13 +183,17 @@
     </figure>
   </section>
 
-  <section class="callout">
-    <svg class="callout-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="26" height="21" rx="4"/><path d="M10 4h22a4 4 0 0 1 4 4v16"/><path d="M4 15h26"/></svg>
-    <div>
-      <h2>Rather have a window?</h2>
-      <p>Drag Dispatch away from the menu bar, or click its pop-out button, and it becomes a regular Mac window: in the Dock and ⌘-Tab, ready to resize, tile or move to another desktop. Close it and it tucks back into the menu bar.</p>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Window</p>
+      <h2>Rather have a window? Drag it off.</h2>
+      <p>Pull Dispatch away from the menu bar, or click its pop-out button, and it becomes a regular Mac window: in the Dock and ⌘-Tab, ready to resize or tile. Close it and it tucks back into the menu bar.</p>
       <p class="fine">In the ⋯ menu, <strong>Open as a Window</strong> makes that the default, and <strong>Show in Dock</strong> keeps a Dock icon either way.</p>
     </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="window"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Drag it off the menu bar.</span></figcaption>
+    </figure>
   </section>
 
   <div class="rest">
@@ -204,6 +211,6 @@
   </div>
 </main>
 <footer>Dispatch isn't an official WordPress.com app. It signs in with your WordPress.com account and keeps your sign-in only on your Mac. Everyone in the demos is made up.</footer>
-<script src="sim.js?v=6e4e9477f3"></script>
+<script src="sim.js?v=28ef1787b4"></script>
 </body>
 </html>
