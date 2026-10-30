@@ -8,6 +8,8 @@
 	<string>Dispatch</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.shaunandrews.dispatch</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleName</key>
 	<string>Dispatch</string>
 	<key>CFBundlePackageType</key>

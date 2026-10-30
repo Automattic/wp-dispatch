@@ -30,6 +30,7 @@ There's no Xcode project. It's a SwiftPM executable (`Package.swift`) that `buil
 | `./build.sh` | Universal (Apple silicon and Intel) release build into `build/Dispatch.app`, with Sparkle embedded and signed. |
 | `./build.sh --install` | The same, then moves it into `~/Applications` and registers it with LaunchServices. A running copy keeps the old build until it restarts: use ⋯ → **Restart**. |
 | `SIGN_IDENTITY="Developer ID Application: …" ./build.sh` | Signs with a real certificate and the hardened runtime instead of ad-hoc. |
+| `./tools/icon/make.sh` | Redraws the app icon from `tools/icon/draw.swift` (a D whose corner is a speech-bubble tail, white on WordPress blue) into `Resources/AppIcon.icns`, plus the website's `icon.png` and `favicon.png`. |
 
 After installing, restart the running copy. Find its exact PID first and kill only that PID, never a name pattern (`pkill -f Dispatch` could hit other apps):
 

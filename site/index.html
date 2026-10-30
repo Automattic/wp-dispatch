@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dispatch for WordPress.com</title>
 <meta name="description" content="A menu bar app for skimming your WordPress.com notifications, blogs and P2s.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
 <link rel="stylesheet" href="sim.css?v=809d2499b5">
 <style>
   :root {
@@ -37,6 +39,7 @@
   }
   main { max-width: 1100px; margin: 0 auto; padding: 72px 20px 48px; }
   .intro { max-width: 760px; }
+  .app-icon { display: block; width: 96px; height: 96px; margin: 0 0 18px -8px; }
   h1 { font-size: clamp(36px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.025em; margin: 0; }
   h1 span { color: var(--muted); font-weight: 500; }
   .lede { font-size: 20px; color: var(--muted); max-width: 34em; margin: 18px 0 28px; }
@@ -90,6 +93,7 @@
 <body>
 <main>
   <div class="intro">
+    <img class="app-icon" src="icon.png" width="96" height="96" alt="">
     <h1>Dispatch <span>for WordPress.com</span></h1>
     <p class="lede">Your WordPress.com notifications, blogs and P2s, one click away in the menu bar. Skim everything, read what matters, and never lose the afternoon to a browser tab.</p>
     <div class="download">
