@@ -512,7 +512,7 @@ struct PostRow: View {
                         if let time = post.readingTime { Text(time) }
                         if let views = reader.views(post) {
                             HStack(spacing: 2) {
-                                Image(systemName: "cellularbars")
+                                SignalBars()
                                 Text(views)
                             }
                             .help("\(views) views")
@@ -1252,6 +1252,20 @@ struct PillPicker<T: Hashable>: View {
 }
 
 /// Heart and count for the open post. Dimmed until an x-post's original has been looked up.
+/// Views: four thin bars rising like a signal meter. SF's `cellularbars` is too heavy at 11pt.
+struct SignalBars: View {
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 1.4) {
+            ForEach([0.36, 0.57, 0.79, 1.0], id: \.self) { h in
+                Capsule().frame(width: 1.6, height: 9 * h)
+            }
+        }
+        .frame(height: 9)
+        .padding(.trailing, 1)
+        .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 0.5 }
+    }
+}
+
 extension Color {
     /// A liked star: WordPress.com's golden yellow, dark enough to read on a light background.
     static let like = Color(red: 0.96, green: 0.69, blue: 0.0)

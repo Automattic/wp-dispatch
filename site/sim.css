@@ -193,6 +193,7 @@
 .sim-like.liked { color: var(--s-like); }
 .sim-likes { display: inline-flex; align-items: center; gap: 2px; vertical-align: -1px; }
 .sim-likes svg { width: 11.5px; height: 11.5px; } /* the SF Symbols' size at 11pt */
+.sim-likes svg.bars { width: 10.6px; height: 9px; margin-right: 1px; }
 .sim-likes svg.cm { width: 12.5px; height: 12.5px; }
 .sim-likes.liked { color: var(--s-like); }
 .sim-article { flex: 1; overflow: hidden; padding: 18px 24px 10px; }
