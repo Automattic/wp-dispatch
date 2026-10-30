@@ -98,7 +98,6 @@
 .sim-icon { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--s-muted); transition: background .1s; }
 .sim-icon:hover { background: var(--s-fill-2); }
 .sim-icon svg { width: 14px; height: 14px; }
-.sim-icon.more { width: 20px; height: 14px; } /* the app's ⋯ is a borderless Menu, sized to its glyph */
 .sim-filters { height: 36px; padding: 0 12px 6px; display: flex; align-items: center; gap: 4px; flex: none; }
 .sim-filters .spacer { flex: 1; }
 .sim-icon[disabled] { opacity: .35; }

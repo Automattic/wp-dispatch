@@ -61,25 +61,7 @@ struct ListPane: View {
                 } else {
                     IconButton("menubar.arrow.up.rectangle", help: "Put back in the menu bar") { c.attach() }
                 }
-                Menu {
-                    Button("Open on WordPress.com") {
-                        NSWorkspace.shared.open(URL(string: c.section == .reader
-                            ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
-                    }
-                    Divider()
-                    Button("Check for Updates…") { Updates.shared.checkForUpdates() }
-                    Text("Dispatch \(Updates.shared.versionLabel)")
-                    Divider()
-                    Button("Sign out") { store.signOut() }
-                    Button("Restart") { Updates.relaunch() }
-                    Button("Quit") { NSApp.terminate(nil) }
-                } label: {
-                    Image(systemName: "ellipsis").frame(width: 22, height: 22)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .driftTag("btn.more")
+                MoreMenu().driftTag("btn.more")
                 if c.mode == .detached {
                     IconButton("xmark", help: "Close (⌘W)") { c.attach(show: false) }
                 }
@@ -101,6 +83,43 @@ struct ListPane: View {
 
             if c.section == .notifications { NotificationList() } else { PostList() }
         }
+    }
+}
+
+/// The ⋯ menu. Sized and highlighted like an `IconButton`: a borderless `Menu` hugs its glyph,
+/// so its hover wash was a squashed 20×14 pill.
+struct MoreMenu: View {
+    @EnvironmentObject var store: Store
+    @EnvironmentObject var c: PanelController
+    @State private var hovering = false
+
+    var body: some View {
+        Menu {
+            Button("Open on WordPress.com") {
+                NSWorkspace.shared.open(URL(string: c.section == .reader
+                    ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
+            }
+            Divider()
+            Button("Check for Updates…") { Updates.shared.checkForUpdates() }
+            Text("Dispatch \(Updates.shared.versionLabel)")
+            Divider()
+            Button("Sign out") { store.signOut() }
+            Button("Restart") { Updates.relaunch() }
+            Button("Quit") { NSApp.terminate(nil) }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 26, height: 26)
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(hovering ? 0.08 : 0)))
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("More")
+        .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
     }
 }
 
