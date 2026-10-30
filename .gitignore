@@ -7,9 +7,13 @@ build/
 # Release zips are rebuilt by release.sh and published to the Space, not committed.
 site/releases/*.zip
 site/releases/*.delta
+# Old deltas generate_appcast sets aside once the appcast drops them.
 .spacefast/state.json
 site/.spacefast/state.json
 .claude/
 
 # The drift check's Playwright (tools/drift/package.json).
 tools/drift/node_modules/
+
+# Old deltas generate_appcast sets aside once the appcast stops listing them.
+site/releases/old_updates/
