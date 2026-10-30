@@ -55,7 +55,7 @@ enum ReaderPage {
           <div class=chips><span id=time class=chip></span><button id=jump class="chip me" hidden></button></div>
           \(likersTag)
         </header>
-        <article id=content>\(content)</article>
+        <article id=content>\(MediaLoader.route(content))</article>
         <script>const TERMS = \(termsJSON);\(js)</script>
         </body></html>
         """
@@ -192,6 +192,7 @@ struct HTMLView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.userContentController.add(context.coordinator, name: "hovercard")
+        config.setURLSchemeHandler(MediaLoader(store: c.store), forURLScheme: MediaLoader.scheme)
         let view = WKWebView(frame: .zero, configuration: config)
         context.coordinator.anchor.view = view
         view.navigationDelegate = context.coordinator
@@ -239,6 +240,65 @@ struct HTMLView: NSViewRepresentable {
                 decisionHandler(.allow)
             }
         }
+    }
+}
+
+/// Images on private sites (Automattic's P2s) only load for a signed-in user, and the web view
+/// has no WordPress.com cookies, so they came back 403. `route` points the page's
+/// wordpress.com image URLs at this handler, which fetches them with the app's token.
+final class MediaLoader: NSObject, WKURLSchemeHandler {
+    static let scheme = "wpn-media"
+    private let store: Store
+    private var live: Set<ObjectIdentifier> = []
+
+    init(store: Store) { self.store = store }
+
+    /// Rewrites `src`/`srcset` values on *.wordpress.com to the handler's scheme. Links are left alone.
+    static func route(_ html: String) -> String {
+        guard let attr = try? NSRegularExpression(pattern: #"\b(src|srcset)="([^"]*)""#) else { return html }
+        let ns = html as NSString
+        var out = ""
+        var at = 0
+        for m in attr.matches(in: html, range: NSRange(location: 0, length: ns.length)) {
+            let value = ns.substring(with: m.range(at: 2))
+            let routed = value.replacingOccurrences(of: #"https?://((?:[a-z0-9-]+\.)+)wordpress\.com/"#,
+                                                    with: "\(scheme)://$1wordpress.com/", options: .regularExpression)
+            out += ns.substring(with: NSRange(location: at, length: m.range(at: 2).location - at)) + routed
+            at = m.range(at: 2).location + m.range(at: 2).length
+        }
+        return out + ns.substring(from: at)
+    }
+
+    func webView(_ webView: WKWebView, start task: any WKURLSchemeTask) {
+        MainActor.assumeIsolated {
+            guard let url = task.request.url, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+            parts.scheme = "https"
+            // The token only ever goes to wordpress.com.
+            guard let real = parts.url, real.host()?.hasSuffix(".wordpress.com") == true, let token = store.token else {
+                return task.didFailWithError(URLError(.badURL))
+            }
+            var req = URLRequest(url: real)
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            let id = ObjectIdentifier(task)
+            live.insert(id)
+            URLSession.shared.dataTask(with: req) { data, response, error in
+                DispatchQueue.main.async {
+                    guard self.live.remove(id) != nil else { return } // the page stopped asking
+                    if let data, let http = response as? HTTPURLResponse {
+                        task.didReceive(HTTPURLResponse(url: url, statusCode: http.statusCode, httpVersion: nil,
+                                                        headerFields: http.allHeaderFields as? [String: String]) ?? http)
+                        task.didReceive(data)
+                        task.didFinish()
+                    } else {
+                        task.didFailWithError(error ?? URLError(.unknown))
+                    }
+                }
+            }.resume()
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop task: any WKURLSchemeTask) {
+        MainActor.assumeIsolated { _ = live.remove(ObjectIdentifier(task)) }
     }
 }
 

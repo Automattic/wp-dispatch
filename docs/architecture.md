@@ -83,6 +83,10 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - `HTMLView` is the `WKWebView` wrapper. It catches `wpn://site/<id>` links, which open a site's feed in the list, and sends every other link to the browser.
 - The W logo is rendered as a template image.
 
+## Images on private sites
+
+Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed-in session, and the reader's web view has no WordPress.com cookies. `MediaLoader.route` rewrites `src`/`srcset` URLs on `*.wordpress.com` to `wpn-media://…`, and `MediaLoader` (a `WKURLSchemeHandler`) fetches them over https with the app's token. The token is only ever sent to `*.wordpress.com`.
+
 ## Hovercards: `Hovercards.swift`
 
 - `.hovercard(edge:) { … }` on any view opens a card beside it after a ~0.5s hover (instantly when one is already open). The card lives in its own borderless, non-activating `NSPanel` that can't become key, so the list keeps keyboard focus and the card isn't clipped by the panel.
