@@ -24,7 +24,7 @@ Dispatch ships as a zip on its website and updates itself with [Sparkle](https:/
    ```bash
    ./tools/release/changes.sh
    ```
-   It lists every commit since the last `Release x.y.z` commit, with its message, and the files touched.
+   It lists every commit since the last `Release x.y.z` commit (so don't start other commit messages that way), with its message, and the files touched.
 3. Write the release notes in `site/releases/Dispatch-<version>.html`. They're required: `release.sh` stops without them. Sparkle shows them in the update window, and they go on the public release log at https://dispatchapp.space.fast/releases/.
    - Format: `<h2>Dispatch 0.5.0</h2><ul><li><strong>Short headline.</strong> A sentence on what's better for you.</li></ul>`.
    - Lead with what people get, not how it was built. Leave out work that doesn't change the app (website, tooling, docs), and anything internal to Automattic: the notes are public.
