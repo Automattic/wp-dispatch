@@ -44,7 +44,7 @@ Dispatch ships as a zip on its website and updates itself with [Sparkle](https:/
    ```
 5. Commit what the release changed and push:
    ```bash
-   git add Info.plist site/appcast.xml site/_redirects site/releases/*.html
+   git add Info.plist site/appcast.xml site/_redirects site/index.html site/sim.js site/releases/*.html
    ```
    ```bash
    git commit -m "Release 0.2.0"
@@ -109,13 +109,14 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 **The demo** (`sim.js` and `sim.css`) is a working HTML copy of the panel, filled with made-up content:
 - Visitors can click and use `j`, `k`, `←`, `→`, `l`, `s`, `o` and `esc`.
 - A guided tour drives the same UI with a pretend cursor. Each feature in the list plays its own chapter.
+- Hovering a made-up person or site opens a hovercard, as in the app.
 - Phone-width screens get a camera that follows the list or the reader.
 - Real clicks pause the tour.
 - It can be driven from code through `window.DispatchSim`: `play()`, `pause()`, `chapter(name)`, and `do.*` for individual actions. See the header comment in `sim.js`.
 
 When the app gains or changes a visible feature, update the demo data, its actions and the tour.
 
-**Cache busting:** `index.html` loads `sim.css?v=…` and `sim.js?v=…`. After editing either file, bump the number. `release.sh` sets it to the build number. To update the site without a release:
+**Cache busting:** `index.html` loads `sim.css?v=…` and `sim.js?v=…`. After editing either file, bump the number. `release.sh` sets it to the build number, and sets `VERSION` in `sim.js` (shown in the demo's ⋯ menu) to the release. To update the site without a release:
 
 ```bash
 cd site && sf publish --space spc_6f81e0c2ca994ef597cc94eb55f421d5 --yes --wait

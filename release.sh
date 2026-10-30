@@ -57,6 +57,7 @@ $TOOLS/generate_appcast --account dispatch \
 
 # Fresh copies of the demo for this release.
 sed -i '' -E "s#(sim\.(css|js))\?v=[0-9]+#\1?v=$BUILD#g" site/index.html
+sed -i '' -E "s#(const VERSION = )\"[^\"]*\"#\1\"$VERSION\"#" site/sim.js
 
 # The website's Download button always gets the newest zip.
 print -r -- "/download /releases/Dispatch-$VERSION.zip 302" > site/_redirects
@@ -64,4 +65,4 @@ print -r -- "/download /releases/Dispatch-$VERSION.zip 302" > site/_redirects
 if [[ "$2" != "--no-publish" ]]; then
   (cd site && sf publish --space $SPACE_ID --yes --wait -m "Dispatch $VERSION")
 fi
-echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects, site/index.html and any release notes."
+echo "Released $VERSION. Commit Info.plist, site/appcast.xml, site/_redirects, site/index.html, site/sim.js and any release notes."
