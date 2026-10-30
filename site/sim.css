@@ -56,11 +56,13 @@
 .sim-menubar .spacer { flex: 1; }
 .sim-menubar .apple { font-size: 14px; }
 .sim-w {
-  width: 26px; height: 20px; border-radius: 5px; display: grid; place-items: center;
+  min-width: 26px; height: 20px; padding: 0 5px; border-radius: 5px; display: flex; align-items: center; justify-content: center; gap: 4px;
   transition: background .15s;
 }
 .sim-w.on { background: var(--s-fill-2); }
-.sim-w svg { width: 15px; height: 15px; }
+.sim-w svg { width: 16px; height: 16px; flex: none; }
+.sim-wcount { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.sim-wcount:empty { display: none; }
 
 /* Dock: fills the bottom of the wide shot, so it reads as a whole Mac screen. */
 .sim-dock {

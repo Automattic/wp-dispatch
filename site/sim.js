@@ -100,7 +100,7 @@
     root.innerHTML = `
       <div class="sim" tabindex="0" aria-label="Interactive demo of Dispatch">
         <div class="sim-menubar"><span class="apple"></span><b>Finder</b><span>File</span><span>Edit</span><span>View</span>
-          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.w}</button><span>Tue 9:41</span></div>
+          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.w}<span class="sim-wcount"></span></button><span>Tue 9:41</span></div>
         <div class="sim-panel">
           <div class="sim-detail" data-drift="detail"></div>
           <div class="sim-list" data-drift="list">
@@ -123,6 +123,7 @@
 
     function renderHead() {
       const unread = unreadCount();
+      $(".sim-wcount").textContent = unread || "";
       $(".sim-head").innerHTML = `
         <button class="sim-tab ${st.section === "notifications" ? "on" : ""}" data-a="section" data-v="notifications"${dt("tab.notifications")}>Notifications${unread ? `<span class="sim-badge"${dt("badge.notifications")}>${unread}</span>` : ""}</button>
         <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
@@ -335,6 +336,8 @@
     function render(swapRows) {
       panel.classList.toggle("hidden", !st.open);
       $(".sim-w").classList.toggle("on", st.open);
+      // Like the app's status item: the W, then the unread count beside it.
+      $(".sim-wcount").textContent = unreadCount() || "";
       panel.classList.toggle("wide", st.sel !== null);
       renderHead(); renderFilters(); renderRows(swapRows); renderDetail(); renderMenu();
       if (cardFor && !sim.contains(cardFor)) hideCard();
