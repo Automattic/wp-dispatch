@@ -1,7 +1,7 @@
 /* Dispatch simulation: a working, made-up copy of the app's panel for the website.
-   Sizes follow the app (list 380pt, reader 540pt) on a 1000×600 stage that scales to fit. */
+   Sizes follow the app (list 380pt, reader 540pt) on a 1000×600 desk. Each stage scales it to
+   fit, or follows the action with a camera when it's narrow. */
 
-.sim-wrap { position: relative; width: 100%; margin: 48px 0 0; }
 .sim-scale { position: relative; width: 100%; overflow: hidden; border-radius: 14px; transition: height .45s cubic-bezier(.2,.9,.25,1); }
 .sim.ready { transition: transform .45s cubic-bezier(.2,.9,.25,1); }
 .sim {
@@ -280,11 +280,12 @@
 /* Tour controls below the stage */
 .sim-tour { display: flex; align-items: center; gap: 12px; margin-top: 14px; min-height: 30px; }
 .sim-play {
-  flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
-  border: 1px solid var(--line); background: transparent; color: var(--text); font: 600 14px/1 inherit; cursor: pointer;
+  flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer;
 }
-.sim-play svg { width: 12px; height: 12px; }
-.sim-caption { color: var(--muted); font-size: 15px; transition: opacity .25s; }
+.sim-play:hover { background: var(--hover); }
+.sim-play svg { width: 11px; height: 11px; }
+.sim-caption { color: var(--muted); font-size: 15px; line-height: 1.35; transition: opacity .25s; }
 .sim-caption.fade { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {

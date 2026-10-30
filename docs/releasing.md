@@ -104,19 +104,20 @@ The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the 
 
 ## Website
 
-`site/index.html` is one hand-written page with a download button, an interactive demo, the features and the install steps.
+`site/index.html` is one hand-written page: a download button, then one row per benefit (copy on one side, a live demo on the other, alternating), then the install steps. Lead each row with what it does for people, and the feature second.
 
 **The demo** (`sim.js` and `sim.css`) is a working HTML copy of the panel, filled with made-up content:
 - Visitors can click and use `j`, `k`, `←`, `→`, `l`, `s`, `o` and `esc`.
-- A guided tour drives the same UI with a pretend cursor. Each feature in the list plays its own chapter.
+- Every `[data-dispatch-sim]` element is its own stage with its own made-up data. Its value names the tour chapter it plays, for example `data-dispatch-sim="comments"`.
+- A stage plays its chapter on a loop with a pretend cursor while it's on screen, and rests when it scrolls away.
 - Hovering a made-up person or site opens a hovercard, as in the app.
-- Phone-width screens get a camera that follows the list or the reader.
-- Real clicks pause the tour.
-- It can be driven from code through `window.DispatchSim`: `play()`, `pause()`, `chapter(name)`, and `do.*` for individual actions. See the header comment in `sim.js`.
+- Stages narrower than 900px (the page's columns, phones) get a camera that follows the list or the reader.
+- A real click or key hands that stage to the visitor until they press its play button.
+- It can be driven from code through `window.DispatchSims` (one per stage; `window.DispatchSim` is the first): `play()`, `pause()`, `chapter(name)`, and `do.*` for individual actions. See the header comment in `sim.js`.
 
-When the app gains or changes a visible feature, update the demo data, its actions and the tour.
+When the app gains or changes a visible feature, update the demo data, its actions and the tour, and give it a row if it's worth one.
 
-**Cache busting:** `index.html` loads `sim.css?v=…` and `sim.js?v=…`. After editing either file, bump the number. `release.sh` sets it to the build number, and sets `VERSION` in `sim.js` (shown in the demo's ⋯ menu) to the release. To update the site without a release:
+**Cache busting:** `index.html` loads `sim.css?v=…` and `sim.js?v=…`, where the value is the file's content hash. After editing either file, run `./bust-site.sh`. `release.sh` runs it too, after setting `VERSION` in `sim.js` (shown in the demo's ⋯ menu) to the release. To update the site without a release:
 
 ```bash
 cd site && sf publish --space spc_6f81e0c2ca994ef597cc94eb55f421d5 --yes --wait

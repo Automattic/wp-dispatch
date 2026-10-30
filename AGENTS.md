@@ -17,7 +17,7 @@ Read [README.md](README.md) first, then the doc for your task:
 - **Never print, log or commit secrets.** That covers the WordPress.com token in `credentials.json`, the Sparkle private key, and Spacefast keys. `site/.spacefast/state.json` is gitignored. Only `space.json` is committed.
 - **Releasing publishes to real users.** `./release.sh` pushes an update to every installed copy within a day. Only run it when you've been asked to ship. Use `--no-publish` for a dry run.
 - **The website is public.** The demo (`site/sim.js`) uses made-up people, blogs and P2s. Keep it that way. Never put real notifications, P2 content or anything internal to Automattic on the site.
-- **When the app changes, update the demo.** If you add, remove or rename a visible feature, change `site/sim.js` and the feature list in `site/index.html` to match.
+- **When the app changes, update the demo.** If you add, remove or rename a visible feature, change `site/sim.js` and its row in `site/index.html` to match.
 - **Keep the module name `DispatchApp`.** Renaming it to `Dispatch` collides with Apple's GCD module.
 - **Don't add a custom URL scheme for sign-in.** WordPress.com only allows its own schemes. The reason is in [docs/auth.md](docs/auth.md).
 - **Match the existing code.** Comment density, naming, and plain AppKit/SwiftUI without extra dependencies. When you change how something works, update the doc for it in the same commit.

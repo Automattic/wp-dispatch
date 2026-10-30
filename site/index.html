@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dispatch for WordPress.com</title>
 <meta name="description" content="A menu bar app for skimming your WordPress.com notifications, blogs and P2s.">
-<link rel="stylesheet" href="sim.css?v=6">
+<link rel="stylesheet" href="sim.css?v=6597d35b78">
 <style>
   :root {
     --bg: #fbfaf8;
@@ -35,7 +35,7 @@
     font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 1000px; margin: 0 auto; padding: 72px 20px 48px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 72px 20px 48px; }
   .intro { max-width: 760px; }
   h1 { font-size: clamp(36px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.025em; margin: 0; }
   h1 span { color: var(--muted); font-weight: 500; }
@@ -49,21 +49,31 @@
   .button:hover { filter: brightness(1.08); }
   .meta { color: var(--muted); font-size: 15px; }
   .rest { max-width: 760px; }
-  ul.features { padding: 0; list-style: none; margin: 48px 0 0; display: grid; gap: 4px; }
-  ul.features li {
-    border-top: 1px solid var(--line); padding: 14px 12px; margin: 0 -12px; cursor: pointer; border-radius: 8px;
-    display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: baseline;
+  .row {
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center;
+    padding: 64px 0; border-top: 1px solid var(--line);
   }
-  ul.features li:hover { background: var(--hover); }
-  ul.features li.playing strong { color: var(--accent); }
-  ul.features strong { display: block; }
-  ul.features span { color: var(--muted); grid-column: 1; }
-  ul.features em { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-style: normal; font-size: 14px; color: var(--accent); }
-  section.install { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .row:first-of-type { margin-top: 64px; }
+  .row:nth-of-type(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .row:nth-of-type(even) .copy { order: 2; }
+  .kicker { margin: 0 0 10px; color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+  .row h2 { margin: 0 0 14px; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.12; letter-spacing: -0.02em; }
+  .row .copy p:last-child { margin: 0; color: var(--muted); font-size: 18px; }
+  .stage { margin: 0; min-width: 0; }
+  kbd {
+    font: 600 0.82em/1 -apple-system, BlinkMacSystemFont, sans-serif; padding: 3px 6px; border-radius: 5px;
+    border: 1px solid var(--line); border-bottom-width: 2px; background: var(--bg); color: var(--text);
+  }
+  .demo-note { margin: 0; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+  @media (max-width: 820px) {
+    .row, .row:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 48px 0; }
+    .row:nth-of-type(even) .copy { order: 0; }
+  }
+  section.install { margin-top: 32px; border-top: 1px solid var(--line); padding-top: 18px; }
   section.install h2 { font-size: 17px; margin: 0 0 6px; }
   section.install p, section.install ol { color: var(--muted); margin: 0 0 8px; }
   section.install ol { padding-left: 20px; }
-  footer { max-width: 1000px; margin: 0 auto; padding: 24px 20px 56px; color: var(--muted); font-size: 14px; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 20px 56px; color: var(--muted); font-size: 14px; }
   a { color: var(--accent); }
 </style>
 </head>
@@ -71,31 +81,93 @@
 <main>
   <div class="intro">
     <h1>Dispatch <span>for WordPress.com</span></h1>
-    <p class="lede">Your notifications, blogs and P2s in the menu bar. Skim everything, read what matters, and skip opening a browser tab.</p>
+    <p class="lede">Your WordPress.com notifications, blogs and P2s, one click away in the menu bar. Skim everything, read what matters, and never lose the afternoon to a browser tab.</p>
     <div class="download">
       <a class="button" href="/download">Download for Mac</a>
       <span class="meta">macOS 14 or later · Apple silicon and Intel</span>
     </div>
   </div>
 
-  <div class="sim-wrap">
-    <div class="sim-scale" data-dispatch-sim></div>
-    <div class="sim-tour">
-      <button class="sim-play" data-sim-play type="button">Play tour</button>
-      <span class="sim-caption" data-sim-caption>This is a working demo with made-up posts. Click around, or watch the tour.</span>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Notifications</p>
+      <h2>Know what needs you, without opening a tab.</h2>
+      <p>Replies, mentions, likes and new followers from WordPress.com wait in your menu bar. Switch to Unread to see only what's new, then mark it all read in one click.</p>
     </div>
-  </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="notifications"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Comments, likes, mentions and follows, right in your menu bar.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Reading</p>
+      <h2>Read it right where it landed.</h2>
+      <p>Click anything and the post slides out beside the list. Your name is highlighted wherever you're mentioned, so you can see straight away why it's there.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="read"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Click anything to read it right there.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Skimming</p>
+      <h2>Get through the pile in a few minutes.</h2>
+      <p><kbd>j</kbd> and <kbd>k</kbd> move through the list, <kbd>esc</kbd> closes the reader, and <kbd>⌘↑</kbd> jumps back to the top. Every post shows its reading time, so you know what you're getting into.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="keys"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Skim with the keyboard.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Following</p>
+      <h2>Catch up on the blogs you love.</h2>
+      <p>The sites you follow are one tab over. Like a post with <kbd>l</kbd> just as you would on WordPress.com, or save it for later with <kbd>s</kbd>.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="reader"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>The blogs you follow, with reading times.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Hovercards</p>
+      <h2>Know who you're talking to.</h2>
+      <p>Rest on a face or a site icon and a card tells you who they are. One more click shows everything that site has posted.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="cards"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Rest on a face or a site icon.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">P2s</p>
+      <h2>Keep up with your team, minus the repeats.</h2>
+      <p>Your P2s get a tab of their own. A post cross-posted to several P2s shows up once, and opens the original.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="xposts"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>P2s live under Automattic.</span></figcaption>
+    </figure>
+  </section>
+  <section class="row" data-sim-row>
+    <div class="copy">
+      <p class="kicker">Comments</p>
+      <h2>Join the conversation without switching apps.</h2>
+      <p>Read the whole thread, like comments and reply from the reader. Short comments stay short, and the thread keeps its place as you move between posts.</p>
+    </div>
+    <figure class="stage">
+      <div class="sim-scale" data-dispatch-sim="comments"></div>
+      <figcaption class="sim-tour"><button class="sim-play" data-sim-play type="button" aria-label="Play"></button><span class="sim-caption" data-sim-caption>Comments come along with every post.</span></figcaption>
+    </figure>
+  </section>
 
   <div class="rest">
-    <ul class="features">
-      <li data-chapter="notifications"><strong>Notifications at a glance</strong><span>Comments, likes, mentions and follows, with an Unread filter and Mark all as read.</span><em>Show me</em></li>
-      <li data-chapter="read"><strong>Read without leaving</strong><span>The reader slides out beside the list. Your name is highlighted wherever you're mentioned.</span><em>Show me</em></li>
-      <li data-chapter="keys"><strong>Made for skimming</strong><span>j and k move through the list, ⌘↑ jumps back to the top, l likes, s saves, esc closes. Every post shows its reading time.</span><em>Show me</em></li>
-      <li data-chapter="reader"><strong>Your blogs, liked and saved</strong><span>Like posts the same way you would on WordPress.com, and save them for later.</span><em>Show me</em></li>
-      <li data-chapter="cards"><strong>Hovercards</strong><span>Rest on a face or a site icon to see who it is. Read just that site's posts with a click.</span><em>Show me</em></li>
-      <li data-chapter="xposts"><strong>P2s and x-posts</strong><span>See where an x-post came from and read the original.</span><em>Show me</em></li>
-      <li data-chapter="comments"><strong>Comments, likes and replies</strong><span>Read the whole thread, like comments and reply without opening a browser.</span><em>Show me</em></li>
-    </ul>
+    <p class="demo-note">Every demo on this page is the real layout with made-up people and posts. Click around in any of them, or press play to watch again.</p>
 
     <section class="install">
       <h2>Installing</h2>
@@ -108,7 +180,7 @@
     </section>
   </div>
 </main>
-<footer>Dispatch isn't an official WordPress.com app. It signs in with your WordPress.com account and keeps your sign-in only on your Mac. Everyone in the demo above is made up.</footer>
-<script src="sim.js?v=6"></script>
+<footer>Dispatch isn't an official WordPress.com app. It signs in with your WordPress.com account and keeps your sign-in only on your Mac. Everyone in the demos is made up.</footer>
+<script src="sim.js?v=9812e289a2"></script>
 </body>
 </html>

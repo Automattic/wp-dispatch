@@ -55,9 +55,10 @@ $TOOLS/generate_appcast --account dispatch \
   --maximum-versions 5 \
   -o site/appcast.xml site/releases
 
-# Fresh copies of the demo for this release.
-sed -i '' -E "s#(sim\.(css|js))\?v=[0-9]+#\1?v=$BUILD#g" site/index.html
+# Fresh copies of the demo for this release: its ⋯ menu shows the version, and the
+# cache-busting query is each file's content hash.
 sed -i '' -E "s#(const VERSION = )\"[^\"]*\"#\1\"$VERSION\"#" site/sim.js
+./bust-site.sh
 
 # The website's Download button always gets the newest zip.
 print -r -- "/download /releases/Dispatch-$VERSION.zip 302" > site/_redirects
