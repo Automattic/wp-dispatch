@@ -32,6 +32,9 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var replyRequest = 0
     /// The keyboard shortcuts sheet (`?`).
     @Published var showingKeys = false
+    /// Which part of the panel the introduction is talking about, so it can glow.
+    enum IntroSpot { case tabs, chrome }
+    @Published var introSpot: IntroSpot?
     /// The highlighted row in Later, for ↑/↓, Return and ⌫. Later rows open in other sections, so it
     /// highlights instead of selecting.
     @Published var laterHighlight: String?

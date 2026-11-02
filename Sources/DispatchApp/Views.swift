@@ -69,11 +69,14 @@ struct ListPane: View {
                     c.switchSection(.notifications)
                 }
                 .driftTag("tab.notifications")
+                .introGlow(c.introSpot == .tabs)
                 SectionTab("Reader", on: c.section == .reader) { c.switchSection(.reader) }
                     .driftTag("tab.reader")
+                    .introGlow(c.introSpot == .tabs)
                     .padding(.leading, 10)
                 LaterTab()
                     .driftTag("tab.later")
+                    .introGlow(c.introSpot == .tabs)
                     .padding(.leading, 10)
                 Spacer()
                 if loading { ProgressView().controlSize(.small).padding(.trailing, 2) }
@@ -81,10 +84,11 @@ struct ListPane: View {
                 if c.mode == .attached {
                     IconButton("macwindow.on.rectangle", help: "Pop out into a window (or drag the header)") { c.detach() }
                         .driftTag("btn.popout")
+                        .introGlow(c.introSpot == .chrome)
                 } else {
                     IconButton("menubar.arrow.up.rectangle", help: "Put back in the menu bar") { c.attach() }
                 }
-                MoreMenu().driftTag("btn.more")
+                MoreMenu().driftTag("btn.more").introGlow(c.introSpot == .chrome)
                 if c.mode == .detached {
                     IconButton("xmark", help: "Close (⌘W)") { c.attach(show: false) }
                 }
@@ -113,7 +117,7 @@ struct ListPane: View {
             case .reader: PostList()
             case .later: LaterList()
             }
-            FirstRunTips() // docked under the list, once
+            Introduction() // docked under the list, once
         }
     }
 }
@@ -143,6 +147,7 @@ struct MoreMenu: View {
                 }
             }
             Divider()
+            Button("Show Introduction") { UserDefaults.standard.set(false, forKey: "introSeen") }
             Button("Keyboard Shortcuts") { c.showingKeys = true }
             Button("Check for Updates…") { Updates.shared.checkForUpdates() }
             Text("Dispatch \(Updates.shared.versionLabel)")
@@ -170,50 +175,101 @@ struct MoreMenu: View {
 
 // MARK: - First run
 
-/// Three short tips, once, after the first sign-in: the keys that matter, reminders, and `?`. A panel
-/// docked at the bottom of the list (which makes room for it), not a card floating over it.
-struct FirstRunTips: View {
+/// The introduction, once, after the first sign-in (and again from ⋯ → Show Introduction): what
+/// Dispatch is, its three places, reading and replying, notifications and reminders, the keyboard,
+/// and the settings. A panel docked under the list, which makes room for it. While a step talks
+/// about part of the panel, that part glows (`PanelController.introSpot`).
+struct Introduction: View {
     @EnvironmentObject var c: PanelController
-    @AppStorage("tipsSeen") private var seen = false
+    @AppStorage("introSeen") private var seen = false
     @State private var page = 0
 
-    private let tips: [(symbol: String, title: String, text: String)] = [
-        ("keyboard", "Get around with the keyboard",
-         "← and → walk your lists, from Notifications through the Reader to Later. ↑ and ↓ (or j and k) move through one, and Space pages through a post."),
-        ("alarm", "Come back to it later",
-         "Press m, or the alarm in the reader, to be reminded about a notification or post. The Later tab keeps them all."),
-        ("questionmark.circle", "Everything else",
-         "Press ? any time for every shortcut. Rest on a face or a site icon to see who it is."),
+    private struct Step { let symbol: String; let title: String; let text: String; var spot: PanelController.IntroSpot? }
+    private let steps: [Step] = [
+        Step(symbol: "sparkles", title: "Welcome to Dispatch",
+             text: "Your WordPress.com notifications, the blogs you follow and your P2s, one click away in the menu bar. Skim the list, and read anything right here beside it."),
+        Step(symbol: "square.stack.3d.up", title: "Three places",
+             text: "Notifications for replies, mentions and likes. Reader for the blogs you follow, your P2s and what you've saved. Later for whatever you've asked to come back to.",
+             spot: .tabs),
+        Step(symbol: "bubble.left.and.bubble.right", title: "Read, react, reply",
+             text: "Click anything to open it. Like it, save it, read the comments and reply without opening a browser. It's your real WordPress.com account, so everything matches the web."),
+        Step(symbol: "bell.badge", title: "It comes to you",
+             text: "Mentions and replies arrive as Mac notifications you can answer from the banner. Not ready yet? Remind Me brings anything back later, and Later keeps the list."),
+        Step(symbol: "keyboard", title: "Fast with the keyboard",
+             text: "← and → walk your lists, ↑ and ↓ (or j and k) move through one, and Space pages through a post. l likes, s saves, m reminds, r replies. Press ? for the rest."),
+        Step(symbol: "slider.horizontal.3", title: "Make it yours",
+             text: "Drag the header, or click pop-out, to make Dispatch a window. In ⋯, keep it in the Dock, choose which notifications alert you, and pick what the menu bar number counts.",
+             spot: .chrome),
     ]
 
     var body: some View {
         if !seen && !Demo.isOn {
-            let tip = tips[page]
+            let step = steps[page]
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    Image(systemName: tip.symbol).font(.system(size: 14, weight: .medium)).foregroundStyle(Color.accentColor)
-                    Text(tip.title).font(.system(size: 13, weight: .semibold))
+                    Image(systemName: step.symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .frame(width: 20)
+                    Text(step.title).font(.system(size: 14, weight: .semibold))
                     Spacer()
-                    Text("\(page + 1) of \(tips.count)").font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
+                    HStack(spacing: 4) { // progress
+                        ForEach(steps.indices, id: \.self) { i in
+                            Circle().fill(i == page ? Color.accentColor : Color.primary.opacity(0.18)).frame(width: 5, height: 5)
+                        }
+                    }
                 }
-                Text(tip.text).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                HStack {
-                    Button("Skip") { seen = true }.buttonStyle(.plain).foregroundStyle(.secondary).font(.system(size: 12))
+                Text(step.text).font(.system(size: 12.5)).foregroundStyle(.secondary).lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .id(page)
+                    .transition(.opacity)
+                HStack(spacing: 10) {
+                    Button("Skip") { finish() }.buttonStyle(.plain).foregroundStyle(.secondary).font(.system(size: 12))
                     Spacer()
-                    Button(page == tips.count - 1 ? "Done" : "Next") {
-                        if page == tips.count - 1 { seen = true } else { withAnimation(.easeOut(duration: 0.15)) { page += 1 } }
+                    if page > 0 {
+                        Button("Back") { go(page - 1) }.controlSize(.small)
+                    }
+                    Button(page == steps.count - 1 ? "Get Started" : "Next") {
+                        page == steps.count - 1 ? finish() : go(page + 1)
                     }
                     .keyboardShortcut(.defaultAction)
                     .controlSize(.small)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.top, 13)
             .padding(.bottom, c.mode == .attached ? 20 : 12) // clears the resize grip
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.accentColor.opacity(0.07))
             .overlay(alignment: .top) { Divider() }
             .transition(.move(edge: .bottom).combined(with: .opacity))
+            .onAppear { c.introSpot = steps[page].spot }
+            .onDisappear { c.introSpot = nil }
+        }
+    }
+
+    private func go(_ to: Int) {
+        withAnimation(.easeOut(duration: 0.18)) { page = to }
+        withAnimation(.easeOut(duration: 0.25)) { c.introSpot = steps[to].spot }
+    }
+
+    private func finish() {
+        withAnimation(.easeOut(duration: 0.2)) { seen = true }
+        c.introSpot = nil
+        page = 0
+    }
+}
+
+extension View {
+    /// A soft pulsing ring, for the part of the panel the introduction is talking about.
+    func introGlow(_ on: Bool) -> some View {
+        overlay {
+            if on {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.accentColor, lineWidth: 2)
+                    .padding(-5)
+                    .phaseAnimator([0.3, 1]) { ring, phase in ring.opacity(phase) } animation: { _ in .easeInOut(duration: 0.9) }
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
         }
     }
 }
