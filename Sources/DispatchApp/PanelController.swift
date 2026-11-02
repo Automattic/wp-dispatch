@@ -577,7 +577,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     // MARK: Keyboard
 
-    // The keyboard. Lists: ←/→ walk every list in one row (⌘1–3 and ⇥ jump between sections), ↑/↓ (j/k) within.
+    // The keyboard. Lists: ←/→ walk every list in one row (⇧←/⇧→, ⌘1–3 and ⇥ jump between sections), ↑/↓ (j/k) within.
     // The open item: Space pages it, c/f/r work its comments, l/s/m/o act on it. esc steps back out.
     // `KeyboardHelp` lists them all; keep it in step.
     private func handleKey(_ e: NSEvent) -> NSEvent? {
@@ -611,8 +611,16 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             return nil
         case 125: move(1); return nil   // ↓
         case 126: move(-1); return nil  // ↑
-        case 123: step(-1); return nil // ←
-        case 124: step(1); return nil  // →
+        case 123, 124: // ←/→ the next list; ⇧←/⇧→ the next section, without wrapping
+            let delta = e.keyCode == 123 ? -1 : 1
+            if e.modifierFlags.contains(.shift) {
+                let all: [Section] = [.notifications, .reader, .later]
+                let i = all.firstIndex(of: section) ?? 0
+                switchSection(all[min(max(i + delta, 0), all.count - 1)])
+            } else {
+                step(delta)
+            }
+            return nil
         case 49: // Space / ⇧Space: page the article (it pages itself when it has focus)
             guard !inArticle, let article, showDetail else { return e }
             let page = e.modifierFlags.contains(.shift) ? "-0.85" : "0.85"

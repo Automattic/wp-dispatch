@@ -162,6 +162,7 @@ struct KeyboardHelp: View {
     private let groups: [(String, [(keys: [String], what: String)])] = [
         ("Lists", [
             (["←", "→"], "Previous or next list, across sections"),
+            (["⇧←", "⇧→"], "Previous or next section"),
             (["⌘1", "⌘2", "⌘3"], "Notifications, Reader, Later"),
             (["⇥", "⇧⇥"], "Next or previous section"),
             (["↑", "↓"], "Move through the list (or j, k)"),

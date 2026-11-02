@@ -120,7 +120,7 @@
           <div class="sim-keys" data-a="keysHelp"><div class="card">
           <b>Keyboard Shortcuts</b>
           <div class="cols">${[
-            ["Lists", [["← →", "Previous or next list, across sections"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
+            ["Lists", [["← →", "Previous or next list, across sections"], ["⇧← ⇧→", "Previous or next section"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
             ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
             ["Later", [["↑ ↓", "Highlight a reminder"], ["↩", "Open it"], ["⌫", "Done"]]],
           ].map(([title, rows]) => `<div><i>${title}</i>${rows.map(([keys, what]) => `<p><span>${keys.split(" ").map((x) => `<kbd>${x}</kbd>`).join("")}</span>${what}</p>`).join("")}</div>`).join("")}</div>
@@ -490,6 +490,12 @@
         const all = ["notifications", "reader", "later"];
         A.section(all[(all.indexOf(st.section) + d + 3) % 3]);
       },
+      // ⇧←/⇧→: the next section, without wrapping.
+      jumpSection(d) {
+        const all = ["notifications", "reader", "later"], i = all.indexOf(st.section);
+        const next = all[Math.min(Math.max(i + d, 0), 2)];
+        if (next !== st.section) A.section(next);
+      },
       keysHelp() { sim.querySelector(".sim-keys").classList.toggle("show"); },
       commentsKey() { if (st.sel !== null && postFor(selected()?.item)) A.comments(); },
       fullKey() { if (st.sel === null || !postFor(selected()?.item)) return; if (!st.commentsOpen) { st.commentsOpen = true; st.commentsExpanded = true; } else st.commentsExpanded = !st.commentsExpanded; renderComments(true); },
@@ -642,7 +648,8 @@
       const k = {
         j: later ? ["laterMove", 1] : ["move", 1], ArrowDown: later ? ["laterMove", 1] : ["move", 1],
         k: later ? ["laterMove", -1] : ["move", -1], ArrowUp: later ? ["laterMove", -1] : ["move", -1],
-        ArrowLeft: ["tab", -1], ArrowRight: ["tab", 1], Tab: ["nextSection", e.shiftKey ? -1 : 1],
+        ArrowLeft: e.shiftKey ? ["jumpSection", -1] : ["tab", -1], ArrowRight: e.shiftKey ? ["jumpSection", 1] : ["tab", 1],
+        Tab: ["nextSection", e.shiftKey ? -1 : 1],
         Escape: st.site && st.sel === null ? ["siteBack"] : ["close"], "?": ["keysHelp"],
         Enter: later ? ["laterOpen"] : null, Backspace: later ? ["laterDoneKey"] : null,
         " ": ["page", e.shiftKey ? -1 : 1], c: ["commentsKey"], f: ["fullKey"], r: ["replyKey"], m: ["remindKey"],
