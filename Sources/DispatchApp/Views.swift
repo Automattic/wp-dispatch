@@ -39,7 +39,13 @@ struct ListPane: View {
     @EnvironmentObject var reader: ReaderStore
     @EnvironmentObject var c: PanelController
 
-    private var loading: Bool { c.section == .notifications ? store.isLoading : reader.isLoading }
+    private var loading: Bool {
+        switch c.section {
+        case .notifications: store.isLoading
+        case .reader: reader.isLoading
+        case .later: false
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,6 +57,9 @@ struct ListPane: View {
                 .driftTag("tab.notifications")
                 SectionTab("Reader", on: c.section == .reader) { c.switchSection(.reader) }
                     .driftTag("tab.reader")
+                    .padding(.leading, 10)
+                LaterTab()
+                    .driftTag("tab.later")
                     .padding(.leading, 10)
                 Spacer()
                 if loading { ProgressView().controlSize(.small).padding(.trailing, 2) }
@@ -73,7 +82,11 @@ struct ListPane: View {
 
             // Row 2: filters for the current section.
             Group {
-                if c.section == .notifications { NotificationFilters() } else { ReaderFilters() }
+                switch c.section {
+                case .notifications: NotificationFilters()
+                case .reader: ReaderFilters()
+                case .later: LaterFilters()
+                }
             }
             .padding(.horizontal, 12)
             .frame(height: 36)
@@ -81,7 +94,11 @@ struct ListPane: View {
 
             Divider().opacity(0.6)
 
-            if c.section == .notifications { NotificationList() } else { PostList() }
+            switch c.section {
+            case .notifications: NotificationList()
+            case .reader: PostList()
+            case .later: LaterList()
+            }
         }
     }
 }
@@ -91,7 +108,6 @@ struct ListPane: View {
 struct MoreMenu: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var c: PanelController
-    @ObservedObject private var reminders = Reminders.shared
     @State private var hovering = false
 
     var body: some View {
@@ -106,13 +122,6 @@ struct MoreMenu: View {
             Menu("Notify Me About") {
                 ForEach(Alerts.Kind.allCases, id: \.self) { kind in
                     Toggle(kind.title, isOn: Binding(get: { Alerts.shared.isOn(kind) }, set: { Alerts.shared.set(kind, $0) }))
-                }
-            }
-            if !reminders.all.isEmpty {
-                Menu("Reminders") {
-                    ForEach(reminders.all) { r in
-                        Button("\(r.title) · \(Reminders.describe(r.due))") { c.open(r) }
-                    }
                 }
             }
             Divider()
@@ -136,6 +145,120 @@ struct MoreMenu: View {
         .fixedSize()
         .help("More")
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
+    }
+}
+
+// MARK: - Later
+
+/// The Later tab. Its badge counts reminders that are due.
+struct LaterTab: View {
+    @EnvironmentObject var c: PanelController
+    @ObservedObject private var reminders = Reminders.shared
+
+    var body: some View {
+        // Due ones re-count each minute.
+        TimelineView(.everyMinute) { context in
+            SectionTab("Later", badge: reminders.all.filter { $0.due <= context.date }.count, on: c.section == .later) {
+                c.switchSection(.later)
+            }
+        }
+    }
+}
+
+struct LaterFilters: View {
+    @ObservedObject private var reminders = Reminders.shared
+
+    var body: some View {
+        HStack {
+            Text(reminders.all.isEmpty ? "No reminders" : reminders.all.count == 1 ? "1 reminder, soonest first" : "\(reminders.all.count) reminders, soonest first")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+            Spacer()
+        }
+    }
+}
+
+/// Every reminder, notifications and posts together, soonest first. Clicking opens the item where
+/// it lives; it stays here until you mark it done.
+struct LaterList: View {
+    @EnvironmentObject var c: PanelController
+    @ObservedObject private var reminders = Reminders.shared
+    @Namespace private var selection
+
+    var body: some View {
+        if reminders.all.isEmpty {
+            EmptyState(symbol: "alarm", title: "Nothing for later",
+                       detail: "Use the alarm in the reader, or right-click any notification or post, to be reminded about it.")
+        } else {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ListTop()
+                    LazyVStack(spacing: 2) {
+                        ForEach(Array(reminders.all.enumerated()), id: \.element.id) { i, r in
+                            LaterRow(reminder: r, selection: selection).driftScope("row.\(i)")
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.top, 6)
+                    .padding(.bottom, c.mode == .attached ? 18 : 6)
+                }
+            }
+        }
+    }
+}
+
+struct LaterRow: View {
+    @EnvironmentObject var c: PanelController
+    @EnvironmentObject var reader: ReaderStore
+    let reminder: Reminder
+    let selection: Namespace.ID
+
+    var body: some View {
+        let note = reminder.noteID.flatMap { id in c.store.notes.first { $0.id == id } }
+        SelectableRow(selected: false, selection: selection, action: { c.open(reminder, clear: false) }) {
+            HStack(alignment: .top, spacing: 11) {
+                Group {
+                    if let note {
+                        Avatar(url: note.icon, kind: note.kind)
+                    } else if let post = reminder.post {
+                        SiteIcon(url: reader.icon(for: post), name: post.site_name ?? reader.siteName(post.site_ID), size: 34)
+                    } else {
+                        Image(systemName: "alarm").font(.system(size: 15)).foregroundStyle(.secondary)
+                            .frame(width: 34, height: 34).background(Circle().fill(Color.primary.opacity(0.06)))
+                    }
+                }
+                .driftTag("icon")
+
+                VStack(alignment: .leading, spacing: 2) {
+                    TimelineView(.everyMinute) { context in
+                        let due = reminder.due <= context.date
+                        HStack(spacing: 4) {
+                            Image(systemName: "alarm.fill").font(.system(size: 9.5))
+                            Text(due ? "Due · \(Reminders.describe(reminder.due))" : Reminders.describe(reminder.due))
+                        }
+                        .font(.system(size: 11, weight: due ? .semibold : .medium))
+                        .foregroundStyle(due ? Color.accentColor : .secondary)
+                    }
+                    .driftTag("when")
+                    Text(reminder.title).font(.system(size: 13, weight: .semibold)).lineLimit(2).driftTag("title")
+                    if let subtitle = reminder.subtitle {
+                        Text(subtitle.plainText).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2).driftTag("excerpt")
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+
+                IconButton("checkmark.circle", help: "Done") { Reminders.shared.cancel(reminder.id) }
+                    .driftTag("done")
+            }
+        }
+        .contextMenu {
+            Button("Open") { c.open(reminder, clear: false) }
+            RemindItems(id: reminder.id) { Reminders.shared.snooze(reminder.id, until: $0) }
+            Divider()
+            Button("Done") { Reminders.shared.cancel(reminder.id) }
+        }
     }
 }
 

@@ -22,7 +22,7 @@ enum Demo {
     }()
 
     /// The website's scenes (`SCENES` in site/sim.js). Keep the two lists in step.
-    static let scenes = ["notifications", "note-open", "comments-open", "comments-full", "reply-open", "reader", "reader-post", "xposts"]
+    static let scenes = ["notifications", "note-open", "comments-open", "comments-full", "reply-open", "reader", "reader-post", "xposts", "later"]
 }
 
 // MARK: - Made-up WordPress.com
@@ -360,11 +360,24 @@ enum DemoRender {
     /// Mirrors `SCENES` in site/sim.js.
     private static func stage(_ scene: String, _ c: PanelController) async {
         c.resetForDemo()
+        Reminders.shared.all.map(\.id).forEach(Reminders.shared.cancel)
         await c.store.refresh() // fresh read/unread state
         let notes = c.store.notes
         switch scene {
         case "note-open": if let n = notes.first(where: { $0.id == 2 }) { c.select(n) }
         case "reply-open": if let n = notes.first(where: { $0.id == 4 }) { c.select(n) }
+        case "later":
+            // A notification for tomorrow morning and a post in three hours, as the site's scene has.
+            let when = Reminders.choices()
+            if let n = notes.first(where: { $0.id == 2 }), let t = when.first(where: { $0.title == "Tomorrow Morning" }) {
+                Reminders.shared.remind(n, at: t.due)
+            }
+            c.reader.show(.blogs)
+            await c.reader.refresh()
+            if let p = c.reader.posts.first(where: { $0.title == "The case for software that waits" }) {
+                Reminders.shared.remind(p, at: when[1].due)
+            }
+            c.switchSection(.later)
         case "comments-open", "comments-full":
             if let n = notes.first(where: { $0.id == 1 }) { c.select(n) }
             c.commentsOpen = true

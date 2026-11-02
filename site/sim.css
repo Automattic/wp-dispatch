@@ -308,6 +308,13 @@
 .sim-menu.show, .sim-card.show { opacity: 1; transform: none; pointer-events: auto; }
 .sim-menu { top: 72px; right: 50px; width: 200px; padding: 5px; font-size: 12.5px; transform-origin: top right; }
 .sim-menu.remind { width: 248px; transform-origin: top left; }
+.sim-latercount { padding-left: 4px; color: var(--s-muted); font-size: 12px; font-weight: 500; }
+.sim-later .when { display: flex; color: var(--s-muted); font-size: 11px; font-weight: 500; line-height: 14px; }
+.sim-later .when span { display: inline-flex; align-items: center; gap: 4px; }
+.sim-later .when svg { width: 10px; height: 10px; }
+.sim-later .when.due { color: var(--s-accent); font-weight: 600; }
+.sim-later .title { margin-top: 2px; }
+.sim-later .sim-icon { flex: none; align-self: flex-start; }
 .sim-clock { display: inline-flex; color: var(--s-accent); margin-right: 4px; align-self: center; }
 .sim-clock svg { width: 10px; height: 10px; }
 /* A Mac notification banner, top right of the desk. */

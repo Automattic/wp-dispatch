@@ -14,7 +14,8 @@ final class Panel: NSPanel {
 @MainActor
 final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     enum Mode { case attached, detached }
-    enum Section: String { case notifications, reader }
+    /// Notifications, the Reader, and Later: every reminder, whichever of the two it points at.
+    enum Section: String { case notifications, reader, later }
 
     @Published private(set) var mode: Mode = .attached
     @Published private(set) var showDetail = false
@@ -82,6 +83,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             guard let p = selectedPost else { return nil }
             if let origin = p.xpostOrigin { return origin }
             return p.isExternal ? nil : (p.site_ID, p.postID)
+        case .later: return nil // Later opens items in their own section
         }
     }
     private var hasSelection: Bool { selectedID != nil || selectedPostID != nil }
@@ -185,9 +187,9 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     /// A reminder's item: its notification if it's still in the list, its post, or its page in the browser.
-    /// Opening it is acting on it, so the reminder goes.
-    func open(_ r: Reminder) {
-        Reminders.shared.cancel(r.id)
+    /// From its banner, opening it is acting on it, so the reminder goes; from Later it stays until Done.
+    func open(_ r: Reminder, clear: Bool = true) {
+        if clear { Reminders.shared.cancel(r.id) }
         if let id = r.noteID, let note = store.notes.first(where: { $0.id == id }) { return open(note) }
         if let post = r.post {
             mode == .detached ? reopen() : (panel.isVisible && panel.alphaValue > 0 ? () : showPanel())
@@ -388,6 +390,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             if let i = list.firstIndex(where: { $0.id == selectedPostID }), i >= list.count - 3 {
                 Task { await reader.loadMore() }
             }
+        case .later: break
         }
     }
 
@@ -399,6 +402,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         case .reader:
             let list = reader.posts
             return list.firstIndex { $0.id == selectedPostID }.map { ($0, list.count) }
+        case .later: return nil
         }
     }
 
@@ -424,6 +428,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         switch section {
         case .notifications: await store.refresh()
         case .reader: await reader.refresh()
+        case .later: break // reminders are local
         }
     }
 

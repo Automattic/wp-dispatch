@@ -84,6 +84,7 @@
     };
     const items = () => {
       if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || (n.unread && !st.read.has(n.id)));
+      if (st.section === "later") return laterKeys();
       if (st.site) return Object.keys(POSTS).filter((k) => POSTS[k].site === st.site && !POSTS[k].xpost);
       if (st.feed === "saved") return [...st.saved].reverse(); // newest save first, like WordPress.com
       return FEEDS[st.feed];
@@ -131,7 +132,8 @@
     const cursor = $(".sim-cursor"), keyHint = $(".sim-key"), menu = $(".sim-menu"), card = $(".sim-card");
 
     // A clock beside a row's time while it has a reminder.
-    const clock = (key) => (st.reminders[key] ? `<span class="sim-clock" title="Reminder: ${st.reminders[key]}">${I.alarmFill}</span>` : "");
+    const clock = (key) => (st.reminders[key] ? `<span class="sim-clock" title="Reminder: ${st.reminders[key].label}">${I.alarmFill}</span>` : "");
+    const laterKeys = () => Object.keys(st.reminders).sort((a, b) => st.reminders[a].due - st.reminders[b].due); // soonest first
 
     function renderHead() {
       const unread = unreadCount();
@@ -139,6 +141,8 @@
       $(".sim-head").innerHTML = `
         <button class="sim-tab ${st.section === "notifications" ? "on" : ""}" data-a="section" data-v="notifications"${dt("tab.notifications")}>Notifications${unread ? `<span class="sim-badge"${dt("badge.notifications")}>${unread}</span>` : ""}</button>
         <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
+        ${(() => { const due = Object.values(st.reminders).filter((x) => x.due <= new Date()).length;
+          return `<button class="sim-tab ${st.section === "later" ? "on" : ""}" data-a="section" data-v="later"${dt("tab.later")}>Later${due ? `<span class="sim-badge">${due}</span>` : ""}</button>`; })()}
         <span class="spacer"></span>
         <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh"${dt("btn.refresh")}>${I.refresh}</button>
         ${st.detached
@@ -170,7 +174,7 @@
       if (!st.menu) return;
       if (st.menu === "remind") {
         const s = selected(), set = s && st.reminders[keyOf(s.item)];
-        menu.innerHTML = (set ? `<div class="dim">Reminding you ${set}</div><hr>` : "")
+        menu.innerHTML = (set ? `<div class="dim">Reminding you ${set.label}</div><hr>` : "")
           + remindChoices().map(([title, when], i) => `<button data-a="remindAt" data-v="${i}">${title} — ${describeWhen(when)}</button>`).join("")
           + (set ? `<hr><button data-a="remindCancel">Cancel Reminder</button>` : "");
         const b = detail.querySelector('[data-a="remindMenu"]'), base = sim.getBoundingClientRect(), r = b?.getBoundingClientRect();
@@ -189,6 +193,12 @@
     let thumb = null;
     function renderFilters() {
       const box = $(".sim-filters");
+      if (st.section === "later") {
+        const n = Object.keys(st.reminders).length;
+        box.innerHTML = `<span class="sim-latercount">${n === 0 ? "No reminders" : n === 1 ? "1 reminder, soonest first" : `${n} reminders, soonest first`}</span>`;
+        thumb = null;
+        return;
+      }
       if (st.section === "reader" && st.site) {
         box.innerHTML = `<div class="sim-sitebar"><button class="sim-back" data-a="siteBack" title="Back">${I.back}</button>
           ${siteIcon(st.site, "tiny")}<b>${esc(S[st.site].name)}</b></div>`;
@@ -229,6 +239,24 @@
         </div>
       </div>`;
     }
+    // A Later row, like LaterRow: the item's picture, when it's due, what it is, and Done.
+    function laterRow(key, i) {
+      const r = (name) => dt(`row.${i}.${name}`), rem = st.reminders[key];
+      const n = NOTES.find((x) => x.id === key), p = n ? POSTS[n.post] : POSTS[key];
+      const due = rem.due <= new Date();
+      const pic = n ? `<div class="sim-avwrap">${av(n.who, "sim-av big", true, r("icon"))}<span class="sim-kind" style="background:${KIND[n.kind]}"${r("kind")}>${I.kind[n.kind]}</span></div>`
+        : siteIcon(p.site, "", r("icon"));
+      const title = n ? `${P[n.who][0]} ${n.action}` : p.title, sub = n ? (p ? p.title : S[n.site].name) : S[p.site].name;
+      return `<div class="sim-row sim-later" data-a="openLater" data-v="${key}"${r("box")}>
+        ${pic}
+        <div class="main">
+          <div class="when ${due ? "due" : ""}"><span${r("when")}>${I.alarmFill}${due ? "Due · " : ""}${rem.label}</span></div>
+          <div class="title"><span${r("title")}>${esc(title)}</span></div>
+          <div class="ex"><span${r("excerpt")}>${esc(sub)}</span></div>
+        </div>
+        <button class="sim-icon" data-a="laterDone" data-v="${key}" title="Done"${r("done")}>${I.check}</button>
+      </div>`;
+    }
     function postRow(k, i) {
       const r = (name) => dt(`row.${i}.${name}`);
       const p = POSTS[k], on = st.sel === k ? "on" : "";
@@ -251,8 +279,9 @@
     function renderRows(swap) {
       const list = items();
       const html = list.length
-        ? list.map((it, i) => (st.section === "notifications" ? noteRow(it, i) : postRow(it, i))).join("")
-        : `<div class="sim-placeholder" style="height:300px">${st.feed === "saved" ? "Nothing saved yet.<br>Press s on a post to save it." : "You're all caught up."}</div>`;
+        ? list.map((it, i) => (st.section === "notifications" ? noteRow(it, i) : st.section === "later" ? laterRow(it, i) : postRow(it, i))).join("")
+        : `<div class="sim-placeholder" style="height:300px">${st.section === "later" ? "Nothing for later.<br>Use the alarm in the reader to be reminded about something."
+          : st.feed === "saved" ? "Nothing saved yet.<br>Press s on a post to save it." : "You're all caught up."}</div>`;
       if (!swap) { rows.innerHTML = html; return; }
       rows.classList.add("swap");
       setTimeout(() => { rows.innerHTML = html; rows.classList.remove("swap"); }, 140);
@@ -368,7 +397,7 @@
         <button class="sim-icon" data-a="close" title="Close (esc)"${dt("detail.close")}>${I.x}</button>
         ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)"${dt("detail.like")}>${star(p)}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
         <button class="sim-icon ${st.saved.has(s.item) ? "on" : ""}" data-a="save" title="Save (s)"${dt("detail.save")}>${st.saved.has(s.item) ? I.markFill : I.mark}</button>` : ""}
-        ${(() => { const r = st.reminders[keyOf(s.item)]; return `<button class="sim-icon ${r ? "on" : ""}" data-a="remindMenu" title="${r ? `Reminder: ${r}` : "Remind me about this later"}"${dt("detail.remind")}>${r ? I.alarmFill : I.alarm}</button>`; })()}
+        ${(() => { const r = st.reminders[keyOf(s.item)]; return `<button class="sim-icon ${r ? "on" : ""}" data-a="remindMenu" title="${r ? `Reminder: ${r.label}` : "Remind me about this later"}"${dt("detail.remind")}>${r ? I.alarmFill : I.alarm}</button>`; })()}
         <button class="sim-icon" data-a="toast" data-v="Opens in your browser" title="Open in browser (o)"${dt("detail.open")}>${I.safari}</button>
         <span class="spacer"></span>
         <span class="sim-pos"${dt("detail.pos")}>${s.index + 1} of ${s.count}</span>
@@ -447,7 +476,7 @@
         render();
       },
       move(d) {
-        const list = items(); if (!list.length) return;
+        const list = items(); if (!list.length || st.section === "later") return;
         const i = list.findIndex((it) => keyOf(it) === st.sel);
         const next = Math.max(0, Math.min(list.length - 1, i < 0 ? 0 : i + Number(d)));
         A.select(keyOf(list[next]));
@@ -510,11 +539,19 @@
         m.classList.remove("on"); m.getBoundingClientRect(); m.classList.add("on");
       },
       menu() { st.menu = !st.menu; renderHead(); renderMenu(); },
+      // Later: open the item where it lives (the reminder stays until Done), or mark it done.
+      openLater(key) {
+        const n = NOTES.find((x) => x.id === key);
+        Object.assign(st, { section: n ? "notifications" : "reader", site: null, sel: null, commentsOpen: false });
+        if (!n) st.feed = FEEDS.p2s.includes(key) ? "p2s" : "blogs";
+        A.select(key);
+      },
+      laterDone(key) { delete st.reminders[key]; renderHead(); renderFilters(); renderRows(); },
       remindMenu() { st.menu = st.menu === "remind" ? false : "remind"; renderMenu(); },
       remindAt(i) {
         const s = selected(); if (!s) return;
         const [, when] = remindChoices()[Number(i)];
-        st.reminders[keyOf(s.item)] = describeWhen(when);
+        st.reminders[keyOf(s.item)] = { due: when, label: describeWhen(when) };
         st.menu = false; renderMenu(); renderRows(); renderDetail();
         hint(`Reminding you ${describeWhen(when)}`, 1800);
       },
@@ -677,6 +714,11 @@
       xposts() { Object.assign(st, { section: "reader", feed: "p2s", sel: "train" }); },
       // The rest are for the drift check (tools/drift), which renders the app in the same states.
       "note-open"() { st.sel = "n2"; st.read.add("n2"); },
+      later() {
+        const when = remindChoices(), tomorrow = when.find(([t]) => t === "Tomorrow Morning")[1];
+        st.reminders = { n2: { due: tomorrow, label: describeWhen(tomorrow) }, waits: { due: when[1][1], label: describeWhen(when[1][1]) } };
+        st.section = "later";
+      },
       "comments-full"() { Object.assign(st, { sel: "n1", commentsOpen: true, commentsExpanded: true }); st.read.add("n1"); },
       "reply-open"() { st.sel = "n4"; st.read.add("n4"); },
       "comments-open"() { Object.assign(st, { sel: "n1", commentsOpen: true }); st.read.add("n1"); },
