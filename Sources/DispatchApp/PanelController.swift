@@ -177,6 +177,27 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
+    /// From a banner or a reminder: bring Dispatch up with this notification open.
+    func open(_ note: Note) {
+        mode == .detached ? reopen() : (panel.isVisible && panel.alphaValue > 0 ? () : showPanel())
+        switchSection(.notifications)
+        select(note)
+    }
+
+    /// A reminder's item: its notification if it's still in the list, its post, or its page in the browser.
+    /// Opening it is acting on it, so the reminder goes.
+    func open(_ r: Reminder) {
+        Reminders.shared.cancel(r.id)
+        if let id = r.noteID, let note = store.notes.first(where: { $0.id == id }) { return open(note) }
+        if let post = r.post {
+            mode == .detached ? reopen() : (panel.isVisible && panel.alphaValue > 0 ? () : showPanel())
+            switchSection(.reader)
+            select(post)
+            return
+        }
+        if let s = r.url, let url = URL(string: s) { NSWorkspace.shared.open(url) }
+    }
+
     /// At launch: open as a window if that's the setting.
     func applyLaunchMode() {
         if opensAsWindow && store.isConnected { detach() } else { updateDockIcon() }

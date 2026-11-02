@@ -148,6 +148,7 @@ final class Store: ObservableObject {
             struct Response: Decodable { let notes: [Note] }
             let data = try await request("notifications/?number=40&fields=id,type,read,timestamp,icon,url,subject,body,meta")
             notes = try JSONDecoder().decode(Response.self, from: data).notes
+            Alerts.shared.announce(notes)
             error = nil
             if mentionTerms.isEmpty { await loadMe() }
         } catch {

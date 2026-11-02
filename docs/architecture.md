@@ -91,6 +91,13 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 
 Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed-in session, and the reader's web view has no WordPress.com cookies. `MediaLoader.route` rewrites `src`/`srcset` URLs on `*.wordpress.com` to `wpn-media://…`, and `MediaLoader` (a `WKURLSchemeHandler`) fetches them over https with the app's token. The token is only ever sent to `*.wordpress.com`.
 
+## Mac notifications and reminders: `Alerts.swift`, `Reminders.swift`
+
+- **Banners.** After each notifications refresh, `Alerts.announce` posts a Mac notification for each unread notification newer than the last one it saw (`alertedThrough` in UserDefaults), so a launch never replays the backlog; five or more become one summary. The kinds are settings (⋯ → Notify Me About): mentions and comments on, likes and follows off.
+- **Actions on the banner.** Comments and mentions get Reply (a text field; it posts a reply to the comment, or a comment on the post), Mark as Read and Remind Me in 1 Hour. Clicking a banner opens that notification (`PanelController.open(_:)`).
+- **Reminders.** Remind Me (the alarm in the reader toolbar, or right-click on a row) offers in 1 hour, in 3 hours, this evening, tomorrow morning and next week. A `Reminder` keeps what it takes to reopen the item (the note's ID, or the whole `ReaderPost`) in `reminders.json`, and schedules a local notification for its time, so it arrives even if Dispatch isn't running. Its banner has Remind Me in 1 Hour and Done; clicking it opens the item and clears the reminder. Rows with a reminder show a clock, and ⋯ → Reminders lists them.
+- `UNUserNotificationCenter` can't exist outside an app bundle, so `Alerts` creates it lazily and never in demo mode.
+
 ## Hovercards: `Hovercards.swift`
 
 - `.hovercard(edge:) { … }` on any view opens a card beside it after a ~0.5s hover (instantly when one is already open). The card lives in its own borderless, non-activating `NSPanel` that can't become key, so the list keeps keyboard focus and the card isn't clipped by the panel.

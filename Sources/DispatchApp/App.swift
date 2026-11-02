@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.controller = controller
         _ = Updates.shared // starts the daily background check
         NSApp.mainMenu = mainMenu()
+        Alerts.shared.start(controller)
         controller.applyLaunchMode()
         Screenshots.stage(controller)
     }

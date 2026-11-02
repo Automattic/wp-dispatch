@@ -91,6 +91,7 @@ struct ListPane: View {
 struct MoreMenu: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var c: PanelController
+    @ObservedObject private var reminders = Reminders.shared
     @State private var hovering = false
 
     var body: some View {
@@ -102,6 +103,18 @@ struct MoreMenu: View {
             Divider()
             Toggle("Show in Dock", isOn: $c.showInDock)
             Toggle("Open as a Window", isOn: $c.opensAsWindow)
+            Menu("Notify Me About") {
+                ForEach(Alerts.Kind.allCases, id: \.self) { kind in
+                    Toggle(kind.title, isOn: Binding(get: { Alerts.shared.isOn(kind) }, set: { Alerts.shared.set(kind, $0) }))
+                }
+            }
+            if !reminders.all.isEmpty {
+                Menu("Reminders") {
+                    ForEach(reminders.all) { r in
+                        Button("\(r.title) · \(Reminders.describe(r.due))") { c.open(r) }
+                    }
+                }
+            }
             Divider()
             Button("Check for Updates…") { Updates.shared.checkForUpdates() }
             Text("Dispatch \(Updates.shared.versionLabel)")
@@ -123,6 +136,73 @@ struct MoreMenu: View {
         .fixedSize()
         .help("More")
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
+    }
+}
+
+/// "Remind Me" in the reader's toolbar: pick a time, or see and cancel the one that's set.
+struct RemindMenu: View {
+    let id: String
+    let remind: (Date) -> Void
+    @ObservedObject private var reminders = Reminders.shared
+    @State private var hovering = false
+
+    var body: some View {
+        let set = reminders.reminder(id)
+        Menu {
+            if let set { Text("Reminding you \(Reminders.describe(set.due))") }
+            RemindItems(id: id, remind: remind, flat: true)
+        } label: {
+            Image(systemName: set == nil ? "alarm" : "alarm.fill")
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(set == nil ? Color.secondary : Color.accentColor)
+                .frame(width: 26, height: 26)
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(hovering ? 0.08 : 0)))
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(set.map { "Reminder: \(Reminders.describe($0.due))" } ?? "Remind me about this later")
+        .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
+        .driftTag("detail.remind")
+    }
+}
+
+/// The reminder times, as menu items: under a "Remind Me" submenu, or `flat` in a menu of their own.
+struct RemindItems: View {
+    let id: String
+    let remind: (Date) -> Void
+    var flat = false
+    @ObservedObject private var reminders = Reminders.shared
+
+    var body: some View {
+        if flat { items } else { Menu("Remind Me") { items } }
+    }
+
+    @ViewBuilder private var items: some View {
+        ForEach(Reminders.choices()) { choice in
+            Button("\(choice.title) — \(Reminders.describe(choice.due))") { remind(choice.due) }
+        }
+        if reminders.reminder(id) != nil {
+            Divider()
+            Button("Cancel Reminder") { reminders.cancel(id) }
+        }
+    }
+}
+
+/// A small clock beside a row's time while it has a reminder.
+struct ReminderClock: View {
+    let id: String
+    @ObservedObject private var reminders = Reminders.shared
+
+    var body: some View {
+        if let r = reminders.reminder(id) {
+            Image(systemName: "alarm.fill")
+                .font(.system(size: 9.5))
+                .foregroundStyle(Color.accentColor)
+                .help("Reminder: \(Reminders.describe(r.due))")
+        }
     }
 }
 
@@ -438,6 +518,7 @@ struct NoteRow: View {
                             .lineLimit(1)
                             .driftTag("who")
                         Spacer(minLength: 4)
+                        ReminderClock(id: Reminder.id(note: note))
                         Text(note.date.map(shortTime) ?? "")
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(note.isUnread ? Color.accentColor : .secondary)
@@ -459,6 +540,11 @@ struct NoteRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
             }
+        }
+        .contextMenu {
+            RemindItems(id: Reminder.id(note: note)) { Reminders.shared.remind(note, at: $0) }
+            Divider()
+            Button("Open in Browser") { c.store.openInBrowser(note) }
         }
     }
 }
@@ -489,6 +575,7 @@ struct PostRow: View {
                         Text(site.plainText).fontWeight(.semibold).foregroundStyle(.secondary).lineLimit(1)
                             .driftTag("who")
                         Spacer(minLength: 4)
+                        ReminderClock(id: Reminder.id(post: post))
                         Text(post.dateValue.map(shortTime) ?? "")
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
@@ -547,6 +634,7 @@ struct PostRow: View {
         }
         .contextMenu {
             Button(reader.isSaved(post) ? "Remove from Saved" : "Save Post") { reader.toggleSave(post) }
+            RemindItems(id: Reminder.id(post: post)) { Reminders.shared.remind(post, at: $0) }
             if reader.canLike(post) {
                 Button(reader.likeState(post)?.liked == true ? "Unlike Post" : "Like Post") {
                     Task { await reader.toggleLike(post) }
@@ -734,6 +822,11 @@ struct DetailPane: View {
                                help: reader.isSaved(post) ? "Remove from Saved (s)" : "Save post (s)",
                                tint: reader.isSaved(post) ? .accentColor : nil) { reader.toggleSave(post) }
                         .driftTag("detail.save")
+                }
+                if c.section == .reader, let post = c.selectedPost {
+                    RemindMenu(id: Reminder.id(post: post)) { Reminders.shared.remind(post, at: $0) }
+                } else if c.section == .notifications, let note = c.selectedNote {
+                    RemindMenu(id: Reminder.id(note: note)) { Reminders.shared.remind(note, at: $0) }
                 }
                 IconButton("safari", help: "Open in browser (o)") { c.openSelectedInBrowser() }
                     .driftTag("detail.open")

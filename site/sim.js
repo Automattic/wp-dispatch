@@ -10,7 +10,7 @@
  * Programmatic control lives on window.DispatchSims (one per stage; DispatchSim is the first):
  *   DispatchSim.play()               start (or restart) the tour
  *   DispatchSim.pause()
- *   DispatchSim.chapter("comments")  play one chapter: notifications, read, keys, reader, saved, cards, xposts, comments, window
+ *   DispatchSim.chapter("comments")  play one chapter: notifications, read, remind, keys, reader, saved, cards, xposts, comments, window
  *   DispatchSim.do.section("reader"), .feed("p2s"), .site("kettle"), .select("waits"), .move(1), .comments(), .likePost(), …
  */
 (() => {
@@ -32,6 +32,8 @@
     signal: `<svg viewBox="0 0 11 9" fill="currentColor" class="bars"><rect x="0" y="5.76" width="1.6" height="3.24" rx=".8"/><rect x="3" y="3.87" width="1.6" height="5.13" rx=".8"/><rect x="6" y="1.89" width="1.6" height="7.11" rx=".8"/><rect x="9" y="0" width="1.6" height="9" rx=".8"/></svg>`, // SignalBars in Views.swift
     expand: svg(`<path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/>`),
     collapse: svg(`<path d="M13.5 6.5h-4v-4M9.5 6.5l4.5-4.5M2.5 9.5h4v4M6.5 9.5 2 14"/>`),
+    alarm: svg(`<circle cx="8" cy="9" r="5.2"/><path d="M8 6.4V9l1.8 1.3M2.6 3.6l2-1.6M13.4 3.6l-2-1.6"/>`),
+    alarmFill: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="9" r="5.8"/><path d="M8 6.2V9l1.9 1.4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M2.6 3.6l2-1.6M13.4 3.6l-2-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     putBack: svg(`<rect x="1.5" y="1.5" width="13" height="13" rx="2.5"/><path d="M1.5 4.8h13M8 12V7.4M5.8 9.4 8 7.2l2.2 2.2"/>`),
     popout: svg(`<rect x="1.5" y="3.5" width="10" height="8" rx="1.5"/><path d="M4.5 1.5h8a2 2 0 0 1 2 2v6"/>`),
       more: `<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="13" cy="8" r="1.3"/></svg>`,
@@ -78,7 +80,7 @@
       open: true, section: "notifications", filter: "all", feed: "blogs",
       sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false,
       site: null, // the Reader showing one site's posts (from a hovercard, or a post's site name)
-      menu: false, saved: new Set(), read: new Set(),
+      menu: false, saved: new Set(), read: new Set(), reminders: {}, // reminders: item key → "Tomorrow at 9:00 AM"
     };
     const items = () => {
       if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || (n.unread && !st.read.has(n.id)));
@@ -117,6 +119,7 @@
         </div>
         <div class="sim-dock">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de", "#ff375f", "#8e8e93", "#3858e9", "#ffd60a"]
           .map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="app" src="${ICON}" alt=""></div>
+        <div class="sim-banner" data-a="openBanner"></div>
         <div class="sim-switcher">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de"].map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="on" src="${ICON}" alt=""><b>Dispatch</b></div>
         <div class="sim-menu"></div>
         <div class="sim-card"></div>
@@ -126,6 +129,9 @@
     const $ = (s) => root.querySelector(s);
     const sim = $(".sim"), panel = $(".sim-panel"), detail = $(".sim-detail"), rows = $(".sim-rows-inner");
     const cursor = $(".sim-cursor"), keyHint = $(".sim-key"), menu = $(".sim-menu"), card = $(".sim-card");
+
+    // A clock beside a row's time while it has a reminder.
+    const clock = (key) => (st.reminders[key] ? `<span class="sim-clock" title="Reminder: ${st.reminders[key]}">${I.alarmFill}</span>` : "");
 
     function renderHead() {
       const unread = unreadCount();
@@ -143,9 +149,35 @@
     }
 
     // The ⋯ menu, as in the app.
+    // Remind Me's times, as in Reminders.choices: soon, later today, tomorrow, next week.
+    function remindChoices(now = new Date()) {
+      const at = (h, days = 0) => { const d = new Date(now); d.setDate(d.getDate() + days); d.setHours(h, 0, 0, 0); return d; };
+      const list = [["In 1 Hour", new Date(+now + 3600e3)], ["In 3 Hours", new Date(+now + 3 * 3600e3)]];
+      if (now.getHours() < 17) list.push(["This Evening", at(18)]);
+      list.push(["Tomorrow Morning", at(9, 1)]);
+      list.push(["Next Week", at(9, ((8 - now.getDay()) % 7) || 7)]);
+      return list;
+    }
+    function describeWhen(d) {
+      const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      const day = new Date(); day.setHours(0, 0, 0, 0);
+      const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - day) / 864e5);
+      return `${diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "short" })} at ${time}`;
+    }
     function renderMenu() {
-      menu.classList.toggle("show", st.menu);
+      menu.classList.toggle("show", !!st.menu);
+      menu.classList.toggle("remind", st.menu === "remind");
       if (!st.menu) return;
+      if (st.menu === "remind") {
+        const s = selected(), set = s && st.reminders[keyOf(s.item)];
+        menu.innerHTML = (set ? `<div class="dim">Reminding you ${set}</div><hr>` : "")
+          + remindChoices().map(([title, when], i) => `<button data-a="remindAt" data-v="${i}">${title} — ${describeWhen(when)}</button>`).join("")
+          + (set ? `<hr><button data-a="remindCancel">Cancel Reminder</button>` : "");
+        const b = detail.querySelector('[data-a="remindMenu"]'), base = sim.getBoundingClientRect(), r = b?.getBoundingClientRect();
+        if (r) { menu.style.left = (r.left - base.left) / st.scale - 4 + "px"; menu.style.top = (r.bottom - base.top) / st.scale + 4 + "px"; menu.style.right = "auto"; }
+        return;
+      }
+      menu.style.left = menu.style.top = menu.style.right = "";
       const item = (label, tip) => `<button data-a="menuItem" data-v="${tip}">${label}</button>`;
       const toggle = (key, label) => `<button class="check ${st[key] ? "on" : ""}" data-a="menuToggle" data-v="${key}">${label}</button>`;
       menu.innerHTML = item("Open on WordPress.com", "Opens WordPress.com in your browser") + "<hr>"
@@ -191,7 +223,7 @@
         <div class="sim-dot"${unread ? r("dot") : ""}></div>
         <div class="sim-avwrap">${av(n.who, "sim-av big", true, r("icon"))}<span class="sim-kind" style="background:${KIND[n.kind]}"${r("kind")}>${I.kind[n.kind]}</span></div>
         <div class="main">
-          <div class="top"><div class="who"><span${r("who")}><b>${P[n.who][0]}</b> <span>${esc(action)}</span></span></div><div class="time"${r("time")}>${n.ago}</div></div>
+          <div class="top"><div class="who"><span${r("who")}><b>${P[n.who][0]}</b> <span>${esc(action)}</span></span></div>${clock(n.id)}<div class="time"${r("time")}>${n.ago}</div></div>
           ${title ? `<div class="title"><span${r("title")}>${esc(title)}</span></div>` : ""}
           ${n.text ? `<div class="ex"><span${r("excerpt")}>${esc(n.text)}</span></div>` : ""}
         </div>
@@ -210,7 +242,7 @@
       return `<div class="sim-row ${on}" data-a="select" data-v="${k}"${r("box")}>
         ${siteIcon(p.site, "", r("icon"))}
         <div class="main">
-          <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div><div class="time"${r("time")}>${p.ago}</div></div>
+          <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div>${clock(k)}<div class="time"${r("time")}>${p.ago}</div></div>
           <div class="title"><span${r("title")}>${esc(p.title)}</span></div>
           <div class="ex"><span${r("excerpt")}>${esc(p.excerpt)}</span></div>
           <div class="foot"${r("foot")}><span>${P[p.author][0]}</span><span>${p.read}</span>${p.views ? `<span class="sim-likes" title="${p.views} views">${I.signal}${p.views}</span>` : ""}${p.likes ? `<span class="sim-likes ${p.liked ? "liked" : ""}">${p.liked ? I.starFill : I.star}${p.likes}</span>` : ""}${p.comments.length ? `<span class="sim-likes">${I.comment.replace("<svg", '<svg class="cm"')}${p.comments.length}</span>` : ""}${saved}</div>
@@ -336,6 +368,7 @@
         <button class="sim-icon" data-a="close" title="Close (esc)"${dt("detail.close")}>${I.x}</button>
         ${reader ? `<button class="sim-like ${p.liked ? "liked" : ""}" data-a="likePost" title="Like (l)"${dt("detail.like")}>${star(p)}${p.likes ? `<span>${p.likes}</span>` : ""}</button>
         <button class="sim-icon ${st.saved.has(s.item) ? "on" : ""}" data-a="save" title="Save (s)"${dt("detail.save")}>${st.saved.has(s.item) ? I.markFill : I.mark}</button>` : ""}
+        ${(() => { const r = st.reminders[keyOf(s.item)]; return `<button class="sim-icon ${r ? "on" : ""}" data-a="remindMenu" title="${r ? `Reminder: ${r}` : "Remind me about this later"}"${dt("detail.remind")}>${r ? I.alarmFill : I.alarm}</button>`; })()}
         <button class="sim-icon" data-a="toast" data-v="Opens in your browser" title="Open in browser (o)"${dt("detail.open")}>${I.safari}</button>
         <span class="spacer"></span>
         <span class="sim-pos"${dt("detail.pos")}>${s.index + 1} of ${s.count}</span>
@@ -477,6 +510,29 @@
         m.classList.remove("on"); m.getBoundingClientRect(); m.classList.add("on");
       },
       menu() { st.menu = !st.menu; renderHead(); renderMenu(); },
+      remindMenu() { st.menu = st.menu === "remind" ? false : "remind"; renderMenu(); },
+      remindAt(i) {
+        const s = selected(); if (!s) return;
+        const [, when] = remindChoices()[Number(i)];
+        st.reminders[keyOf(s.item)] = describeWhen(when);
+        st.menu = false; renderMenu(); renderRows(); renderDetail();
+        hint(`Reminding you ${describeWhen(when)}`, 1800);
+      },
+      remindCancel() {
+        const s = selected(); if (s) delete st.reminders[keyOf(s.item)];
+        st.menu = false; renderMenu(); renderRows(); renderDetail();
+      },
+      // A reminder coming due, as a Mac notification banner in the corner of the desk.
+      banner(key) {
+        const b = sim.querySelector(".sim-banner");
+        if (!key) { b.classList.remove("show"); return; }
+        const n = NOTES.find((x) => x.id === key), p = n ? POSTS[n.post] : POSTS[key];
+        b.dataset.v = key;
+        b.innerHTML = `<img src="${ICON}" alt=""><div><b>${n ? `${P[n.who][0]} ${n.action}` : esc(p.title)}</b>
+          <span>${esc(p ? p.title : S[n.site].name)}</span><small>You asked to be reminded about this.</small></div><em>now</em>`;
+        b.classList.add("show");
+      },
+      openBanner(v) { A.banner(null); delete st.reminders[v]; if (st.sel !== v) A.select(v); else { renderRows(); renderDetail(); } },
       menuItem(v) { st.menu = false; renderHead(); renderMenu(); hint(v, 1800); },
       menuToggle(v) {
         st[v] = !st[v]; st.menu = false; renderHead(); renderMenu();
@@ -490,7 +546,7 @@
     sim.addEventListener("click", (e) => {
       const el = e.target.closest("[data-a]");
       if (e.isTrusted) stopTour();
-      if (st.menu && !["menu", "menuItem"].includes(el?.dataset.a)) A.menu();
+      if (st.menu && !["menu", "menuItem", "menuToggle", "remindMenu", "remindAt", "remindCancel"].includes(el?.dataset.a)) A.menu();
       if (!el) return;
       A[el.dataset.a](el.dataset.v);
     });
@@ -676,7 +732,7 @@
     }
     function reset() {
       Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false, detached: false });
-      hideCard(); A.switcher(false);
+      hideCard(); A.switcher(false); A.banner(null); st.reminders = {};
       st.read.clear(); st.saved.clear();
       Object.values(POSTS).forEach((p) => { if (p.liked) { p.liked = false; p.likes--; } });
       POSTS.inbox.comments = POSTS.inbox.comments.filter((x) => x.id < 1000);
@@ -723,6 +779,20 @@
         caption("Saved keeps it until you have a minute, here or on the web.");
         await point('.sim-pill[data-v="saved"]', t); await sleep(2400, t);
       },
+      async remind(t) {
+        caption("Read it now, deal with it later: Remind Me brings it back when you're ready.");
+        if (st.section !== "notifications") await point('.sim-tab[data-v="notifications"]', t);
+        await point(rowSel("n2"), t); await sleep(1400, t);
+        await point('[data-a="remindMenu"]', t); await sleep(900, t);
+        await point('[data-a="remindAt"][data-v="' + (remindChoices().length - 2) + '"]', t); await sleep(1300, t);
+        caption("The row keeps a clock until then.");
+        await point(".sim-clock", t, { click: false }); await sleep(1600, t);
+        caption("When it's time, a notification brings it back. Click it to pick up where you left off.");
+        await key("Escape", t);
+        hint("Tomorrow, 9:00 AM", 1400); await sleep(900, t);
+        A.banner("n2"); await sleep(1800, t);
+        await point(".sim-banner", t); await sleep(1800, t);
+      },
       async window(t) {
         caption("Drag Dispatch off the menu bar and it becomes a window.");
         await point(".sim-head .spacer", t, { click: false });
@@ -766,7 +836,7 @@
         await point('[data-a="send"]', t); await sleep(2200, t);
       },
     };
-    const ORDER = ["notifications", "read", "keys", "reader", "saved", "cards", "xposts", "comments", "window"];
+    const ORDER = ["notifications", "read", "remind", "keys", "reader", "saved", "cards", "xposts", "comments", "window"];
 
     async function runTour(names, loop) {
       const t = ++token;
