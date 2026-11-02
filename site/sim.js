@@ -80,7 +80,7 @@
       open: true, section: "notifications", filter: "all", feed: "blogs",
       sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false,
       site: null, // the Reader showing one site's posts (from a hovercard, or a post's site name)
-      menu: false, saved: new Set(), read: new Set(), unreadAgain: new Set(), reminders: {}, // reminders: item key → "Tomorrow at 9:00 AM"
+      menu: false, saved: new Set(), read: new Set(), unreadAgain: new Set(), seenPosts: new Set(), unseenAgain: new Set(), reminders: {}, // reminders: item key → "Tomorrow at 9:00 AM"
     };
     const items = () => {
       if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || isUnread(n));
@@ -102,6 +102,8 @@
       `<div class="${cls}" style="--c:${P[who][1]}"${card ? ` data-card="person:${who}"` : ""}${attrs}>${initials(who)}</div>`;
     const siteIcon = (site, extra = "", attrs = "") => `<div class="sim-site ${extra}" style="--c:${S[site].color}" data-card="site:${site}"${attrs}>${S[site].name.replace("+", "")[0].toUpperCase()}</div>`;
     const marked = (text) => esc(text).replace(/@robin|Robin/g, (m) => `<mark>${m}</mark>`);
+    // Reader posts you haven't read, per WordPress.com (`unseen` in the data), less what you've opened.
+    const seen = (k) => (st.unseenAgain.has(k) ? false : st.seenPosts.has(k) || !POSTS[k].unseen);
     const isUnread = (n) => (n.unread && !st.read.has(n.id)) || st.unreadAgain.has(n.id);
     const unreadCount = () => NOTES.filter(isUnread).length;
     const KIND = { comment: "#0a84ff", mention: "#ff9500", like: "#f5b000", follow: "#34c759" };
@@ -122,7 +124,7 @@
           <b>Keyboard Shortcuts</b>
           <div class="cols">${[
             ["Lists", [["← →", "Previous or next list, across sections"], ["⇧← ⇧→", "Previous or next section"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
-            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["u", "Mark a notification unread"], ["⌘+ ⌘−", "Bigger or smaller text (⌘0 resets)"], ["click", "An image, to open it in Quick Look"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
+            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["u", "Mark unread (or read)"], ["⌘+ ⌘−", "Bigger or smaller text (⌘0 resets)"], ["click", "An image, to open it in Quick Look"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
             ["Later", [["↑ ↓", "Highlight a reminder"], ["↩", "Open it"], ["⌫", "Done"]]],
           ].map(([title, rows]) => `<div><i>${title}</i>${rows.map(([keys, what]) => `<p><span>${keys.split(" ").map((x) => `<kbd>${x}</kbd>`).join("")}</span>${what}</p>`).join("")}</div>`).join("")}</div>
         </div></div>
@@ -275,12 +277,15 @@
       const p = POSTS[k], on = st.sel === k ? "on" : "";
       const saved = st.saved.has(k) && st.feed !== "saved" ? `<span class="sim-saved">${I.markFill}</span>` : ""; // everything in Saved is saved
       if (p.xpost) {
-        return `<div class="sim-row compact sim-xrow ${on}" data-a="select" data-v="${k}"${r("box")}>
+        return `<div class="sim-row compact sim-xrow ${on} ${seen(k) ? "" : "unread"}" data-a="select" data-v="${k}"${r("box")}>
+          <div class="sim-dot"${seen(k) ? "" : r("dot")}></div>
           <div class="sim-avwrap x">${siteIcon(p.xpost.from, "small", r("icon"))}<div class="sim-xbadge"${r("kind")}>${I.xpost}</div></div>
           <div class="main"><div class="top"${r("line")}><div class="who"><b>${S[p.xpost.from].name}</b> → ${S[p.xpost.to].name} ${saved}</div><div class="time"${r("time")}>${p.ago}</div></div>
           <div class="title"><span${r("title")}>${esc(p.title)}</span></div></div></div>`;
       }
-      return `<div class="sim-row ${on}" data-a="select" data-v="${k}"${r("box")}>
+      const unseen = !seen(k);
+      return `<div class="sim-row ${on} ${unseen ? "unread" : ""}" data-a="select" data-v="${k}"${r("box")}>
+        <div class="sim-dot"${unseen ? r("dot") : ""}></div>
         ${siteIcon(p.site, "", r("icon"))}
         <div class="main">
           <div class="top"><div class="who site"><span${r("who")}>${S[p.site].name}</span></div>${clock(k)}<div class="time"${r("time")}>${p.ago}</div></div>
@@ -502,7 +507,12 @@
       },
       // u: a notification back to unread, or read again.
       unreadKey() {
-        const s = selected(); if (st.section !== "notifications" || !s) return;
+        const s = selected();
+        if (st.section === "reader" && s) {
+          if (seen(s.item)) { st.seenPosts.delete(s.item); st.unseenAgain.add(s.item); } else { st.seenPosts.add(s.item); st.unseenAgain.delete(s.item); }
+          renderRows(); hint(seen(s.item) ? "Marked as read" : "Marked as unread"); return;
+        }
+        if (st.section !== "notifications" || !s) return;
         const id = s.item.id;
         if (isUnread(s.item)) { st.read.add(id); st.unreadAgain.delete(id); } else { st.read.delete(id); st.unreadAgain.add(id); }
         renderHead(); renderFilters(); renderRows();
@@ -525,6 +535,7 @@
       select(v) {
         st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = ""; st.postOpen = false;
         if (st.section === "notifications") { st.read.add(v); st.unreadAgain.delete(v); }
+      else { st.seenPosts.add(v); st.unseenAgain.delete(v); }
         render();
       },
       move(d) {
@@ -789,7 +800,7 @@
       "reply-open"() { st.sel = "n4"; st.read.add("n4"); },
       "comments-open"() { Object.assign(st, { sel: "n1", commentsOpen: true }); st.read.add("n1"); },
       reader() { st.section = "reader"; },
-      "reader-post"() { Object.assign(st, { section: "reader", sel: "waits" }); },
+      "reader-post"() { Object.assign(st, { section: "reader", sel: "waits" }); st.seenPosts.add("waits"); },
     };
     let token = 0, playing = false, visible = false, handedOver = false;
     const Cancel = Symbol("cancel");
@@ -842,7 +853,7 @@
       Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false, detached: false });
       hideCard(); A.switcher(false); A.banner(null); st.reminders = {}; st.laterHL = null;
       sim.querySelector(".sim-keys")?.classList.remove("show");
-      st.read.clear(); st.saved.clear(); st.unreadAgain.clear();
+      st.read.clear(); st.saved.clear(); st.unreadAgain.clear(); st.seenPosts.clear(); st.unseenAgain.clear();
       Object.values(POSTS).forEach((p) => { if (p.liked) { p.liked = false; p.likes--; } });
       POSTS.inbox.comments = POSTS.inbox.comments.filter((x) => x.id < 1000);
       POSTS.inbox.comments.forEach((x) => { if (x.liked) { x.liked = false; x.likes--; } });

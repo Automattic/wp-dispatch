@@ -43,6 +43,7 @@ final class DemoAPI {
     private struct Post: Decodable {
         let id: Int; let site: String; let title: String; let author: String; let ago: String; let read: String
         let excerpt: String; let body: [String]; let likes: Int; let comments: [Comment]; let xpost: XPost?; let views: String?
+        let unseen: Bool?
     }
     private struct NoteData: Decodable {
         let num: Int; let kind: String; let who: String; let action: String
@@ -157,6 +158,7 @@ final class DemoAPI {
             "discussion": ["comment_count": p.comments.count],
         ]
         if let v = p.views { out["views"] = v }
+        out["is_seen"] = !(p.unseen ?? false)
         // An x-post is a snippet on the destination P2 that points at the original.
         if let x = p.xpost, let to = d.sites[x.to], let from = d.sites[x.from] {
             out["ID"] = p.id + 10_000

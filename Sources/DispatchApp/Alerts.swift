@@ -110,6 +110,23 @@ final class Alerts: NSObject, UNUserNotificationCenterDelegate {
         center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
 
+    // MARK: Sign-in
+
+    /// WordPress.com sign-ins last about two weeks and can't renew themselves. Once one runs out
+    /// nothing updates, so say so instead of going quiet. Clicking it opens the panel's Reconnect.
+    func sessionExpired() {
+        guard !Demo.isOn else { return }
+        // At launch this runs before `start`; let that set the delegate first.
+        DispatchQueue.main.async { [self] in
+            requestPermission()
+            let content = UNMutableNotificationContent()
+            content.title = "Reconnect Dispatch to WordPress.com"
+            content.body = "Your sign-in expired, so notifications have stopped. Click to sign in again."
+            content.sound = .default
+            deliver("session-expired", content)
+        }
+    }
+
     // MARK: Reminders
 
     func schedule(_ r: Reminder) {

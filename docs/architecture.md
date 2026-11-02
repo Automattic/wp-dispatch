@@ -15,7 +15,7 @@ Dispatch is one AppKit process with a SwiftUI interface. It has about 2,800 line
 
 The interface lives in one `NSHostingView` (`sizingOptions = []`) that moves between two homes:
 
-- **Attached panel.** A borderless, non-activating `NSPanel` hanging under the status item. The list (380pt) is centered under the icon, and the reader (540pt) grows out to its left. The window frame animates with `NSAnimationContext`. A global mouse-down monitor closes the panel on outside clicks. You drag the bottom edge to set the height, which is saved as `panelHeight`.
+- **Attached panel.** A borderless, non-activating `NSPanel` hanging under the status item. The list (380pt) is centered under the icon, and the reader (`detailWidth`, 540pt to start; drag the divider between them to change it, `beginWidthResize`) grows out to its left. The window frame animates with `NSAnimationContext`. A global mouse-down monitor closes the panel on outside clicks. You drag the bottom edge to set the height, which is saved as `panelHeight`.
 - **Detached window.** A titled `NSWindow` with a full-size content view and hidden traffic lights. You tear it off by dragging the header (`dragWindow`), or with the pop-out button. ⌘W or the close button puts it back in the menu bar.
 
 Dispatch is an accessory app (no Dock icon, not in ⌘-Tab) while it's in the menu bar, and a regular app while it's a window, so the window shows up in the Dock, ⌘-Tab and Mission Control like any other (`updateDockIcon`). Two settings in the ⋯ menu and the app menu change that: **Show in Dock** (`showInDock`) keeps the Dock icon in menu bar mode too, and **Open as a Window** (`opensAsWindow`) detaches at launch (`applyLaunchMode`). A Dock click or ⌘-Tab with nothing showing calls `reopen()`, which brings back the window or opens the panel. `AppDelegate` builds the menu bar (Dispatch, Edit, Window), seen whenever Dispatch is a regular app.
@@ -99,6 +99,15 @@ Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed
 - **Reminders.** Remind Me (the alarm in the reader toolbar, or right-click on a row) offers in 1 hour, in 3 hours, this evening, tomorrow morning and next week. A `Reminder` keeps what it takes to reopen the item (the note's ID, or the whole `ReaderPost`) in `reminders.json`, and schedules a local notification for its time, so it arrives even if Dispatch isn't running. Its banner has Remind Me in 1 Hour and Done; clicking it opens the item and clears the reminder. Rows with a reminder show a clock.
 - **Later.** A third section (`Section.later`, `LaterList`) lists every reminder, notifications and posts together, soonest first, with due ones marked; its tab's badge counts what's due. Clicking a row opens the item in its own section (`open(_:clear: false)`), so the reminder stays until you click Done (or reschedule it from the right-click menu).
 - `UNUserNotificationCenter` can't exist outside an app bundle, so `Alerts` creates it lazily and never in demo mode.
+
+## Rough edges, handled
+
+- **Errors** in a list show as `ErrorBanner`: what happened in words (`friendly(_:)`: offline, timed out, couldn't reach WordPress.com) and Try Again. A post that hasn't loaded after 10 seconds offers Try Again and Open in Browser.
+- **Comment drafts** are kept per thread (`ReaderStore.drafts`) when you move to another post or close the panel; the drawer's header says "Draft" while one waits.
+- **Expired sign-ins** (they last about two weeks and can't renew) post a Mac notification, so Dispatch doesn't just go quiet.
+- **Seen posts.** Reader rows show a dot until you've read them, from WordPress.com's `is_seen` (shared with the web Reader). Opening one marks it seen (`wpcom/v2/seen-posts/seen/blog/new`, or `seen-posts/seen/new` for RSS; `…/delete` undoes it with `u`). The API only accepts WordPress.com's own app names as `source`, so Dispatch sends `reader-web`.
+- **First run.** `FirstRunTips` shows three cards once (`tipsSeen`): the keyboard, reminders, and `?`.
+- **VoiceOver** reads each icon button's help text, not its symbol name.
 
 ## Hovercards: `Hovercards.swift`
 

@@ -19,6 +19,16 @@ struct RootView: View {
                         .frame(width: c.mode == .attached ? c.detailWidth : nil)
                         .frame(maxWidth: c.mode == .detached ? .infinity : nil)
                     Divider()
+                        .overlay {
+                            // In the menu bar the panel can't be resized from its edge, so drag the divider
+                            // to give the reader more or less room. (A window resizes like any other.)
+                            if c.mode == .attached {
+                                ResizeArea(cursor: .resizeLeftRight, onHover: { _ in },
+                                           onBegin: { c.beginWidthResize() }, onChange: { c.updateWidthResize() },
+                                           onEnd: { c.endWidthResize() })
+                                    .frame(width: 8)
+                            }
+                        }
                 }
                 ListPane().driftTag("list").frame(width: c.listWidth)
             }
@@ -30,6 +40,7 @@ struct RootView: View {
             .overlay {
                 if c.showingKeys { KeyboardHelp().transition(.opacity.combined(with: .scale(scale: 0.97))) }
             }
+            .overlay(alignment: .bottom) { FirstRunTips() }
             .animation(.easeOut(duration: 0.15), value: c.showingKeys)
             .ignoresSafeArea() // the detached window's hidden titlebar would otherwise leave a strip
         }
@@ -67,7 +78,7 @@ struct ListPane: View {
                     .padding(.leading, 10)
                 Spacer()
                 if loading { ProgressView().controlSize(.small).padding(.trailing, 2) }
-                IconButton("arrow.clockwise", help: "Refresh") { Task { await c.refreshCurrent() } }.driftTag("btn.refresh")
+                IconButton("arrow.clockwise", help: "Refresh (⌘R)") { Task { await c.refreshCurrent() } }.driftTag("btn.refresh")
                 if c.mode == .attached {
                     IconButton("macwindow.on.rectangle", help: "Pop out into a window (or drag the header)") { c.detach() }
                         .driftTag("btn.popout")
@@ -152,7 +163,57 @@ struct MoreMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help("More")
+        .accessibilityLabel("More")
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
+    }
+}
+
+// MARK: - First run
+
+/// Three short cards, once, after the first sign-in: the keys that matter, reminders, and `?`.
+struct FirstRunTips: View {
+    @AppStorage("tipsSeen") private var seen = false
+    @State private var page = 0
+
+    private let tips: [(symbol: String, title: String, text: String)] = [
+        ("keyboard", "Get around with the keyboard",
+         "← and → walk your lists, from Notifications through the Reader to Later. ↑ and ↓ (or j and k) move through one, and Space pages through a post."),
+        ("alarm", "Come back to it later",
+         "Press m, or the alarm in the reader, to be reminded about a notification or post. The Later tab keeps them all."),
+        ("questionmark.circle", "Everything else",
+         "Press ? any time for every shortcut. Rest on a face or a site icon to see who it is."),
+    ]
+
+    var body: some View {
+        if !seen && !Demo.isOn {
+            let tip = tips[page]
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: tip.symbol).font(.system(size: 14, weight: .medium)).foregroundStyle(Color.accentColor)
+                    Text(tip.title).font(.system(size: 13, weight: .semibold))
+                    Spacer()
+                    Text("\(page + 1) of \(tips.count)").font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
+                }
+                Text(tip.text).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Skip") { seen = true }.buttonStyle(.plain).foregroundStyle(.secondary).font(.system(size: 12))
+                    Spacer()
+                    Button(page == tips.count - 1 ? "Done" : "Next") {
+                        if page == tips.count - 1 { seen = true } else { withAnimation(.easeOut(duration: 0.15)) { page += 1 } }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .controlSize(.small)
+                }
+            }
+            .padding(14)
+            .frame(width: 340)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.18), radius: 16, y: 6))
+            .padding(.bottom, 22)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 20)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
 }
 
@@ -170,12 +231,13 @@ struct KeyboardHelp: View {
             (["⇥", "⇧⇥"], "Next or previous section"),
             (["↑", "↓"], "Move through the list (or j, k)"),
             (["⌘↑"], "Back to the top"),
+            (["⌘R"], "Refresh"),
             (["esc"], "Back out: a site’s feed, the reader, the panel"),
         ]),
         ("Reading", [
             (["Space", "⇧Space"], "Page down or up"),
             (["l"], "Like"), (["s"], "Save"), (["m"], "Remind me later"), (["o"], "Open in the browser"),
-            (["u"], "Mark a notification unread"), (["⌘+", "⌘−"], "Bigger or smaller text (⌘0 resets)"),
+            (["u"], "Mark unread (or read)"), (["⌘+", "⌘−"], "Bigger or smaller text (⌘0 resets)"),
             (["click"], "An image, to open it in Quick Look"),
             (["c"], "Comments"), (["f"], "Comments full height"), (["r"], "Reply"), (["⌘↩"], "Send a comment"),
         ]),
@@ -376,6 +438,7 @@ struct RemindMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help(set.map { "Reminder: \(Reminders.describe($0.due))" } ?? "Remind me about this later")
+        .accessibilityLabel(set.map { "Reminder: \(Reminders.describe($0.due))" } ?? "Remind me later")
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
         .driftTag("detail.remind")
     }
@@ -538,7 +601,7 @@ struct NotificationList: View {
     var body: some View {
         let notes = c.visibleNotes
         if let error = store.error {
-            Text(error).font(.caption).foregroundStyle(.red).padding(12)
+            ErrorBanner(message: error) { Task { await c.refreshCurrent() } }
         }
         if notes.isEmpty && !store.isLoading {
             EmptyState(symbol: c.unreadOnly ? "checkmark.circle" : "tray",
@@ -578,7 +641,7 @@ struct PostList: View {
 
     var body: some View {
         if let error = reader.error {
-            Text(error).font(.caption).foregroundStyle(.red).padding(12)
+            ErrorBanner(message: error) { Task { await c.refreshCurrent() } }
         }
         if reader.posts.isEmpty {
             if reader.isLoading || !reader.hasLoaded {
@@ -631,6 +694,26 @@ struct PostList: View {
                 }
             }
         }
+    }
+}
+
+/// Something went wrong loading a list: what happened, in words, and a way to try again.
+struct ErrorBanner: View {
+    let message: String
+    let retry: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            Text(message).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+            Spacer(minLength: 4)
+            Button("Try Again", action: retry).controlSize(.small)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 9).fill(Color.orange.opacity(0.1)))
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
     }
 }
 
@@ -773,7 +856,7 @@ struct PostRow: View {
 
     var body: some View {
         let site = post.site_name ?? reader.siteName(post.site_ID)
-        SelectableRow(selected: selected, selection: selection, action: { c.select(post) }) {
+        SelectableRow(selected: selected, selection: selection, unread: !reader.isSeen(post), action: { c.select(post) }) {
             HStack(alignment: .top, spacing: 11) {
                 Group {
                     if post.isExternal {
@@ -848,6 +931,7 @@ struct PostRow: View {
             }
         }
         .contextMenu {
+            Button(reader.isSeen(post) ? "Mark as Unread" : "Mark as Read") { reader.setSeen(post, !reader.isSeen(post)) }
             Button(reader.isSaved(post) ? "Remove from Saved" : "Save Post") { reader.toggleSave(post) }
             RemindItems(id: Reminder.id(post: post)) { Reminders.shared.remind(post, at: $0) }
             if reader.canLike(post) {
@@ -875,7 +959,7 @@ struct XPostRow: View {
 
     var body: some View {
         let source = post.xpostSource
-        SelectableRow(selected: selected, selection: selection, compact: true, action: { c.select(post) }) {
+        SelectableRow(selected: selected, selection: selection, unread: !reader.isSeen(post), compact: true, action: { c.select(post) }) {
             HStack(alignment: .top, spacing: 11) {
                 // Where it came from, badged as a cross-post (like the notification type badges).
                 SiteIcon(url: post.xpostOrigin.flatMap { reader.icon(forSite: $0.site) },
@@ -1118,6 +1202,8 @@ struct CommentsDrawer: View {
 
     private let spring = Animation.spring(response: 0.48, dampingFraction: 0.8)
     private var key: String { "\(site)-\(post)" }
+    /// Which thread `draft` belongs to: half-written comments are kept per post, not thrown away.
+    @State private var draftKey = ""
 
     var body: some View {
         // A real (zero-height) view so `.task` runs before there's anything to show.
@@ -1140,9 +1226,12 @@ struct CommentsDrawer: View {
             }
         }
         .onChange(of: c.replyRequest) { _, _ in replyFromKeyboard() }
+        .onDisappear { if !draftKey.isEmpty { reader.drafts[draftKey] = draft.isEmpty ? nil : draft } }
         .task(id: key) {
             // First time: slide up and pop the bubbles in. After that, just swap threads.
             guard comments != nil else {
+                draftKey = key
+                draft = reader.drafts[key] ?? ""
                 let loaded = await reader.comments(site: site, post: post)
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { comments = loaded }
                 try? await Task.sleep(for: .milliseconds(60))
@@ -1151,7 +1240,9 @@ struct CommentsDrawer: View {
                 return
             }
             replyTo = nil
-            draft = ""
+            reader.drafts[draftKey] = draft.isEmpty ? nil : draft
+            draftKey = key
+            draft = reader.drafts[key] ?? ""
             sendError = nil
             focus = nil
             if let cached = reader.cachedComments(site: site, post: post) {
@@ -1234,6 +1325,7 @@ struct CommentsDrawer: View {
                 reader.storeComments(list, site: site, post: post)
                 focus = new.id
                 draft = ""
+                reader.drafts[key] = nil
                 replyTo = nil
             } catch {
                 sendError = error.localizedDescription
@@ -1299,6 +1391,11 @@ struct CommentsDrawer: View {
                     .foregroundStyle(Color.accentColor)
                 Text(count == 0 ? "Add a comment" : count == 1 ? "1 comment" : "\(count) comments")
                     .font(.system(size: ts(12), weight: .semibold))
+                if !draft.isEmpty && !c.commentsOpen { // a half-written comment is waiting
+                    Text("Draft").font(.system(size: ts(10.5), weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 6).padding(.vertical, 1)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                }
                 Spacer()
                 Image(systemName: "chevron.up")
                     .font(.system(size: ts(10), weight: .bold))
@@ -1422,7 +1519,9 @@ struct CommentBubble: View {
                     HStack(spacing: 6) {
                         Text(comment.author?.name ?? "Someone").font(.system(size: ts(12), weight: .semibold))
                         if let date = comment.dateValue {
-                            Text(date, style: .relative).font(.system(size: ts(11))).foregroundStyle(.tertiary)
+                            // "3 hours ago", like the reader's byline (style: .relative read "1 hr, 0 min").
+                            Text(RelativeDateTimeFormatter().localizedString(for: date, relativeTo: .now))
+                                .font(.system(size: ts(11))).foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -1492,17 +1591,35 @@ struct WebContent: View {
         let baseURL: String?
         let load: () async -> String
         @State private var html: String?
+        @State private var slow = false
+        @State private var attempt = 0
 
         var body: some View {
             ZStack {
                 if let html {
                     HTMLView(html: html, baseURL: baseURL.flatMap(URL.init(string:))).transition(.opacity)
+                } else if slow {
+                    // Still nothing after a while: say so, and offer a way out.
+                    VStack(spacing: 10) {
+                        Text("This is taking a while.").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                        HStack {
+                            Button("Try Again") { slow = false; attempt += 1 }
+                            if let url = baseURL.flatMap(URL.init(string:)) {
+                                Button("Open in Browser") { NSWorkspace.shared.open(url) }
+                            }
+                        }
+                        .controlSize(.small)
+                    }
                 } else {
                     ProgressView().controlSize(.small)
                 }
             }
             .animation(.easeOut(duration: 0.18), value: html != nil)
-            .task { html = await load() }
+            .task(id: attempt) { html = await load() }
+            .task(id: attempt) {
+                try? await Task.sleep(for: .seconds(10))
+                if html == nil, !Task.isCancelled { slow = true }
+            }
         }
     }
 }
@@ -1773,6 +1890,7 @@ struct HeightHandle: View {
 /// AppKit owns the cursor here: SwiftUI's push/pop gets out of balance and the
 /// hosting view resets it, so the resize cursor only showed up some of the time.
 struct ResizeArea: NSViewRepresentable {
+    var cursor: NSCursor = .resizeUpDown
     let onHover: (Bool) -> Void
     let onBegin: () -> Void
     let onChange: () -> Void
@@ -1781,6 +1899,7 @@ struct ResizeArea: NSViewRepresentable {
     func makeNSView(context: Context) -> ResizeView { ResizeView() }
 
     func updateNSView(_ view: ResizeView, context: Context) {
+        view.cursor = cursor
         view.onHover = onHover
         view.onBegin = onBegin
         view.onChange = onChange
@@ -1788,6 +1907,7 @@ struct ResizeArea: NSViewRepresentable {
     }
 
     final class ResizeView: NSView {
+        var cursor: NSCursor = .resizeUpDown
         var onHover: (Bool) -> Void = { _ in }
         var onBegin: () -> Void = {}
         var onChange: () -> Void = {}
@@ -1805,10 +1925,10 @@ struct ResizeArea: NSViewRepresentable {
             area = a
         }
 
-        override func resetCursorRects() { addCursorRect(bounds, cursor: .resizeUpDown) }
-        override func cursorUpdate(with event: NSEvent) { NSCursor.resizeUpDown.set() }
-        override func mouseEntered(with event: NSEvent) { onHover(true); NSCursor.resizeUpDown.set() }
-        override func mouseMoved(with event: NSEvent) { NSCursor.resizeUpDown.set() }
+        override func resetCursorRects() { addCursorRect(bounds, cursor: cursor) }
+        override func cursorUpdate(with event: NSEvent) { cursor.set() }
+        override func mouseEntered(with event: NSEvent) { onHover(true); cursor.set() }
+        override func mouseMoved(with event: NSEvent) { cursor.set() }
         override func mouseExited(with event: NSEvent) {
             onHover(false)
             if !dragging { NSCursor.arrow.set() }
@@ -1819,12 +1939,12 @@ struct ResizeArea: NSViewRepresentable {
 
         override func mouseDown(with event: NSEvent) {
             dragging = true
-            NSCursor.resizeUpDown.set()
+            cursor.set()
             onBegin()
         }
 
         override func mouseDragged(with event: NSEvent) {
-            NSCursor.resizeUpDown.set()
+            cursor.set()
             onChange()
         }
 
@@ -1920,6 +2040,7 @@ struct IconButton: View {
         }
         .buttonStyle(.plain)
         .help(help)
+        .accessibilityLabel(help) // VoiceOver would otherwise read the symbol's name
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
     }
 }

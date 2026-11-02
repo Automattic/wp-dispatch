@@ -36,11 +36,14 @@ struct ReaderPost: Codable, Identifiable, Hashable {
     let feed_item_ID: Int?
     /// "19K": WordPress.com's own rounding. Only some posts in the Following feed have it.
     let views: String?
+    /// Whether you've read it, per WordPress.com (shared with the web Reader). Nil in Saved and site feeds.
+    let is_seen: Bool?
+    let feed_ID: Int?
 
     var isExternal: Bool { is_external ?? false }
 
     private enum CodingKeys: String, CodingKey {
-        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count, feed_item_ID, views
+        case postID = "ID", site_ID, title, URL, date, excerpt, content, site_name, site_icon, author, word_count, is_external, metadata, like_count, i_like, comment_count, feed_item_ID, views, is_seen, feed_ID
     }
     private enum FeedKeys: String, CodingKey { case discussion }
     private struct Discussion: Decodable { let comment_count: Int? }
@@ -69,6 +72,8 @@ struct ReaderPost: Codable, Identifiable, Hashable {
         comment_count = int(.comment_count)
             ?? (try? decoder.container(keyedBy: FeedKeys.self).decode(Discussion.self, forKey: .discussion))?.comment_count
         feed_item_ID = int(.feed_item_ID)
+        is_seen = (try? c.decode(Bool.self, forKey: .is_seen)) ?? int(.is_seen).map { $0 != 0 }
+        feed_ID = int(.feed_ID)
         views = (try? c.decode(String.self, forKey: .views)) ?? int(.views).map { $0.formatted(.number.notation(.compactName)) }
     }
 
@@ -219,7 +224,7 @@ final class ReaderStore: ObservableObject {
             if feed == .saved { saved = page.posts; persist() }
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendly(error)
         }
     }
 
@@ -329,6 +334,32 @@ final class ReaderStore: ObservableObject {
         extraIcons[id] = img
     }
 
+    // MARK: Seen
+
+    /// What you've read here since the feed loaded, over the feed's own `is_seen`.
+    @Published private(set) var seenNow: [String: Bool] = [:]
+
+    /// Unknown counts as seen, so feeds without the field (Saved, single sites) show no dots.
+    func isSeen(_ post: ReaderPost) -> Bool { seenNow[post.id] ?? post.is_seen ?? true }
+
+    /// Marks it read (or unread again) here and on WordPress.com, the same list the web Reader keeps.
+    func setSeen(_ post: ReaderPost, _ seen: Bool) {
+        guard isSeen(post) != seen else { return }
+        seenNow[post.id] = seen
+        let action = seen ? "new" : "delete"
+        // WordPress.com only takes its own app names as the source; Dispatch is a Reader, like the web one.
+        let (path, body): (String, [String: Any]) = post.isExternal
+            ? ("seen-posts/seen/\(action)", ["feed_id": post.feed_ID ?? post.site_ID, "feed_item_ids": [post.feed_item_ID ?? post.postID], "source": "reader-web"])
+            : ("seen-posts/seen/blog/\(action)", ["blog_id": post.site_ID, "post_ids": [post.postID], "source": "reader-web"])
+        Task {
+            guard let data = try? JSONSerialization.data(withJSONObject: body),
+                  (try? await store.request(path, version: "wpcom/v2", method: "POST", body: data)) != nil else {
+                seenNow[post.id] = !seen // put it back
+                return
+            }
+        }
+    }
+
     // MARK: Views
 
     /// View counts the feeds leave out (P2s, Saved): from the post's stats, which WordPress.com
@@ -354,6 +385,8 @@ final class ReaderStore: ObservableObject {
     // MARK: Comments
 
     private var commentCache: [String: [PostComment]] = [:]
+    /// Unsent comments by thread ("site-post"), so moving to another post doesn't lose one.
+    var drafts: [String: String] = [:]
 
     /// Comments in thread order (each reply right after its parent), with depth for indenting.
     /// `fresh` skips the cache: threads keep growing, and a cached one is only a quick first look.

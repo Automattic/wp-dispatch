@@ -80,6 +80,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item("Select All", #selector(NSText.selectAll(_:)), "a"),
         ]))
         main.addItem(menu("View", [
+            item("Refresh", #selector(refresh), "r", target: self),
+            .separator(),
             item("Bigger Text", #selector(zoomIn), "+", target: self),
             item("Smaller Text", #selector(zoomOut), "-", target: self),
             item("Actual Size", #selector(zoomReset), "0", target: self),
@@ -110,6 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func goReader() { controller?.switchSection(.reader) }
     @objc private func goLater() { controller?.switchSection(.later) }
     @objc private func showKeys() { controller?.showingKeys = true }
+    @objc private func refresh() { Task { await controller?.refreshCurrent() } }
     @objc private func zoomIn() { controller?.zoom(1) }
     @objc private func zoomOut() { controller?.zoom(-1) }
     @objc private func zoomReset() { controller?.zoom(0) }

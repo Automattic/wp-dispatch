@@ -226,7 +226,8 @@
           "depth": 1
         }
       ],
-      "views": "96"
+      "views": "96",
+      "unseen": true
     },
     "sourdough": {
       "id": 3,
@@ -274,7 +275,8 @@
           "depth": 1
         }
       ],
-      "views": "3.4K"
+      "views": "3.4K",
+      "unseen": true
     },
     "waits": {
       "id": 4,
@@ -305,7 +307,8 @@
           "depth": 0
         }
       ],
-      "views": "1.2K"
+      "views": "1.2K",
+      "unseen": true
     },
     "scopes": {
       "id": 5,

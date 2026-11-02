@@ -74,7 +74,12 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     let store: Store
     let reader: ReaderStore
     let listWidth: CGFloat = 380
-    let detailWidth: CGFloat = 540
+    /// The reader's width in the menu bar panel; drag the divider to change it.
+    @Published private(set) var detailWidth: CGFloat = {
+        let w = UserDefaults.standard.double(forKey: "detailWidth")
+        return w >= 420 ? w : 540
+    }()
+    private var widthStart: (width: CGFloat, mouseX: CGFloat)?
     private let minDetailWidth: CGFloat = 420
 
     /// None while rendering the website's demo scenes, which stay out of the menu bar.
@@ -382,6 +387,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     func select(_ post: ReaderPost) {
         currentPost = post
+        reader.setSeen(post, true)
         withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { selectedPostID = post.id }
         let posts = reader.posts
         if let i = posts.firstIndex(of: post), i + 1 < posts.count { reader.prefetch(posts[i + 1]) }
@@ -522,6 +528,20 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     func endResize() { resizeStart = nil }
 
+    func beginWidthResize() { widthStart = (detailWidth, NSEvent.mouseLocation.x) }
+
+    /// The list stays under the menu bar icon, so the reader grows out to the left.
+    func updateWidthResize() {
+        guard let start = widthStart, let vis = panel.screen?.visibleFrame else { return }
+        detailWidth = min(max(start.width + (start.mouseX - NSEvent.mouseLocation.x), minDetailWidth), vis.width - listWidth - 24)
+        panel.setFrame(attachedFrame(), display: true)
+    }
+
+    func endWidthResize() {
+        widthStart = nil
+        UserDefaults.standard.set(detailWidth, forKey: "detailWidth")
+    }
+
     // MARK: Tear-off window
 
     /// Header drag. Attached: we move the panel ourselves and detach on drop.
@@ -641,6 +661,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
                 return nil
             }
             switch e.charactersIgnoringModifiers {
+            case "r": Task { await refreshCurrent() }; return nil
             case "=", "+": zoom(1); return nil
             case "-": zoom(-1); return nil
             case "0": zoom(0); return nil
@@ -704,6 +725,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             Task { await reader.toggleLike(post) }
             return nil
         case "u": // back to unread, or read again
+            if section == .reader, let post = selectedPost { reader.setSeen(post, !reader.isSeen(post)); return nil }
             guard section == .notifications, let note = selectedNote else { return e }
             note.isUnread ? store.markRead(note) : store.markUnread(note)
             return nil

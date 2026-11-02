@@ -121,7 +121,7 @@ final class Store: ObservableObject {
             NSApp.activate(ignoringOtherApps: true)
             await refresh()
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendly(error)
         }
     }
 
@@ -136,6 +136,7 @@ final class Store: ObservableObject {
     private func expireSession() {
         signOut()
         sessionExpired = true
+        Alerts.shared.sessionExpired()
     }
 
     // MARK: API
@@ -152,7 +153,7 @@ final class Store: ObservableObject {
             error = nil
             if mentionTerms.isEmpty { await loadMe() }
         } catch {
-            self.error = error.localizedDescription
+            self.error = friendly(error)
         }
     }
 
@@ -327,4 +328,16 @@ private extension Optional {
         guard let self else { return nil }
         return await transform(self)
     }
+}
+
+/// An error as a person would put it, for the list's error banner.
+func friendly(_ error: Error) -> String {
+    switch (error as? URLError)?.code {
+    case .notConnectedToInternet?, .dataNotAllowed?: return "You're offline. Dispatch will catch up when you're back."
+    case .timedOut?: return "WordPress.com is taking too long to answer."
+    case .cannotFindHost?, .cannotConnectToHost?, .networkConnectionLost?, .dnsLookupFailed?: return "Couldn't reach WordPress.com."
+    default: break
+    }
+    if error is DecodingError { return "WordPress.com sent back something Dispatch didn't expect." }
+    return error.localizedDescription
 }
