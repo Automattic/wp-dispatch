@@ -51,6 +51,8 @@ final class ImagePreview: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDele
         panel.reloadData()
         panel.currentPreviewItemIndex = showing
         panel.makeKeyAndOrderFront(nil)
+        // Dispatch's panel floats at menu level; Quick Look has to sit above it, or it opens behind.
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue + 1)
     }
 
     private nonisolated func download(_ address: String, token: String?) async -> URL? {
