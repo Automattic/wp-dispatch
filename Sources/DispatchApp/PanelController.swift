@@ -37,12 +37,16 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published var laterHighlight: String?
     /// The open article, for paging with Space.
     weak var article: WKWebView?
-    /// An image is open full size in the article; esc closes it instead of the reader.
-    var lightboxOpen = false
     /// The reader's text size (the web view's page zoom), set with ⌘+ / ⌘− / ⌘0.
-    @Published var textZoom = UserDefaults.standard.object(forKey: "textZoom") as? Double ?? 1 {
-        didSet { UserDefaults.standard.set(textZoom, forKey: "textZoom"); article?.pageZoom = textZoom }
+    /// Lists and comments scale with it too (`ts`).
+    @Published var textZoom = PanelController.textScale {
+        didSet {
+            UserDefaults.standard.set(textZoom, forKey: "textZoom")
+            Self.textScale = textZoom
+            article?.pageZoom = textZoom
+        }
     }
+    static var textScale: Double = UserDefaults.standard.object(forKey: "textZoom") as? Double ?? 1
     private static let zoomSteps: [Double] = [0.8, 0.9, 1, 1.1, 1.25, 1.4, 1.6]
 
     /// ⌘+ / ⌘−: the next text size up or down; 0 goes back to normal.
@@ -643,7 +647,6 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             default: return e
             }
         }
-        if lightboxOpen, e.keyCode == 53 { article?.evaluateJavaScript("closeLightbox()"); return nil }
         switch e.keyCode {
         case 53: // esc: keys sheet, then a single site's feed, then the reader, then the panel
             if section == .reader, reader.isSiteFeed, !showDetail { reader.show(reader.previousFeed); return nil }

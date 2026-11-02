@@ -176,7 +176,7 @@ struct KeyboardHelp: View {
             (["Space", "⇧Space"], "Page down or up"),
             (["l"], "Like"), (["s"], "Save"), (["m"], "Remind me later"), (["o"], "Open in the browser"),
             (["u"], "Mark a notification unread"), (["⌘+", "⌘−"], "Bigger or smaller text (⌘0 resets)"),
-            (["click"], "An image, to see it full size"),
+            (["click"], "An image, to open it in Quick Look"),
             (["c"], "Comments"), (["f"], "Comments full height"), (["r"], "Reply"), (["⌘↩"], "Send a comment"),
         ]),
         ("Later", [
@@ -313,7 +313,7 @@ struct LaterRow: View {
                     } else if let post = reminder.post {
                         SiteIcon(url: reader.icon(for: post), name: post.site_name ?? reader.siteName(post.site_ID), size: 34)
                     } else {
-                        Image(systemName: "alarm").font(.system(size: 15)).foregroundStyle(.secondary)
+                        Image(systemName: "alarm").font(.system(size: ts(15))).foregroundStyle(.secondary)
                             .frame(width: 34, height: 34).background(Circle().fill(Color.primary.opacity(0.06)))
                     }
                 }
@@ -323,16 +323,16 @@ struct LaterRow: View {
                     TimelineView(.everyMinute) { context in
                         let due = reminder.due <= context.date
                         HStack(spacing: 4) {
-                            Image(systemName: "alarm.fill").font(.system(size: 9.5))
+                            Image(systemName: "alarm.fill").font(.system(size: ts(9.5)))
                             Text(due ? "Due · \(Reminders.describe(reminder.due))" : Reminders.describe(reminder.due))
                         }
-                        .font(.system(size: 11, weight: due ? .semibold : .medium))
+                        .font(.system(size: ts(11), weight: due ? .semibold : .medium))
                         .foregroundStyle(due ? Color.accentColor : .secondary)
                     }
                     .driftTag("when")
-                    Text(reminder.title).font(.system(size: 13, weight: .semibold)).lineLimit(2).driftTag("title")
+                    Text(reminder.title).font(.system(size: ts(13), weight: .semibold)).lineLimit(2).driftTag("title")
                     if let subtitle = reminder.subtitle {
-                        Text(subtitle.plainText).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2).driftTag("excerpt")
+                        Text(subtitle.plainText).font(.system(size: ts(12))).foregroundStyle(.secondary).lineLimit(2).driftTag("excerpt")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -732,20 +732,20 @@ struct NoteRow: View {
                         Spacer(minLength: 4)
                         ReminderClock(id: Reminder.id(note: note))
                         Text(note.date.map(shortTime) ?? "")
-                            .font(.system(size: 11).monospacedDigit())
+                            .font(.system(size: ts(11)).monospacedDigit())
                             .foregroundStyle(note.isUnread ? Color.accentColor : .secondary)
                             .driftTag("time")
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: ts(12)))
 
                     if let target = note.target {
                         Text(target.plainText)
-                            .font(.system(size: 13, weight: note.isUnread ? .semibold : .medium))
+                            .font(.system(size: ts(13), weight: note.isUnread ? .semibold : .medium))
                             .lineLimit(2)
                             .driftTag("title")
                     }
                     if let excerpt = note.excerpt, !excerpt.isEmpty {
-                        Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
+                        Text(excerpt).font(.system(size: ts(12))).foregroundStyle(.secondary).lineLimit(2)
                             .driftTag("excerpt")
                     }
                 }
@@ -792,19 +792,19 @@ struct PostRow: View {
                         Spacer(minLength: 4)
                         ReminderClock(id: Reminder.id(post: post))
                         Text(post.dateValue.map(shortTime) ?? "")
-                            .font(.system(size: 11).monospacedDigit())
+                            .font(.system(size: ts(11)).monospacedDigit())
                             .foregroundStyle(.secondary)
                             .driftTag("time")
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: ts(12)))
 
                     Text((post.title ?? "").plainText.isEmpty ? "Untitled" : (post.title ?? "").plainText)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: ts(13), weight: .semibold))
                         .lineLimit(2)
                         .driftTag("title")
                     let excerpt = (post.excerpt ?? "").plainText
                     if !excerpt.isEmpty {
-                        Text(excerpt).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(3)
+                        Text(excerpt).font(.system(size: ts(12))).foregroundStyle(.secondary).lineLimit(3)
                             .driftTag("excerpt")
                     }
                     HStack(spacing: 6) {
@@ -837,7 +837,7 @@ struct PostRow: View {
                             Image(systemName: "bookmark.fill").foregroundStyle(Color.accentColor)
                         }
                     }
-                    .font(.system(size: 11))
+                    .font(.system(size: ts(11)))
                     .foregroundStyle(.secondary) // tertiary was too faint to read over the panel's material
                     .driftTag("foot")
                     .padding(.top, 1)
@@ -882,7 +882,7 @@ struct XPostRow: View {
                          name: source.handle.replacingOccurrences(of: "+", with: ""), size: 26)
                     .overlay(alignment: .bottomTrailing) {
                         Image(systemName: "arrow.turn.down.right")
-                            .font(.system(size: 6.5, weight: .bold))
+                            .font(.system(size: ts(6.5), weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 13, height: 13)
                             .background(Color.gray.gradient, in: Circle())
@@ -903,22 +903,22 @@ struct XPostRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(source.handle).fontWeight(.semibold)
-                        Image(systemName: "arrow.right").font(.system(size: 8, weight: .bold)).foregroundStyle(.tertiary)
+                        Image(systemName: "arrow.right").font(.system(size: ts(8), weight: .bold)).foregroundStyle(.tertiary)
                         Text(post.destinationHandle)
                         if reader.isSaved(post) && reader.feed != .saved {
-                            Image(systemName: "bookmark.fill").font(.system(size: 9)).foregroundStyle(Color.accentColor)
+                            Image(systemName: "bookmark.fill").font(.system(size: ts(9))).foregroundStyle(Color.accentColor)
                         }
                         Spacer(minLength: 4)
                         Text(post.dateValue.map(shortTime) ?? "").monospacedDigit()
                             .driftTag("time")
                     }
-                    .font(.system(size: 11.5))
+                    .font(.system(size: ts(11.5)))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .driftTag("line")
 
                     Text(post.xpostTitle)
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.system(size: ts(12.5), weight: .medium))
                         .lineLimit(2)
                         .driftTag("title")
                 }
@@ -936,6 +936,10 @@ struct XPostRow: View {
         }
     }
 }
+
+/// A list or comment font size at the reader's text size (⌘+ / ⌘−). Views that use it observe the
+/// controller, so they redraw when it changes.
+@MainActor func ts(_ size: CGFloat) -> CGFloat { size * PanelController.textScale }
 
 private func shortTime(_ date: Date) -> String {
     let s = Date.now.timeIntervalSince(date)
@@ -1241,19 +1245,19 @@ struct CommentsDrawer: View {
         VStack(alignment: .leading, spacing: 6) {
             if let replyTo {
                 HStack(spacing: 4) {
-                    Image(systemName: "arrowshape.turn.up.left.fill").font(.system(size: 9))
+                    Image(systemName: "arrowshape.turn.up.left.fill").font(.system(size: ts(9)))
                     Text("Replying to \(replyTo.author?.name ?? "comment")").lineLimit(1)
-                    Button { self.replyTo = nil } label: { Image(systemName: "xmark").font(.system(size: 8, weight: .bold)) }
+                    Button { self.replyTo = nil } label: { Image(systemName: "xmark").font(.system(size: ts(8), weight: .bold)) }
                         .buttonStyle(.plain)
                         .help("Comment on the post instead")
                 }
-                .font(.system(size: 11))
+                .font(.system(size: ts(11)))
                 .foregroundStyle(.secondary)
             }
             HStack(alignment: .bottom, spacing: 8) {
                 TextField(replyTo == nil ? "Add a comment…" : "Write a reply…", text: $draft, axis: .vertical)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12.5))
+                    .font(.system(size: ts(12.5)))
                     .lineSpacing(3)
                     .lineLimit(1...6)
                     .focused($composing)
@@ -1269,7 +1273,7 @@ struct CommentsDrawer: View {
                     if sending {
                         ProgressView().controlSize(.small).frame(width: 24, height: 24)
                     } else {
-                        Image(systemName: "arrow.up.circle.fill").font(.system(size: 24))
+                        Image(systemName: "arrow.up.circle.fill").font(.system(size: ts(24)))
                     }
                 }
                 .buttonStyle(.plain)
@@ -1279,7 +1283,7 @@ struct CommentsDrawer: View {
                 .help("Send (⌘↩)")
             }
             if let sendError {
-                Text(sendError).font(.system(size: 11)).foregroundStyle(.red)
+                Text(sendError).font(.system(size: ts(11))).foregroundStyle(.red)
             }
         }
         .padding(.horizontal, 16)
@@ -1291,13 +1295,13 @@ struct CommentsDrawer: View {
         Button { toggle() } label: {
             HStack(spacing: 6) {
                 Image(systemName: "bubble.left.and.bubble.right.fill")
-                    .font(.system(size: 11))
+                    .font(.system(size: ts(11)))
                     .foregroundStyle(Color.accentColor)
                 Text(count == 0 ? "Add a comment" : count == 1 ? "1 comment" : "\(count) comments")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: ts(12), weight: .semibold))
                 Spacer()
                 Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: ts(10), weight: .bold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(c.commentsOpen ? 180 : 0))
             }
@@ -1341,7 +1345,7 @@ struct CommentsDrawer: View {
                 }
                 Button { startReply(to: nil) } label: {
                     Image(systemName: "plus.bubble")
-                        .font(.system(size: 13))
+                        .font(.system(size: ts(13)))
                         .foregroundStyle(.secondary)
                         .frame(width: 34, height: 34)
                         .background(Circle().fill(Color.primary.opacity(0.06)))
@@ -1395,6 +1399,7 @@ struct CommentsDrawer: View {
 /// One comment: avatar plus a speech bubble. Shares geometry IDs between the
 /// strip and the list so toggling morphs one into the other.
 struct CommentBubble: View {
+    @EnvironmentObject var c: PanelController // re-renders on a text size change
     let comment: PostComment
     let expanded: Bool
     let ns: Namespace.ID
@@ -1415,9 +1420,9 @@ struct CommentBubble: View {
             VStack(alignment: .leading, spacing: 3) {
                 if expanded {
                     HStack(spacing: 6) {
-                        Text(comment.author?.name ?? "Someone").font(.system(size: 12, weight: .semibold))
+                        Text(comment.author?.name ?? "Someone").font(.system(size: ts(12), weight: .semibold))
                         if let date = comment.dateValue {
-                            Text(date, style: .relative).font(.system(size: 11)).foregroundStyle(.tertiary)
+                            Text(date, style: .relative).font(.system(size: ts(11))).foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -1446,6 +1451,7 @@ struct CommentBubble: View {
 
 /// Like and Reply, under a comment in the open list.
 struct CommentActions: View {
+    @EnvironmentObject var c: PanelController // re-renders on a text size change
     let comment: PostComment
     let replying: Bool
     let like: () -> Void
@@ -1468,7 +1474,7 @@ struct CommentActions: View {
                 .help("Reply to \(comment.author?.name ?? "this comment")")
         }
         .buttonStyle(.plain)
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: ts(11), weight: .medium))
         .foregroundStyle(.secondary)
     }
 }

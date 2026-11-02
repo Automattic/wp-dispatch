@@ -122,7 +122,7 @@
           <b>Keyboard Shortcuts</b>
           <div class="cols">${[
             ["Lists", [["← →", "Previous or next list, across sections"], ["⇧← ⇧→", "Previous or next section"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
-            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["u", "Mark a notification unread"], ["⌘+ ⌘−", "Bigger or smaller text (⌘0 resets)"], ["click", "An image, to see it full size"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
+            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["u", "Mark a notification unread"], ["⌘+ ⌘−", "Bigger or smaller text (⌘0 resets)"], ["click", "An image, to open it in Quick Look"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
             ["Later", [["↑ ↓", "Highlight a reminder"], ["↩", "Open it"], ["⌫", "Done"]]],
           ].map(([title, rows]) => `<div><i>${title}</i>${rows.map(([keys, what]) => `<p><span>${keys.split(" ").map((x) => `<kbd>${x}</kbd>`).join("")}</span>${what}</p>`).join("")}</div>`).join("")}</div>
         </div></div>

@@ -26,7 +26,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - the comments drawer state (`commentsOpen`, and `commentsExpanded`, which folds the article away so the open thread takes the reader's full height; both stick while you move between posts),
 - keyboard handling (`handleKey`), through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep. `KeyboardHelp` (`?`, or ⋯ → Keyboard Shortcuts) lists them all; keep it in step:
   - **Lists:** `←`/`→` walk every list in one row, across sections (All, Unread, Following, Automattic, Saved, Later; `step`). `⇧←`/`⇧→`, `⌘1`–`⌘3` and `⇥`/`⇧⇥` jump between sections (⌘1–3 are also in the Go menu; ⇥ wraps around, ⇧arrows don't). `↑`/`↓` or `j`/`k` move within a list. `⌘↑` goes back to the top, unless the article has focus. `esc` backs out: a single site's feed, then the reader, then the panel.
-  - **The open item:** `Space`/`⇧Space` page the article (`article`, the reader's web view). `l` likes, `s` saves, `m` opens Remind Me as a menu, `o` opens in the browser, `u` marks a notification unread (or read again; `Store.markUnread` sends WordPress.com a count of -1, as its own panel does). `⌘+`/`⌘−`/`⌘0` set the reader's text size (`textZoom`, the web view's `pageZoom`; also in the View menu). `c` toggles comments, `f` full height, `r` opens the composer (bumps `replyRequest`; a comment notification replies to its comment).
+  - **The open item:** `Space`/`⇧Space` page the article (`article`, the reader's web view). `l` likes, `s` saves, `m` opens Remind Me as a menu, `o` opens in the browser, `u` marks a notification unread (or read again; `Store.markUnread` sends WordPress.com a count of -1, as its own panel does). `⌘+`/`⌘−`/`⌘0` set the text size (`textZoom`; also in the View menu): the article's `pageZoom`, and list rows and comments through `ts(_:)`, which scales their font sizes. `c` toggles comments, `f` full height, `r` opens the composer (bumps `replyRequest`; a comment notification replies to its comment).
   - **Later:** `↑`/`↓` move a highlight (`laterHighlight`) rather than opening, `↩` or `o` opens, `⌫` is Done.
   - Keys pass through while typing a comment, and the article keeps its own scrolling keys when it has focus.
 
@@ -86,7 +86,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 
 ## Images
 
-Click an image in the reader (or a link straight to one) to see it full size, in a lightbox inside the page; click the image for actual size, anywhere else to close. It uses `data-orig-file`, then the largest `srcset` candidate. While it's open the page tells `HTMLView` (the `lightbox` script handler), so esc closes it instead of the reader.
+Click an image in the reader (or a link straight to one) and it opens in macOS's Quick Look window, with the post's other images a ←/→ away. The page posts their URLs to the `image` script handler (`data-orig-file` first, then the largest `srcset` candidate); `ImagePreview` downloads them to a temporary folder (with the token on `*.wordpress.com`, as `MediaLoader` does), opens the clicked one as soon as it's in, and adds the rest as they arrive.
 
 ## Images on private sites
 
