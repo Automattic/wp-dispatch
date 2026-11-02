@@ -175,9 +175,9 @@ struct MoreMenu: View {
 
 // MARK: - First run
 
-/// The introduction, once, after the first sign-in (and again from ⋯ → Show Introduction): what
-/// Dispatch is, its three places, reading and replying, notifications and reminders, the keyboard,
-/// and the settings. A panel docked under the list, which makes room for it. While a step talks
+/// The introduction, once, after the first sign-in (and again from ⋯ → Show Introduction), in
+/// three steps: what Dispatch is and its three places; reading, replying and reminders; the
+/// keyboard and settings. A panel docked under the list, which makes room for it. While a step talks
 /// about part of the panel, that part glows (`PanelController.introSpot`).
 struct Introduction: View {
     @EnvironmentObject var c: PanelController
@@ -187,18 +187,12 @@ struct Introduction: View {
     private struct Step { let symbol: String; let title: String; let text: String; var spot: PanelController.IntroSpot? }
     private let steps: [Step] = [
         Step(symbol: "sparkles", title: "Welcome to Dispatch",
-             text: "Your WordPress.com notifications, the blogs you follow and your P2s, one click away in the menu bar. Skim the list, and read anything right here beside it."),
-        Step(symbol: "square.stack.3d.up", title: "Three places",
-             text: "Notifications for replies, mentions and likes. Reader for the blogs you follow, your P2s and what you've saved. Later for whatever you've asked to come back to.",
+             text: "Your WordPress.com notifications, the blogs you follow and your P2s, in the menu bar. Notifications, Reader and Later are your three places; click anything to read it right here.",
              spot: .tabs),
-        Step(symbol: "bubble.left.and.bubble.right", title: "Read, react, reply",
-             text: "Click anything to open it. Like it, save it, read the comments and reply without opening a browser. It's your real WordPress.com account, so everything matches the web."),
-        Step(symbol: "bell.badge", title: "It comes to you",
-             text: "Mentions and replies arrive as Mac notifications you can answer from the banner. Not ready yet? Remind Me brings anything back later, and Later keeps the list."),
-        Step(symbol: "keyboard", title: "Fast with the keyboard",
-             text: "← and → walk your lists, ↑ and ↓ (or j and k) move through one, and Space pages through a post. l likes, s saves, m reminds, r replies. Press ? for the rest."),
-        Step(symbol: "slider.horizontal.3", title: "Make it yours",
-             text: "Drag the header, or click pop-out, to make Dispatch a window. In ⋯, keep it in the Dock, choose which notifications alert you, and pick what the menu bar number counts.",
+        Step(symbol: "bubble.left.and.bubble.right", title: "Read, reply, come back later",
+             text: "Like, save, comment and reply without a browser, on your real WordPress.com account. Mentions and replies arrive as Mac notifications, and Remind Me brings anything back later."),
+        Step(symbol: "keyboard", title: "Fast, and yours",
+             text: "← and → walk your lists, ↑ and ↓ move through one, and ? shows every shortcut. Pop Dispatch out into a window, or tune it in ⋯.",
              spot: .chrome),
     ]
 
