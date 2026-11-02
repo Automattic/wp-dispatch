@@ -37,6 +37,20 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published var laterHighlight: String?
     /// The open article, for paging with Space.
     weak var article: WKWebView?
+    /// An image is open full size in the article; esc closes it instead of the reader.
+    var lightboxOpen = false
+    /// The reader's text size (the web view's page zoom), set with ⌘+ / ⌘− / ⌘0.
+    @Published var textZoom = UserDefaults.standard.object(forKey: "textZoom") as? Double ?? 1 {
+        didSet { UserDefaults.standard.set(textZoom, forKey: "textZoom"); article?.pageZoom = textZoom }
+    }
+    private static let zoomSteps: [Double] = [0.8, 0.9, 1, 1.1, 1.25, 1.4, 1.6]
+
+    /// ⌘+ / ⌘−: the next text size up or down; 0 goes back to normal.
+    func zoom(_ delta: Int) {
+        guard delta != 0 else { textZoom = 1; return }
+        let i = Self.zoomSteps.firstIndex { $0 >= textZoom - 0.001 } ?? 2
+        textZoom = Self.zoomSteps[min(max(i + delta, 0), Self.zoomSteps.count - 1)]
+    }
     /// Set by the list as it scrolls; shows the back-to-top button.
     @Published var listScrolled = false
     /// Bumped to ask the visible list to scroll to its top.
@@ -134,7 +148,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         }
 
         store.$notes.sink { [weak self] notes in
-            self?.setBadge(notes.filter(\.isUnread).count)
+            self?.updateBadge(notes)
         }.store(in: &bag)
 
         // Connecting swaps the setup form for the list; resize to fit. Sign-in finishes in the
@@ -215,6 +229,31 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     }
 
     // MARK: Status item
+
+    /// What the number beside the menu bar icon counts.
+    enum MenuBarCount: String, CaseIterable {
+        case all, conversations, none
+        var title: String {
+            switch self {
+            case .all: "All Unread"
+            case .conversations: "Mentions and Replies"
+            case .none: "Nothing"
+            }
+        }
+    }
+
+    @Published var menuBarCount = MenuBarCount(rawValue: UserDefaults.standard.string(forKey: "menuBarCount") ?? "") ?? .all {
+        didSet { UserDefaults.standard.set(menuBarCount.rawValue, forKey: "menuBarCount"); updateBadge(store.notes) }
+    }
+
+    private func updateBadge(_ notes: [Note]) {
+        let unread = notes.filter(\.isUnread)
+        switch menuBarCount {
+        case .all: setBadge(unread.count)
+        case .conversations: setBadge(unread.filter { $0.kind == .mention || $0.kind == .comment }.count)
+        case .none: setBadge(0)
+        }
+    }
 
     private func setBadge(_ count: Int) {
         guard let button = statusItem?.button else { return }
@@ -597,8 +636,14 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
                 switchSection([.notifications, .reader, .later][n - 1])
                 return nil
             }
-            return e
+            switch e.charactersIgnoringModifiers {
+            case "=", "+": zoom(1); return nil
+            case "-": zoom(-1); return nil
+            case "0": zoom(0); return nil
+            default: return e
+            }
         }
+        if lightboxOpen, e.keyCode == 53 { article?.evaluateJavaScript("closeLightbox()"); return nil }
         switch e.keyCode {
         case 53: // esc: keys sheet, then a single site's feed, then the reader, then the panel
             if section == .reader, reader.isSiteFeed, !showDetail { reader.show(reader.previousFeed); return nil }
@@ -654,6 +699,10 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         case "l":
             guard section == .reader, let post = selectedPost, reader.canLike(post) else { return e }
             Task { await reader.toggleLike(post) }
+            return nil
+        case "u": // back to unread, or read again
+            guard section == .notifications, let note = selectedNote else { return e }
+            note.isUnread ? store.markRead(note) : store.markUnread(note)
             return nil
         case "c":
             guard showDetail, commentTarget != nil else { return e }

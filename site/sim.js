@@ -80,10 +80,10 @@
       open: true, section: "notifications", filter: "all", feed: "blogs",
       sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false,
       site: null, // the Reader showing one site's posts (from a hovercard, or a post's site name)
-      menu: false, saved: new Set(), read: new Set(), reminders: {}, // reminders: item key → "Tomorrow at 9:00 AM"
+      menu: false, saved: new Set(), read: new Set(), unreadAgain: new Set(), reminders: {}, // reminders: item key → "Tomorrow at 9:00 AM"
     };
     const items = () => {
-      if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || (n.unread && !st.read.has(n.id)));
+      if (st.section === "notifications") return NOTES.filter((n) => st.filter === "all" || isUnread(n));
       if (st.section === "later") return laterKeys();
       if (st.site) return Object.keys(POSTS).filter((k) => POSTS[k].site === st.site && !POSTS[k].xpost);
       if (st.feed === "saved") return [...st.saved].reverse(); // newest save first, like WordPress.com
@@ -102,7 +102,8 @@
       `<div class="${cls}" style="--c:${P[who][1]}"${card ? ` data-card="person:${who}"` : ""}${attrs}>${initials(who)}</div>`;
     const siteIcon = (site, extra = "", attrs = "") => `<div class="sim-site ${extra}" style="--c:${S[site].color}" data-card="site:${site}"${attrs}>${S[site].name.replace("+", "")[0].toUpperCase()}</div>`;
     const marked = (text) => esc(text).replace(/@robin|Robin/g, (m) => `<mark>${m}</mark>`);
-    const unreadCount = () => NOTES.filter((n) => n.unread && !st.read.has(n.id)).length;
+    const isUnread = (n) => (n.unread && !st.read.has(n.id)) || st.unreadAgain.has(n.id);
+    const unreadCount = () => NOTES.filter(isUnread).length;
     const KIND = { comment: "#0a84ff", mention: "#ff9500", like: "#f5b000", follow: "#34c759" };
 
     root.innerHTML = `
@@ -121,7 +122,7 @@
           <b>Keyboard Shortcuts</b>
           <div class="cols">${[
             ["Lists", [["← →", "Previous or next list, across sections"], ["⇧← ⇧→", "Previous or next section"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
-            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
+            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["u", "Mark a notification unread"], ["⌘+ ⌘−", "Bigger or smaller text (⌘0 resets)"], ["click", "An image, to see it full size"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
             ["Later", [["↑ ↓", "Highlight a reminder"], ["↩", "Open it"], ["⌫", "Done"]]],
           ].map(([title, rows]) => `<div><i>${title}</i>${rows.map(([keys, what]) => `<p><span>${keys.split(" ").map((x) => `<kbd>${x}</kbd>`).join("")}</span>${what}</p>`).join("")}</div>`).join("")}</div>
         </div></div>
@@ -146,7 +147,8 @@
 
     function renderHead() {
       const unread = unreadCount();
-      $(".sim-wcount").textContent = unread || "";
+      const conversations = NOTES.filter((n) => isUnread(n) && (n.kind === "mention" || n.kind === "comment")).length;
+      $(".sim-wcount").textContent = (st.count === "none" ? 0 : st.count === "conversations" ? conversations : unread) || "";
       $(".sim-head").innerHTML = `
         <button class="sim-tab ${st.section === "notifications" ? "on" : ""}" data-a="section" data-v="notifications"${dt("tab.notifications")}>Notifications${unread ? `<span class="sim-badge"${dt("badge.notifications")}>${unread}</span>` : ""}</button>
         <button class="sim-tab ${st.section === "reader" ? "on" : ""}" data-a="section" data-v="reader"${dt("tab.reader")}>Reader</button>
@@ -194,7 +196,9 @@
       const item = (label, tip) => `<button data-a="menuItem" data-v="${tip}">${label}</button>`;
       const toggle = (key, label) => `<button class="check ${st[key] ? "on" : ""}" data-a="menuToggle" data-v="${key}">${label}</button>`;
       menu.innerHTML = item("Open on WordPress.com", "Opens WordPress.com in your browser") + "<hr>"
-        + toggle("dock", "Show in Dock") + toggle("window", "Open as a Window") + "<hr>"
+        + toggle("dock", "Show in Dock") + toggle("window", "Open as a Window")
+        + `<div class="dim">Menu Bar Count</div>` + [["all", "All Unread"], ["conversations", "Mentions and Replies"], ["none", "Nothing"]]
+          .map(([v, label]) => `<button class="check ${(st.count || "all") === v ? "on" : ""}" data-a="menuCount" data-v="${v}">${label}</button>`).join("") + "<hr>"
         + item("Check for Updates…", "You're on the latest version") + `<div class="dim">Dispatch ${VERSION}</div><hr>`
         + item("Sign out", "Signs out of WordPress.com") + item("Restart", "Restarts Dispatch") + item("Quit", "Quits Dispatch");
     }
@@ -237,7 +241,7 @@
       const post = n.post && POSTS[n.post];
       const title = post ? post.title : null;
       const action = post ? n.action : `${n.action} ${S[n.site].name}`;
-      const unread = n.unread && !st.read.has(n.id);
+      const unread = isUnread(n);
       return `<div class="sim-row note ${unread ? "unread" : ""} ${st.sel === n.id ? "on" : ""}" data-a="select" data-v="${n.id}"${r("box")}>
         <div class="sim-dot"${unread ? r("dot") : ""}></div>
         <div class="sim-avwrap">${av(n.who, "sim-av big", true, r("icon"))}<span class="sim-kind" style="background:${KIND[n.kind]}"${r("kind")}>${I.kind[n.kind]}</span></div>
@@ -455,7 +459,7 @@
       panel.classList.toggle("window", !!st.detached);
       $(".sim-dock").classList.toggle("running", !!(st.detached || st.dock));
       // Like the app's status item: the W, then the unread count beside it.
-      $(".sim-wcount").textContent = unreadCount() || "";
+      renderHead();
       panel.classList.toggle("wide", st.sel !== null || !!st.detached); // a window always has room for the reader
       renderHead(); renderFilters(); renderRows(swapRows); renderDetail(); renderMenu();
       if (cardFor && !sim.contains(cardFor)) hideCard();
@@ -496,6 +500,14 @@
         const next = all[Math.min(Math.max(i + d, 0), 2)];
         if (next !== st.section) A.section(next);
       },
+      // u: a notification back to unread, or read again.
+      unreadKey() {
+        const s = selected(); if (st.section !== "notifications" || !s) return;
+        const id = s.item.id;
+        if (isUnread(s.item)) { st.read.add(id); st.unreadAgain.delete(id); } else { st.read.delete(id); st.unreadAgain.add(id); }
+        renderHead(); renderFilters(); renderRows();
+        hint(isUnread(s.item) ? "Marked as unread" : "Marked as read");
+      },
       keysHelp() { sim.querySelector(".sim-keys").classList.toggle("show"); },
       commentsKey() { if (st.sel !== null && postFor(selected()?.item)) A.comments(); },
       fullKey() { if (st.sel === null || !postFor(selected()?.item)) return; if (!st.commentsOpen) { st.commentsOpen = true; st.commentsExpanded = true; } else st.commentsExpanded = !st.commentsExpanded; renderComments(true); },
@@ -512,7 +524,7 @@
       togglePost() { st.postOpen = !st.postOpen; renderDetail(); },
       select(v) {
         st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = ""; st.postOpen = false;
-        if (st.section === "notifications") st.read.add(v);
+        if (st.section === "notifications") { st.read.add(v); st.unreadAgain.delete(v); }
         render();
       },
       move(d) {
@@ -611,6 +623,7 @@
       },
       openBanner(v) { A.banner(null); delete st.reminders[v]; if (st.sel !== v) A.select(v); else { renderRows(); renderDetail(); } },
       menuItem(v) { st.menu = false; renderHead(); renderMenu(); hint(v, 1800); },
+      menuCount(v) { st.count = v; st.menu = false; render(); },
       menuToggle(v) {
         st[v] = !st[v]; st.menu = false; renderHead(); renderMenu();
         hint(v === "dock" ? (st.dock ? "Dispatch keeps a Dock icon" : "Dock icon only while it's a window")
@@ -653,7 +666,7 @@
         Escape: st.site && st.sel === null ? ["siteBack"] : ["close"], "?": ["keysHelp"],
         Enter: later ? ["laterOpen"] : null, Backspace: later ? ["laterDoneKey"] : null,
         " ": ["page", e.shiftKey ? -1 : 1], c: ["commentsKey"], f: ["fullKey"], r: ["replyKey"], m: ["remindKey"],
-        s: ["save"], l: ["likePost"], o: later ? ["laterOpen"] : ["toast", "Opens in your browser"],
+        s: ["save"], l: ["likePost"], o: later ? ["laterOpen"] : ["toast", "Opens in your browser"], u: ["unreadKey"],
       }[e.key];
       if (!k) return;
       e.preventDefault();
@@ -829,7 +842,7 @@
       Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false, detached: false });
       hideCard(); A.switcher(false); A.banner(null); st.reminders = {}; st.laterHL = null;
       sim.querySelector(".sim-keys")?.classList.remove("show");
-      st.read.clear(); st.saved.clear();
+      st.read.clear(); st.saved.clear(); st.unreadAgain.clear();
       Object.values(POSTS).forEach((p) => { if (p.liked) { p.liked = false; p.likes--; } });
       POSTS.inbox.comments = POSTS.inbox.comments.filter((x) => x.id < 1000);
       POSTS.inbox.comments.forEach((x) => { if (x.liked) { x.liked = false; x.likes--; } });

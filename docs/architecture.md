@@ -26,7 +26,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - the comments drawer state (`commentsOpen`, and `commentsExpanded`, which folds the article away so the open thread takes the reader's full height; both stick while you move between posts),
 - keyboard handling (`handleKey`), through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep. `KeyboardHelp` (`?`, or ⋯ → Keyboard Shortcuts) lists them all; keep it in step:
   - **Lists:** `←`/`→` walk every list in one row, across sections (All, Unread, Following, Automattic, Saved, Later; `step`). `⇧←`/`⇧→`, `⌘1`–`⌘3` and `⇥`/`⇧⇥` jump between sections (⌘1–3 are also in the Go menu; ⇥ wraps around, ⇧arrows don't). `↑`/`↓` or `j`/`k` move within a list. `⌘↑` goes back to the top, unless the article has focus. `esc` backs out: a single site's feed, then the reader, then the panel.
-  - **The open item:** `Space`/`⇧Space` page the article (`article`, the reader's web view). `l` likes, `s` saves, `m` opens Remind Me as a menu, `o` opens in the browser. `c` toggles comments, `f` full height, `r` opens the composer (bumps `replyRequest`; a comment notification replies to its comment).
+  - **The open item:** `Space`/`⇧Space` page the article (`article`, the reader's web view). `l` likes, `s` saves, `m` opens Remind Me as a menu, `o` opens in the browser, `u` marks a notification unread (or read again; `Store.markUnread` sends WordPress.com a count of -1, as its own panel does). `⌘+`/`⌘−`/`⌘0` set the reader's text size (`textZoom`, the web view's `pageZoom`; also in the View menu). `c` toggles comments, `f` full height, `r` opens the composer (bumps `replyRequest`; a comment notification replies to its comment).
   - **Later:** `↑`/`↓` move a highlight (`laterHighlight`) rather than opening, `↩` or `o` opens, `⌫` is Done.
   - Keys pass through while typing a comment, and the article keeps its own scrolling keys when it has focus.
 
@@ -36,6 +36,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - Sign-in state and the generic `request(_:version:method:body:)` helper for `public-api.wordpress.com/rest/v1.x`.
 - Notifications, polled every 120 seconds.
 - Optimistic mark-as-read.
+- The number beside the menu bar icon (`PanelController.menuBarCount`, ⋯ → Menu Bar Count): all unread, only mentions and replies, or nothing.
 - Mention terms from `/me`, used to highlight mentions.
 - Reader pages for notifications (`buildPage`): a comment, a reply or a comment mention gets `ReaderPage.commentPage`, which shows the post first (a three-line preview, with the whole post in a "Read the whole post" disclosure), then the comment it replies to (`parent`), then the comment itself, highlighted. A post mention shows the post; likes and follows show the notification with its likers.
 - Session expiry: a 401 or `invalid_token` signs out and shows "Session expired". A 403 from a private P2 doesn't.
@@ -82,6 +83,10 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - `ReaderPage.html(...)` renders posts and notes into one HTML template, with reading time and mention highlighting.
 - `HTMLView` is the `WKWebView` wrapper. It catches `wpn://site/<id>` links, which open a site's feed in the list, and sends every other link to the browser.
 - The W logo is rendered as a template image.
+
+## Images
+
+Click an image in the reader (or a link straight to one) to see it full size, in a lightbox inside the page; click the image for actual size, anywhere else to close. It uses `data-orig-file`, then the largest `srcset` candidate. While it's open the page tells `HTMLView` (the `lightbox` script handler), so esc closes it instead of the reader.
 
 ## Images on private sites
 

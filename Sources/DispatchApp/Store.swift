@@ -174,6 +174,14 @@ final class Store: ObservableObject {
         Task { await markRead([note.id]) }
     }
 
+    /// Back to unread, for something you opened but want to keep. WordPress.com's own panel sends -1.
+    func markUnread(_ note: Note) {
+        guard !note.isUnread, let i = notes.firstIndex(where: { $0.id == note.id }) else { return }
+        notes[i].read = 0
+        let body = try? JSONSerialization.data(withJSONObject: ["counts": ["\(note.id)": -1]])
+        Task { _ = try? await request("notifications/read", method: "POST", body: body) }
+    }
+
     func markAllRead() async {
         await markRead(notes.filter(\.isUnread).map(\.id))
     }

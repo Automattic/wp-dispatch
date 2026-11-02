@@ -79,6 +79,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item("Paste", #selector(NSText.paste(_:)), "v"),
             item("Select All", #selector(NSText.selectAll(_:)), "a"),
         ]))
+        main.addItem(menu("View", [
+            item("Bigger Text", #selector(zoomIn), "+", target: self),
+            item("Smaller Text", #selector(zoomOut), "-", target: self),
+            item("Actual Size", #selector(zoomReset), "0", target: self),
+        ]))
         main.addItem(menu("Go", [
             item("Notifications", #selector(goNotifications), "1", target: self),
             item("Reader", #selector(goReader), "2", target: self),
@@ -105,6 +110,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func goReader() { controller?.switchSection(.reader) }
     @objc private func goLater() { controller?.switchSection(.later) }
     @objc private func showKeys() { controller?.showingKeys = true }
+    @objc private func zoomIn() { controller?.zoom(1) }
+    @objc private func zoomOut() { controller?.zoom(-1) }
+    @objc private func zoomReset() { controller?.zoom(0) }
 }
 
 extension AppDelegate: NSMenuItemValidation {

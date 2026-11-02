@@ -196,9 +196,46 @@ enum ReaderPage {
     mark.me { background:var(--mark); color:inherit; border-radius:3px; padding:0 2px; transition:background .3s; }
     mark.me.on { background:var(--markOn); }
     .sharedaddy, .jp-relatedposts, .wpcom-reblog-snapshot { display:none !important; }
+    article img { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; z-index:10; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.82);
+                cursor:zoom-out; opacity:0; transition:opacity .15s; overflow:auto; }
+    #lightbox.on { opacity:1; }
+    #lightbox img { max-width:100%; max-height:calc(100vh - 40px); border-radius:4px; box-shadow:0 10px 40px rgba(0,0,0,.4); cursor:zoom-in; }
+    #lightbox.actual { place-items:start; }
+    #lightbox.actual img { max-width:none; max-height:none; cursor:zoom-out; }
     """
 
     private static let js = """
+    // Click an image (or a link to one) to see it full size; click the image again for actual
+    // size, anywhere else (or esc, which the app forwards) to close.
+    const imageURL = s => s && /\\.(jpe?g|png|gif|webp|heic|avif)(\\?|$)/i.test(s);
+    const best = img => img.dataset.origFile || img.dataset.largeFile
+      || (img.srcset || '').split(',').map(x => x.trim().split(/\\s+/)).sort((a, b) => parseInt(b[1]) - parseInt(a[1]))[0]?.[0]
+      || img.currentSrc || img.src;
+    function openLightbox(src) {
+      const box = document.createElement('div');
+      box.id = 'lightbox';
+      const big = document.createElement('img');
+      big.src = src;
+      box.append(big);
+      box.onclick = e => { if (e.target === big) box.classList.toggle('actual'); else closeLightbox(); };
+      document.body.append(box);
+      requestAnimationFrame(() => box.classList.add('on'));
+      window.webkit?.messageHandlers?.lightbox?.postMessage(true);
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox')?.remove();
+      window.webkit?.messageHandlers?.lightbox?.postMessage(false);
+    }
+    document.addEventListener('click', e => {
+      const img = e.target.closest('article img');
+      const link = e.target.closest('a');
+      if (!img || (link && !imageURL(link.getAttribute('href')) && !link.querySelector('img'))) return;
+      if (link && !imageURL(link.getAttribute('href'))) return; // a picture that links to a page: follow the link
+      e.preventDefault();
+      openLightbox(best(img));
+    });
+
     // Hovercards: tell the app where a person is, so it can open their card beside them.
     const hc = window.webkit?.messageHandlers?.hovercard;
     if (hc) {
@@ -277,18 +314,21 @@ struct HTMLView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.userContentController.add(context.coordinator, name: "hovercard")
+        config.userContentController.add(context.coordinator, name: "lightbox")
         config.setURLSchemeHandler(MediaLoader(store: c.store), forURLScheme: MediaLoader.scheme)
         let view = WKWebView(frame: .zero, configuration: config)
         context.coordinator.anchor.view = view
         view.navigationDelegate = context.coordinator
         view.setValue(false, forKey: "drawsBackground")
         c.article = view // Space pages it
+        view.pageZoom = c.textZoom
         return view
     }
 
     func updateNSView(_ view: WKWebView, context: Context) {
         context.coordinator.reader = reader
         context.coordinator.panel = c
+        if view.pageZoom != c.textZoom { view.pageZoom = c.textZoom }
         guard context.coordinator.loaded != html else { return }
         context.coordinator.loaded = html
         view.loadHTMLString(html, baseURL: baseURL)
@@ -303,6 +343,7 @@ struct HTMLView: NSViewRepresentable {
         /// `{enter, name, avatar, x, y, w, h}` from the page's hover listeners (rect in page points).
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
             MainActor.assumeIsolated {
+                if message.name == "lightbox" { panel?.lightboxOpen = message.body as? Bool ?? false; return }
                 guard let body = message.body as? [String: Any] else { return }
                 guard body["enter"] as? Bool == true, let reader, let panel else { return Hovercard.shared.leave(anchor) }
                 func n(_ k: String) -> CGFloat { CGFloat((body[k] as? NSNumber)?.doubleValue ?? 0) }
@@ -341,7 +382,8 @@ final class MediaLoader: NSObject, WKURLSchemeHandler {
 
     /// Rewrites `src`/`srcset` values on *.wordpress.com to the handler's scheme. Links are left alone.
     static func route(_ html: String) -> String {
-        guard let attr = try? NSRegularExpression(pattern: #"\b(src|srcset)="([^"]*)""#) else { return html }
+        // data-orig-file is the full-size image, for the lightbox; links to images open there too.
+        guard let attr = try? NSRegularExpression(pattern: #"\b(src|srcset|data-orig-file|data-large-file)="([^"]*)""#) else { return html }
         let ns = html as NSString
         var out = ""
         var at = 0

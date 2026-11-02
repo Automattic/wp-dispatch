@@ -123,6 +123,9 @@ struct MoreMenu: View {
             Divider()
             Toggle("Show in Dock", isOn: $c.showInDock)
             Toggle("Open as a Window", isOn: $c.opensAsWindow)
+            Picker("Menu Bar Count", selection: $c.menuBarCount) {
+                ForEach(PanelController.MenuBarCount.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
             Menu("Notify Me About") {
                 ForEach(Alerts.Kind.allCases, id: \.self) { kind in
                     Toggle(kind.title, isOn: Binding(get: { Alerts.shared.isOn(kind) }, set: { Alerts.shared.set(kind, $0) }))
@@ -172,6 +175,8 @@ struct KeyboardHelp: View {
         ("Reading", [
             (["Space", "⇧Space"], "Page down or up"),
             (["l"], "Like"), (["s"], "Save"), (["m"], "Remind me later"), (["o"], "Open in the browser"),
+            (["u"], "Mark a notification unread"), (["⌘+", "⌘−"], "Bigger or smaller text (⌘0 resets)"),
+            (["click"], "An image, to see it full size"),
             (["c"], "Comments"), (["f"], "Comments full height"), (["r"], "Reply"), (["⌘↩"], "Send a comment"),
         ]),
         ("Later", [
@@ -749,6 +754,9 @@ struct NoteRow: View {
             }
         }
         .contextMenu {
+            Button(note.isUnread ? "Mark as Read" : "Mark as Unread") {
+                note.isUnread ? c.store.markRead(note) : c.store.markUnread(note)
+            }
             RemindItems(id: Reminder.id(note: note)) { Reminders.shared.remind(note, at: $0) }
             Divider()
             Button("Open in Browser") { c.store.openInBrowser(note) }
