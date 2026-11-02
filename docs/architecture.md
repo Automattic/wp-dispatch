@@ -53,7 +53,7 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
   - `site_ID` is sometimes a string.
   - `site_icon` is sometimes `[]`.
 - X-posts are resolved from `xpost_origin` metadata. When you can't access the origin, the reader shows a fallback notice.
-- Comments come from `sites/{site}/posts/{post}/replies`, with `like_count` and `i_like`, and are ordered into threads.
+- Comments come from `sites/{site}/posts/{post}/replies` (100 a page by `offset`, up to 500), with `like_count` and `i_like`, and are ordered into threads. They're cached per post for an instant first look, but the drawer always fetches the thread again (`comments(fresh: true)`) and swaps in anything new: a cached thread can be far behind.
 - Writing:
   - `setLike` posts to `comments/{id}/likes/new` or `likes/mine/delete`.
   - `postComment` posts to `posts/{post}/replies/new` for a comment on the post, or `comments/{id}/replies/new` for a reply.

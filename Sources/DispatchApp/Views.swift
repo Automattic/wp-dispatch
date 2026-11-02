@@ -831,6 +831,7 @@ struct CommentsDrawer: View {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { comments = loaded }
                 try? await Task.sleep(for: .milliseconds(60))
                 appeared = true
+                await refresh()
                 return
             }
             replyTo = nil
@@ -840,14 +841,22 @@ struct CommentsDrawer: View {
             if let cached = reader.cachedComments(site: site, post: post) {
                 comments = cached
                 switching = false
-                return
+            } else {
+                withAnimation(.easeOut(duration: 0.12)) { switching = true }
+                comments = await reader.comments(site: site, post: post)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.12)) { switching = false }
             }
-            withAnimation(.easeOut(duration: 0.12)) { switching = true }
-            let loaded = await reader.comments(site: site, post: post)
-            guard !Task.isCancelled else { return }
-            comments = loaded
-            withAnimation(.easeOut(duration: 0.12)) { switching = false }
+            await refresh()
         }
+    }
+
+    /// Swaps in the latest thread. What was showing came from a cache that may be well behind.
+    private func refresh() async {
+        let latest = await reader.comments(site: site, post: post, fresh: true)
+        guard !Task.isCancelled, let current = comments,
+              latest.map(\.id) != current.map(\.id) || latest.map(\.likeCount) != current.map(\.likeCount) else { return }
+        withAnimation(spring) { comments = latest }
     }
 
     private func toggle(focusing id: Int? = nil) {

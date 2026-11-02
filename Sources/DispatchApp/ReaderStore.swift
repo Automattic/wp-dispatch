@@ -356,13 +356,21 @@ final class ReaderStore: ObservableObject {
     private var commentCache: [String: [PostComment]] = [:]
 
     /// Comments in thread order (each reply right after its parent), with depth for indenting.
-    func comments(site: Int, post: Int) async -> [PostComment] {
+    /// `fresh` skips the cache: threads keep growing, and a cached one is only a quick first look.
+    func comments(site: Int, post: Int, fresh: Bool = false) async -> [PostComment] {
         let key = "\(site)-\(post)"
-        if let cached = commentCache[key] { return cached }
-        struct Response: Decodable { let comments: [PostComment] }
-        guard let data = try? await store.request(
-                "sites/\(site)/posts/\(post)/replies?number=100&order=ASC&fields=ID,author,date,content,parent,like_count,i_like"),
-              let flat = try? JSONDecoder().decode(Response.self, from: data).comments else { return [] }
+        if !fresh, let cached = commentCache[key] { return cached }
+        struct Response: Decodable { let comments: [PostComment]; let found: Int? }
+        // 100 a page, oldest first, up to 500.
+        var flat: [PostComment] = []
+        while flat.count < 500 {
+            guard let data = try? await store.request(
+                    "sites/\(site)/posts/\(post)/replies?number=100&offset=\(flat.count)&order=ASC&fields=ID,author,date,content,parent,like_count,i_like"),
+                  let page = try? JSONDecoder().decode(Response.self, from: data) else { break }
+            flat += page.comments
+            if page.comments.isEmpty || flat.count >= (page.found ?? 0) { break }
+        }
+        guard !flat.isEmpty || commentCache[key] == nil else { return commentCache[key] ?? [] } // offline: keep what we had
 
         let children = Dictionary(grouping: flat.filter { $0.parentID != nil }, by: { $0.parentID! })
         let known = Set(flat.map(\.id))
