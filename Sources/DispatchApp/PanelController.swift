@@ -25,6 +25,8 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var keptVisible: Set<Int> = []
     /// Comments drawer under the reader; starts closed each launch, then sticks while you move between posts.
     @Published var commentsOpen = false
+    /// The open drawer takes the reader's whole height, over the article. Sticks between posts too.
+    @Published var commentsExpanded = false
     /// Set by the list as it scrolls; shows the back-to-top button.
     @Published var listScrolled = false
     /// Bumped to ask the visible list to scroll to its top.
@@ -285,6 +287,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         currentPost = nil
         keptVisible = []
         commentsOpen = false
+        commentsExpanded = false
         unreadOnly = false
         section = .notifications
         reader.show(.blogs)

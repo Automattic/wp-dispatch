@@ -7,7 +7,7 @@
 set -e
 cd "${0:A:h}/../.."
 OUT=build/drift
-SCENES=(notifications note-open comments-open reply-open reader reader-post xposts)
+SCENES=(notifications note-open comments-open comments-full reply-open reader reader-post xposts)
 rm -rf $OUT && mkdir -p $OUT
 
 swift build -q 2>/dev/null || swift build

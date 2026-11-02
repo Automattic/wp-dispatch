@@ -770,6 +770,9 @@ struct DetailPane: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Folded away rather than removed, so the article doesn't reload when it comes back.
+            .frame(maxHeight: c.commentsOpen && c.commentsExpanded && c.commentTarget != nil ? 0 : .infinity)
+            .clipped()
 
             if let t = c.commentTarget {
                 // Not re-identified per post: the drawer stays put and swaps its thread.
@@ -990,6 +993,18 @@ struct CommentsDrawer: View {
         }
         .buttonStyle(.plain)
         .help(c.commentsOpen ? "Hide comments" : "Show comments")
+        .overlay(alignment: .trailing) {
+            if c.commentsOpen {
+                // Left of the chevron: comments over the whole reader, or back to sharing it with the post.
+                IconButton(c.commentsExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
+                           help: c.commentsExpanded ? "Show the post too" : "Comments full height") {
+                    withAnimation(spring) { c.commentsExpanded.toggle() }
+                }
+                .driftTag("comments.expand")
+                .padding(.trailing, 36)
+                .transition(.opacity)
+            }
+        }
     }
 
     private func strip(_ comments: [PostComment]) -> some View {

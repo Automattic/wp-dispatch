@@ -23,7 +23,7 @@ Dispatch is an accessory app (no Dock icon, not in ⌘-Tab) while it's in the me
 Both homes share an `NSVisualEffectView` background with a stretchable rounded mask. `PanelController` also owns:
 - the section (Notifications or Reader),
 - the selection and `showDetail`,
-- the comments drawer state,
+- the comments drawer state (`commentsOpen`, and `commentsExpanded`, which folds the article away so the open thread takes the reader's full height; both stick while you move between posts),
 - keyboard handling, through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep:
   - `↑`/`↓`, `j`/`k`: move the selection
   - `←`/`→`: switch Reader tabs (Following, Automattic, Saved); not in a single site's feed

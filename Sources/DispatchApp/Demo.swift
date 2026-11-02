@@ -22,7 +22,7 @@ enum Demo {
     }()
 
     /// The website's scenes (`SCENES` in site/sim.js). Keep the two lists in step.
-    static let scenes = ["notifications", "note-open", "comments-open", "reply-open", "reader", "reader-post", "xposts"]
+    static let scenes = ["notifications", "note-open", "comments-open", "comments-full", "reply-open", "reader", "reader-post", "xposts"]
 }
 
 // MARK: - Made-up WordPress.com
@@ -365,9 +365,10 @@ enum DemoRender {
         switch scene {
         case "note-open": if let n = notes.first(where: { $0.id == 2 }) { c.select(n) }
         case "reply-open": if let n = notes.first(where: { $0.id == 4 }) { c.select(n) }
-        case "comments-open":
+        case "comments-open", "comments-full":
             if let n = notes.first(where: { $0.id == 1 }) { c.select(n) }
             c.commentsOpen = true
+            c.commentsExpanded = scene == "comments-full"
         case "reader", "reader-post", "xposts":
             c.switchSection(.reader)
             c.reader.show(scene == "xposts" ? .p2s : .blogs)
