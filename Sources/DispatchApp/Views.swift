@@ -40,7 +40,6 @@ struct RootView: View {
             .overlay {
                 if c.showingKeys { KeyboardHelp().transition(.opacity.combined(with: .scale(scale: 0.97))) }
             }
-            .overlay(alignment: .bottom) { FirstRunTips() }
             .animation(.easeOut(duration: 0.15), value: c.showingKeys)
             .ignoresSafeArea() // the detached window's hidden titlebar would otherwise leave a strip
         }
@@ -114,6 +113,7 @@ struct ListPane: View {
             case .reader: PostList()
             case .later: LaterList()
             }
+            FirstRunTips() // docked under the list, once
         }
     }
 }
@@ -170,8 +170,10 @@ struct MoreMenu: View {
 
 // MARK: - First run
 
-/// Three short cards, once, after the first sign-in: the keys that matter, reminders, and `?`.
+/// Three short tips, once, after the first sign-in: the keys that matter, reminders, and `?`. A panel
+/// docked at the bottom of the list (which makes room for it), not a card floating over it.
 struct FirstRunTips: View {
+    @EnvironmentObject var c: PanelController
     @AppStorage("tipsSeen") private var seen = false
     @State private var page = 0
 
@@ -205,13 +207,12 @@ struct FirstRunTips: View {
                     .controlSize(.small)
                 }
             }
-            .padding(14)
-            .frame(width: 340)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.regularMaterial)
-                .shadow(color: .black.opacity(0.18), radius: 16, y: 6))
-            .padding(.bottom, 22)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 20)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, c.mode == .attached ? 20 : 12) // clears the resize grip
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.07))
+            .overlay(alignment: .top) { Divider() }
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }

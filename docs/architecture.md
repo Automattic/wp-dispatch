@@ -106,7 +106,7 @@ Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed
 - **Comment drafts** are kept per thread (`ReaderStore.drafts`) when you move to another post or close the panel; the drawer's header says "Draft" while one waits.
 - **Expired sign-ins** (they last about two weeks and can't renew) post a Mac notification, so Dispatch doesn't just go quiet.
 - **Seen posts.** Reader rows show a dot until you've read them, from WordPress.com's `is_seen` (shared with the web Reader). Opening one marks it seen (`wpcom/v2/seen-posts/seen/blog/new`, or `seen-posts/seen/new` for RSS; `…/delete` undoes it with `u`). The API only accepts WordPress.com's own app names as `source`, so Dispatch sends `reader-web`.
-- **First run.** `FirstRunTips` shows three cards once (`tipsSeen`): the keyboard, reminders, and `?`.
+- **First run.** `FirstRunTips` docks three short tips at the bottom of the list, once (`tipsSeen`): the keyboard, reminders, and `?`.
 - **VoiceOver** reads each icon button's help text, not its symbol name.
 
 ## Hovercards: `Hovercards.swift`
