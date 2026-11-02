@@ -22,7 +22,7 @@ enum Demo {
     }()
 
     /// The website's scenes (`SCENES` in site/sim.js). Keep the two lists in step.
-    static let scenes = ["notifications", "note-open", "comments-open", "comments-full", "reply-open", "reader", "reader-post", "xposts", "later"]
+    static let scenes = ["notifications", "note-open", "comments-open", "comments-full", "reply-open", "reader", "reader-post", "xposts", "later", "keys"]
 }
 
 // MARK: - Made-up WordPress.com
@@ -365,6 +365,7 @@ enum DemoRender {
         let notes = c.store.notes
         switch scene {
         case "note-open": if let n = notes.first(where: { $0.id == 2 }) { c.select(n) }
+        case "keys": c.showingKeys = true
         case "reply-open": if let n = notes.first(where: { $0.id == 4 }) { c.select(n) }
         case "later":
             // A notification for tomorrow morning and a post in three hours, as the site's scene has.

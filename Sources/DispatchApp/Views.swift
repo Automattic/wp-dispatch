@@ -27,6 +27,10 @@ struct RootView: View {
             .overlay(alignment: .bottom) {
                 if c.mode == .attached { HeightHandle() }
             }
+            .overlay {
+                if c.showingKeys { KeyboardHelp().transition(.opacity.combined(with: .scale(scale: 0.97))) }
+            }
+            .animation(.easeOut(duration: 0.15), value: c.showingKeys)
             .ignoresSafeArea() // the detached window's hidden titlebar would otherwise leave a strip
         }
     }
@@ -125,6 +129,7 @@ struct MoreMenu: View {
                 }
             }
             Divider()
+            Button("Keyboard Shortcuts") { c.showingKeys = true }
             Button("Check for Updates…") { Updates.shared.checkForUpdates() }
             Text("Dispatch \(Updates.shared.versionLabel)")
             Divider()
@@ -145,6 +150,84 @@ struct MoreMenu: View {
         .fixedSize()
         .help("More")
         .onHover { h in withAnimation(.easeOut(duration: 0.1)) { hovering = h } }
+    }
+}
+
+// MARK: - Keyboard shortcuts
+
+/// `?`: every shortcut, over the panel. Keep it in step with `PanelController.handleKey`.
+struct KeyboardHelp: View {
+    @EnvironmentObject var c: PanelController
+
+    private let groups: [(String, [(keys: [String], what: String)])] = [
+        ("Lists", [
+            (["←", "→"], "Previous or next list, across sections"),
+            (["⌘1", "⌘2", "⌘3"], "Notifications, Reader, Later"),
+            (["⇥", "⇧⇥"], "Next or previous section"),
+            (["↑", "↓"], "Move through the list (or j, k)"),
+            (["⌘↑"], "Back to the top"),
+            (["esc"], "Back out: a site’s feed, the reader, the panel"),
+        ]),
+        ("Reading", [
+            (["Space", "⇧Space"], "Page down or up"),
+            (["l"], "Like"), (["s"], "Save"), (["m"], "Remind me later"), (["o"], "Open in the browser"),
+            (["c"], "Comments"), (["f"], "Comments full height"), (["r"], "Reply"), (["⌘↩"], "Send a comment"),
+        ]),
+        ("Later", [
+            (["↑", "↓"], "Highlight a reminder"), (["↩"], "Open it"), (["⌫"], "Done"),
+        ]),
+    ]
+
+    @ViewBuilder private var columns: some View {
+        ForEach(groups, id: \.0) { title, rows in
+            VStack(alignment: .leading, spacing: 7) {
+                Text(title.uppercased()).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(.secondary)
+                ForEach(rows, id: \.what) { row in
+                    HStack(spacing: 8) {
+                        HStack(spacing: 3) { ForEach(row.keys, id: \.self) { Keycap($0) } }
+                            .frame(minWidth: 76, alignment: .leading)
+                        Text(row.what).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.18).onTapGesture { c.showingKeys = false }
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text("Keyboard Shortcuts").font(.system(size: 15, weight: .semibold))
+                    Spacer()
+                    IconButton("xmark", help: "Close (esc)") { c.showingKeys = false }
+                }
+                // Side by side when the reader is open; one scrolling column when it's just the list.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 28) { columns }.fixedSize()
+                    ScrollView { VStack(alignment: .leading, spacing: 16) { columns } }
+                }
+            }
+            .padding(18)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 20, y: 8))
+            .fixedSize(horizontal: false, vertical: false)
+            .padding(16)
+        }
+    }
+}
+
+struct Keycap: View {
+    let key: String
+    init(_ key: String) { self.key = key }
+
+    var body: some View {
+        Text(key)
+            .font(.system(size: 11, weight: .semibold))
+            .padding(.horizontal, 5)
+            .frame(minWidth: 20, minHeight: 20)
+            .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.07)))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.12)))
     }
 }
 
@@ -216,7 +299,7 @@ struct LaterRow: View {
 
     var body: some View {
         let note = reminder.noteID.flatMap { id in c.store.notes.first { $0.id == id } }
-        SelectableRow(selected: false, selection: selection, action: { c.open(reminder, clear: false) }) {
+        SelectableRow(selected: c.laterHighlight == reminder.id, selection: selection, action: { c.open(reminder, clear: false) }) {
             HStack(alignment: .top, spacing: 11) {
                 Group {
                     if let note {
@@ -1043,6 +1126,7 @@ struct CommentsDrawer: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .onChange(of: c.replyRequest) { _, _ in replyFromKeyboard() }
         .task(id: key) {
             // First time: slide up and pop the bubbles in. After that, just swap threads.
             guard comments != nil else {
@@ -1068,6 +1152,12 @@ struct CommentsDrawer: View {
             }
             await refresh()
         }
+    }
+
+    /// `r`: the composer, replying to the notification's comment when it's a comment notification.
+    private func replyFromKeyboard() {
+        let commentID = c.section == .notifications ? c.selectedNote?.meta?.ids?.comment : nil
+        startReply(to: commentID.flatMap { id in comments?.first { $0.id == id } })
     }
 
     /// Swaps in the latest thread. What was showing came from a cache that may be well behind.

@@ -24,15 +24,11 @@ Both homes share an `NSVisualEffectView` background with a stretchable rounded m
 - the section (Notifications or Reader),
 - the selection and `showDetail`,
 - the comments drawer state (`commentsOpen`, and `commentsExpanded`, which folds the article away so the open thread takes the reader's full height; both stick while you move between posts),
-- keyboard handling, through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep:
-  - `↑`/`↓`, `j`/`k`: move the selection
-  - `←`/`→`: switch Reader tabs (Following, Automattic, Saved); not in a single site's feed
-  - `⌘↑`: scroll the list back to the top, unless the article has focus (then the article scrolls). The ↑ button beside the filters does the same, and shows once the list has scrolled (`ListTop` reports it).
-  - `o`: open in the browser
-  - `s`: save the post
-  - `l`: like the post
-  - `esc`: close the reader or the panel
-  - `⌘W`: put the detached window back in the menu bar
+- keyboard handling (`handleKey`), through a local `keyDown` monitor that returns `nil` for handled keys so there's no beep. `KeyboardHelp` (`?`, or ⋯ → Keyboard Shortcuts) lists them all; keep it in step:
+  - **Lists:** `←`/`→` walk every list in one row, across sections (All, Unread, Following, Automattic, Saved, Later; `step`). `⌘1`–`⌘3` and `⇥`/`⇧⇥` jump between sections (also in the Go menu). `↑`/`↓` or `j`/`k` move within a list. `⌘↑` goes back to the top, unless the article has focus. `esc` backs out: a single site's feed, then the reader, then the panel.
+  - **The open item:** `Space`/`⇧Space` page the article (`article`, the reader's web view). `l` likes, `s` saves, `m` opens Remind Me as a menu, `o` opens in the browser. `c` toggles comments, `f` full height, `r` opens the composer (bumps `replyRequest`; a comment notification replies to its comment).
+  - **Later:** `↑`/`↓` move a highlight (`laterHighlight`) rather than opening, `↩` or `o` opens, `⌫` is Done.
+  - Keys pass through while typing a comment, and the article keeps its own scrolling keys when it has focus.
 
 ## Data
 

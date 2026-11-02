@@ -308,6 +308,19 @@
 .sim-menu.show, .sim-card.show { opacity: 1; transform: none; pointer-events: auto; }
 .sim-menu { top: 72px; right: 50px; width: 200px; padding: 5px; font-size: 12.5px; transform-origin: top right; }
 .sim-menu.remind { width: 248px; transform-origin: top left; }
+/* ? : the shortcuts sheet (KeyboardHelp) */
+.sim-keys { position: absolute; z-index: 9; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .15s; }
+.sim-keys.show { opacity: 1; pointer-events: auto; }
+.sim-keys .card { padding: 18px; border-radius: 14px; background: var(--s-popover); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+.sim-keys .card > b { display: block; font-size: 15px; margin-bottom: 14px; }
+.sim-keys .cols { display: flex; gap: 28px; }
+.sim-keys .card { max-width: calc(100% - 32px); max-height: calc(100% - 32px); overflow: auto; }
+.sim-panel:not(.wide) .sim-keys .cols { flex-direction: column; gap: 16px; } /* just the list: one column */
+.sim-panel:not(.wide) .sim-keys p { white-space: normal; }
+.sim-keys i { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--s-muted); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 7px; }
+.sim-keys p { margin: 0 0 7px; display: flex; gap: 8px; align-items: center; font-size: 12px; white-space: nowrap; }
+.sim-keys p span { display: flex; gap: 3px; min-width: 76px; }
+.sim-keys kbd { font: 600 11px/20px -apple-system, sans-serif; min-width: 20px; padding: 0 5px; text-align: center; border-radius: 5px; background: var(--s-fill-2); box-shadow: inset 0 0 0 1px var(--s-line); }
 .sim-latercount { padding-left: 4px; color: var(--s-muted); font-size: 12px; font-weight: 500; }
 .sim-later .when { display: flex; color: var(--s-muted); font-size: 11px; font-weight: 500; line-height: 14px; }
 .sim-later .when span { display: inline-flex; align-items: center; gap: 4px; }

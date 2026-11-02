@@ -282,6 +282,7 @@ struct HTMLView: NSViewRepresentable {
         context.coordinator.anchor.view = view
         view.navigationDelegate = context.coordinator
         view.setValue(false, forKey: "drawsBackground")
+        c.article = view // Space pages it
         return view
     }
 

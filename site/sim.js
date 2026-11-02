@@ -117,10 +117,19 @@
             <div class="sim-rows"><div class="sim-rows-inner"></div></div>
           </div>
           <div class="sim-handle" data-drift="grip"></div>
+          <div class="sim-keys" data-a="keysHelp"><div class="card">
+          <b>Keyboard Shortcuts</b>
+          <div class="cols">${[
+            ["Lists", [["← →", "Previous or next list, across sections"], ["⌘1 ⌘2 ⌘3", "Notifications, Reader, Later"], ["⇥ ⇧⇥", "Next or previous section"], ["↑ ↓", "Move through the list (or j, k)"], ["⌘↑", "Back to the top"], ["esc", "Back out: a site’s feed, the reader, the panel"]]],
+            ["Reading", [["Space ⇧Space", "Page down or up"], ["l", "Like"], ["s", "Save"], ["m", "Remind me later"], ["o", "Open in the browser"], ["c", "Comments"], ["f", "Comments full height"], ["r", "Reply"], ["⌘↩", "Send a comment"]]],
+            ["Later", [["↑ ↓", "Highlight a reminder"], ["↩", "Open it"], ["⌫", "Done"]]],
+          ].map(([title, rows]) => `<div><i>${title}</i>${rows.map(([keys, what]) => `<p><span>${keys.split(" ").map((x) => `<kbd>${x}</kbd>`).join("")}</span>${what}</p>`).join("")}</div>`).join("")}</div>
+        </div></div>
         </div>
         <div class="sim-dock">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de", "#ff375f", "#8e8e93", "#3858e9", "#ffd60a"]
           .map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="app" src="${ICON}" alt=""></div>
         <div class="sim-banner" data-a="openBanner"></div>
+
         <div class="sim-switcher">${["#5ac8fa", "#ff9f0a", "#34c759", "#af52de"].map((c) => `<span style="--c:${c}"></span>`).join("")}<img class="on" src="${ICON}" alt=""><b>Dispatch</b></div>
         <div class="sim-menu"></div>
         <div class="sim-card"></div>
@@ -247,7 +256,7 @@
       const pic = n ? `<div class="sim-avwrap">${av(n.who, "sim-av big", true, r("icon"))}<span class="sim-kind" style="background:${KIND[n.kind]}"${r("kind")}>${I.kind[n.kind]}</span></div>`
         : siteIcon(p.site, "", r("icon"));
       const title = n ? `${P[n.who][0]} ${n.action}` : p.title, sub = n ? (p ? p.title : S[n.site].name) : S[p.site].name;
-      return `<div class="sim-row sim-later" data-a="openLater" data-v="${key}"${r("box")}>
+      return `<div class="sim-row sim-later ${st.laterHL === key ? "on" : ""}" data-a="openLater" data-v="${key}"${r("box")}>
         ${pic}
         <div class="main">
           <div class="when ${due ? "due" : ""}"><span${r("when")}>${I.alarmFill}${due ? "Due · " : ""}${rem.label}</span></div>
@@ -464,11 +473,36 @@
       section(v) { if (st.section === v) return; st.section = v; st.sel = null; st.commentsOpen = false; render(true); },
       filter(v) { st.filter = v; renderFilters(); renderRows(true); },
       feed(v) { st.feed = v; st.site = null; st.sel = null; render(true); },
+      // ←/→ walk every list in one row, across sections, as in the app: All, Unread, Following,
+      // Automattic, Saved, Later.
       tab(d) {
-        if (st.section !== "reader" || st.site) return;
-        const tabs = ["blogs", "p2s", "saved"], next = tabs[Math.min(Math.max(tabs.indexOf(st.feed) + d, 0), 2)];
-        if (next !== st.feed) A.feed(next);
+        const stops = ["n:all", "n:unread", "r:blogs", "r:p2s", "r:saved", "later"];
+        const here = st.section === "notifications" ? `n:${st.filter}` : st.section === "reader" ? `r:${st.feed}` : "later";
+        const next = stops[Math.min(Math.max(stops.indexOf(here) + d, 0), stops.length - 1)];
+        if (next === here && !st.site) return;
+        const [kind, v] = next.split(":");
+        if (kind === "n") { if (st.section !== "notifications") A.section("notifications"); if (st.filter !== v) A.filter(v); }
+        else if (kind === "r") { st.site = null; if (st.section !== "reader") { st.feed = v; A.section("reader"); } else A.feed(v); }
+        else A.section("later");
       },
+      // ⇥ / ⇧⇥: the next section.
+      nextSection(d) {
+        const all = ["notifications", "reader", "later"];
+        A.section(all[(all.indexOf(st.section) + d + 3) % 3]);
+      },
+      keysHelp() { sim.querySelector(".sim-keys").classList.toggle("show"); },
+      commentsKey() { if (st.sel !== null && postFor(selected()?.item)) A.comments(); },
+      fullKey() { if (st.sel === null || !postFor(selected()?.item)) return; if (!st.commentsOpen) { st.commentsOpen = true; st.commentsExpanded = true; } else st.commentsExpanded = !st.commentsExpanded; renderComments(true); },
+      replyKey() { if (st.sel !== null && postFor(selected()?.item)) A.reply(""); },
+      remindKey() { if (st.sel !== null) A.remindMenu(); },
+      page(d) { const a = detail.querySelector(".sim-article"); if (a) a.scrollBy({ top: d * a.clientHeight * 0.85, behavior: "smooth" }); },
+      laterMove(d) {
+        const keys = laterKeys(); if (!keys.length) return;
+        const i = keys.indexOf(st.laterHL);
+        st.laterHL = keys[Math.max(0, Math.min(keys.length - 1, i < 0 ? 0 : i + d))]; renderRows();
+      },
+      laterOpen() { if (st.laterHL) A.openLater(st.laterHL); },
+      laterDoneKey() { if (st.laterHL) { const k = st.laterHL; A.laterMove(1); if (st.laterHL === k) st.laterHL = null; A.laterDone(k); } },
       togglePost() { st.postOpen = !st.postOpen; renderDetail(); },
       select(v) {
         st.sel = v; st.commentsOpen = false; st.replyTo = null; st.draft = ""; st.postOpen = false;
@@ -602,7 +636,18 @@
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (st.menu && e.key === "Escape") { A.menu(); e.preventDefault(); return; }
-      const k = { j: ["move", 1], ArrowDown: ["move", 1], k: ["move", -1], ArrowUp: ["move", -1], ArrowLeft: ["tab", -1], ArrowRight: ["tab", 1], Escape: ["close"], s: ["save"], l: ["likePost"], o: ["toast", "Opens in your browser"] }[e.key];
+      const help = sim.querySelector(".sim-keys");
+      if (help.classList.contains("show") && (e.key === "Escape" || e.key === "?")) { A.keysHelp(); e.preventDefault(); return; }
+      const later = st.section === "later";
+      const k = {
+        j: later ? ["laterMove", 1] : ["move", 1], ArrowDown: later ? ["laterMove", 1] : ["move", 1],
+        k: later ? ["laterMove", -1] : ["move", -1], ArrowUp: later ? ["laterMove", -1] : ["move", -1],
+        ArrowLeft: ["tab", -1], ArrowRight: ["tab", 1], Tab: ["nextSection", e.shiftKey ? -1 : 1],
+        Escape: st.site && st.sel === null ? ["siteBack"] : ["close"], "?": ["keysHelp"],
+        Enter: later ? ["laterOpen"] : null, Backspace: later ? ["laterDoneKey"] : null,
+        " ": ["page", e.shiftKey ? -1 : 1], c: ["commentsKey"], f: ["fullKey"], r: ["replyKey"], m: ["remindKey"],
+        s: ["save"], l: ["likePost"], o: later ? ["laterOpen"] : ["toast", "Opens in your browser"],
+      }[e.key];
       if (!k) return;
       e.preventDefault();
       if (e.isTrusted) stopTour();
@@ -714,6 +759,7 @@
       xposts() { Object.assign(st, { section: "reader", feed: "p2s", sel: "train" }); },
       // The rest are for the drift check (tools/drift), which renders the app in the same states.
       "note-open"() { st.sel = "n2"; st.read.add("n2"); },
+      keys() { setTimeout(() => sim.querySelector(".sim-keys").classList.add("show")); },
       later() {
         const when = remindChoices(), tomorrow = when.find(([t]) => t === "Tomorrow Morning")[1];
         st.reminders = { n2: { due: tomorrow, label: describeWhen(tomorrow) }, waits: { due: when[1][1], label: describeWhen(when[1][1]) } };
@@ -774,7 +820,8 @@
     }
     function reset() {
       Object.assign(st, { open: true, section: "notifications", filter: "all", feed: "blogs", site: null, menu: false, sel: null, commentsOpen: false, replyTo: null, draft: "", typing: false, detached: false });
-      hideCard(); A.switcher(false); A.banner(null); st.reminders = {};
+      hideCard(); A.switcher(false); A.banner(null); st.reminders = {}; st.laterHL = null;
+      sim.querySelector(".sim-keys")?.classList.remove("show");
       st.read.clear(); st.saved.clear();
       Object.values(POSTS).forEach((p) => { if (p.liked) { p.liked = false; p.likes--; } });
       POSTS.inbox.comments = POSTS.inbox.comments.filter((x) => x.id < 1000);
@@ -802,8 +849,13 @@
       async keys(t) {
         caption("Skim with the keyboard: j and k move through the list, esc closes the reader.");
         if (st.sel === null) await point(rowSel("n1"), t);
-        await key("j", t); await key("j", t); await key("k", t); await sleep(500, t);
-        await key("Escape", t); await sleep(500, t);
+        await key("j", t); await key("j", t); await key("k", t); await sleep(400, t);
+        await key("Escape", t); await sleep(400, t);
+        caption("← and → walk every list, from Notifications through the Reader’s tabs to Later.");
+        for (let i = 0; i < 4; i++) await key("ArrowRight", t);
+        await sleep(600, t);
+        caption("And ? shows them all.");
+        await key("?", t); await sleep(2600, t); await key("?", t);
       },
       async reader(t) {
         caption("The Reader: the blogs you follow, with reading times so you know what you're getting into.");

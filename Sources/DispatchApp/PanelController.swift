@@ -28,6 +28,15 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     @Published var commentsOpen = false
     /// The open drawer takes the reader's whole height, over the article. Sticks between posts too.
     @Published var commentsExpanded = false
+    /// Bumped by `r`: the comments drawer opens its composer, replying to the notification's comment if it has one.
+    @Published private(set) var replyRequest = 0
+    /// The keyboard shortcuts sheet (`?`).
+    @Published var showingKeys = false
+    /// The highlighted row in Later, for ↑/↓, Return and ⌫. Later rows open in other sections, so it
+    /// highlights instead of selecting.
+    @Published var laterHighlight: String?
+    /// The open article, for paging with Space.
+    weak var article: WKWebView?
     /// Set by the list as it scrolls; shows the back-to-top button.
     @Published var listScrolled = false
     /// Bumped to ask the visible list to scroll to its top.
@@ -311,6 +320,8 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         keptVisible = []
         commentsOpen = false
         commentsExpanded = false
+        showingKeys = false
+        laterHighlight = nil
         unreadOnly = false
         section = .notifications
         reader.show(.blogs)
@@ -390,7 +401,9 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             if let i = list.firstIndex(where: { $0.id == selectedPostID }), i >= list.count - 3 {
                 Task { await reader.loadMore() }
             }
-        case .later: break
+        case .later:
+            let list = Reminders.shared.all
+            laterHighlight = step(list, list.firstIndex { $0.id == laterHighlight })?.id
         }
     }
 
@@ -408,13 +421,31 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     func scrollToTop() { scrollToTopRequest += 1 }
 
-    /// ←/→ in the Reader: the next feed tab over. Not in a single site's feed (it has no tabs).
-    private func switchFeed(_ delta: Int) -> Bool {
-        let tabs: [ReaderStore.Feed] = [.blogs, .p2s, .saved]
-        guard section == .reader, let i = tabs.firstIndex(of: reader.feed) else { return false }
-        let next = tabs[min(max(i + delta, 0), tabs.count - 1)]
-        if next != reader.feed { reader.show(next) }
-        return true
+    /// ←/→ walk every list in one row: All, Unread, Following, Automattic, Saved, Later. Crossing
+    /// the end of a section's filters moves into the next section. A single site's feed counts as the
+    /// tab it was opened from.
+    private enum Stop: Equatable { case notes(unread: Bool), feed(ReaderStore.Feed), later }
+    private static let stops: [Stop] = [.notes(unread: false), .notes(unread: true), .feed(.blogs), .feed(.p2s), .feed(.saved), .later]
+
+    private func step(_ delta: Int) {
+        let here: Stop = switch section {
+        case .notifications: .notes(unread: unreadOnly)
+        case .reader: .feed(reader.isSiteFeed ? reader.previousFeed : reader.feed)
+        case .later: .later
+        }
+        guard let i = Self.stops.firstIndex(of: here) else { return }
+        let next = Self.stops[min(max(i + delta, 0), Self.stops.count - 1)]
+        guard next != here || (section == .reader && reader.isSiteFeed) else { return }
+        switch next {
+        case .notes(let unread):
+            switchSection(.notifications)
+            if unread != unreadOnly { withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) { unreadOnly = unread } }
+        case .feed(let feed):
+            switchSection(.reader)
+            if reader.feed != feed { reader.show(feed) }
+        case .later:
+            switchSection(.later)
+        }
     }
 
     func openSelectedInBrowser() {
@@ -546,33 +577,68 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
 
     // MARK: Keyboard
 
+    // The keyboard. Lists: ←/→ walk every list in one row (⌘1–3 and ⇥ jump between sections), ↑/↓ (j/k) within.
+    // The open item: Space pages it, c/f/r work its comments, l/s/m/o act on it. esc steps back out.
+    // `KeyboardHelp` lists them all; keep it in step.
     private func handleKey(_ e: NSEvent) -> NSEvent? {
         guard store.isConnected, e.window === panel || e.window === window else { return e }
         Hovercard.shared.hide()
         if e.window?.firstResponder is NSTextView { return e } // typing a comment
+        let inArticle = Self.isInWebView(e.window?.firstResponder)
+        if showingKeys, e.keyCode == 53 || e.charactersIgnoringModifiers == "?" { showingKeys = false; return nil }
         if e.modifierFlags.contains(.command) {
             if e.charactersIgnoringModifiers == "w", mode == .detached { attach(show: false); return nil }
             // ⌘↑: back to the top of the list, unless the article has focus (it scrolls itself).
-            if e.keyCode == 126, !Self.isInWebView(e.window?.firstResponder) {
+            if e.keyCode == 126, !inArticle {
                 scrollToTop()
+                return nil
+            }
+            if let n = Int(e.charactersIgnoringModifiers ?? ""), (1...3).contains(n) {
+                switchSection([.notifications, .reader, .later][n - 1])
                 return nil
             }
             return e
         }
         switch e.keyCode {
-        case 53: // esc
+        case 53: // esc: keys sheet, then a single site's feed, then the reader, then the panel
+            if section == .reader, reader.isSiteFeed, !showDetail { reader.show(reader.previousFeed); return nil }
             if mode == .attached { showDetail ? closeDetail() : hidePanel() } else { closeDetail() }
+            return nil
+        case 48: // ⇥ / ⇧⇥: the next section
+            let all: [Section] = [.notifications, .reader, .later]
+            let i = all.firstIndex(of: section) ?? 0
+            switchSection(all[(i + (e.modifierFlags.contains(.shift) ? 2 : 1)) % 3])
             return nil
         case 125: move(1); return nil   // ↓
         case 126: move(-1); return nil  // ↑
-        case 123: return switchFeed(-1) ? nil : e // ←
-        case 124: return switchFeed(1) ? nil : e  // →
+        case 123: step(-1); return nil // ←
+        case 124: step(1); return nil  // →
+        case 49: // Space / ⇧Space: page the article (it pages itself when it has focus)
+            guard !inArticle, let article, showDetail else { return e }
+            let page = e.modifierFlags.contains(.shift) ? "-0.85" : "0.85"
+            article.evaluateJavaScript("window.scrollBy({ top: innerHeight * \(page), behavior: 'smooth' })")
+            return nil
+        case 36, 76: // Return: open what's highlighted in Later
+            guard section == .later, let r = laterHighlight.flatMap(Reminders.shared.reminder) else { return e }
+            open(r, clear: false)
+            return nil
+        case 51: // ⌫: done with what's highlighted in Later
+            guard section == .later, let id = laterHighlight else { return e }
+            let list = Reminders.shared.all
+            let next = list.firstIndex { $0.id == id }.flatMap { i in list.indices.contains(i + 1) ? list[i + 1].id : (i > 0 ? list[i - 1].id : nil) }
+            Reminders.shared.cancel(id)
+            laterHighlight = next
+            return nil
         default: break
         }
         switch e.charactersIgnoringModifiers {
         case "j": move(1); return nil
         case "k": move(-1); return nil
-        case "o": openSelectedInBrowser(); return nil
+        case "?": showingKeys.toggle(); return nil
+        case "o":
+            if section == .later, let r = laterHighlight.flatMap(Reminders.shared.reminder) { open(r, clear: false) }
+            else { openSelectedInBrowser() }
+            return nil
         case "s":
             guard section == .reader, let post = selectedPost else { return e }
             reader.toggleSave(post)
@@ -581,8 +647,52 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             guard section == .reader, let post = selectedPost, reader.canLike(post) else { return e }
             Task { await reader.toggleLike(post) }
             return nil
+        case "c":
+            guard showDetail, commentTarget != nil else { return e }
+            withAnimation(.spring(response: 0.48, dampingFraction: 0.8)) { commentsOpen.toggle() }
+            return nil
+        case "f":
+            guard showDetail, commentTarget != nil else { return e }
+            withAnimation(.spring(response: 0.48, dampingFraction: 0.8)) {
+                if !commentsOpen { commentsOpen = true; commentsExpanded = true } else { commentsExpanded.toggle() }
+            }
+            return nil
+        case "r":
+            guard showDetail, commentTarget != nil else { return e }
+            replyRequest += 1
+            return nil
+        case "m":
+            guard showDetail else { return e }
+            remindMenu()
+            return nil
         default: return e
         }
+    }
+
+    /// `m`: Remind Me's times, as a menu over the reader.
+    private func remindMenu() {
+        let target: ((Date) -> Void)?
+        let id: String?
+        if section == .reader, let post = selectedPost {
+            target = { Reminders.shared.remind(post, at: $0) }; id = Reminder.id(post: post)
+        } else if section == .notifications, let note = selectedNote {
+            target = { Reminders.shared.remind(note, at: $0) }; id = Reminder.id(note: note)
+        } else { return }
+        guard let target, let id, let view = (mode == .attached ? panel : window)?.contentView else { return }
+        let menu = NSMenu()
+        if let set = Reminders.shared.reminder(id) {
+            menu.addItem(withTitle: "Reminding you \(Reminders.describe(set.due))", action: nil, keyEquivalent: "")
+            menu.addItem(.separator())
+        }
+        for (i, choice) in Reminders.choices().enumerated() {
+            menu.addItem(ClosureMenuItem("\(choice.title) — \(Reminders.describe(choice.due))", key: "\(i + 1)") { target(choice.due) })
+        }
+        if Reminders.shared.reminder(id) != nil {
+            menu.addItem(.separator())
+            menu.addItem(ClosureMenuItem("Cancel Reminder") { Reminders.shared.cancel(id) })
+        }
+        // Under the toolbar's alarm button.
+        menu.popUp(positioning: nil, at: NSPoint(x: 100, y: view.bounds.height - 48), in: view)
     }
 
     // MARK: Helpers
@@ -638,4 +748,20 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         }
         return v
     }
+}
+
+/// An NSMenuItem that runs a closure, for menus built on the fly.
+final class ClosureMenuItem: NSMenuItem {
+    private let run: () -> Void
+
+    init(_ title: String, key: String = "", run: @escaping () -> Void) {
+        self.run = run
+        super.init(title: title, action: #selector(fire), keyEquivalent: key)
+        keyEquivalentModifierMask = []
+        target = self
+    }
+
+    required init(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    @objc private func fire() { run() }
 }

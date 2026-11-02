@@ -79,6 +79,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item("Paste", #selector(NSText.paste(_:)), "v"),
             item("Select All", #selector(NSText.selectAll(_:)), "a"),
         ]))
+        main.addItem(menu("Go", [
+            item("Notifications", #selector(goNotifications), "1", target: self),
+            item("Reader", #selector(goReader), "2", target: self),
+            item("Later", #selector(goLater), "3", target: self),
+            .separator(),
+            item("Keyboard Shortcuts", #selector(showKeys), "/", [.command], target: self),
+        ]))
         let window = menu("Window", [
             item("Minimize", #selector(NSWindow.performMiniaturize(_:)), "m"),
             item("Zoom", #selector(NSWindow.performZoom(_:))),
@@ -94,6 +101,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleDock() { controller?.showInDock.toggle() }
     @objc private func toggleOpensAsWindow() { controller?.opensAsWindow.toggle() }
     @objc private func putBack() { controller?.attach() }
+    @objc private func goNotifications() { controller?.switchSection(.notifications) }
+    @objc private func goReader() { controller?.switchSection(.reader) }
+    @objc private func goLater() { controller?.switchSection(.later) }
+    @objc private func showKeys() { controller?.showingKeys = true }
 }
 
 extension AppDelegate: NSMenuItemValidation {

@@ -18,7 +18,9 @@ const sections = scenes.map((scene) => {
     const a = app[key], s = site[key];
     if (!a || !s) { rows.push({ key, a, s, why: a ? "missing on the site" : "only on the site" }); continue; }
     const d = a.map((v, i) => Math.round((s[i] - v) * 10) / 10);
-    const slack = [BOX, BOX, TEXT.test(key) ? textSlack(a[2]) : BOX, TEXT.test(key) ? 3 : BOX];
+    // A pill after the first sits wherever the text widths before it put it.
+    const after = /^pill\.[1-9]/.test(key) ? 3 : BOX;
+    const slack = [after, BOX, TEXT.test(key) ? textSlack(a[2]) : BOX, TEXT.test(key) ? 3 : BOX];
     const off = ["x", "y", "width", "height"].filter((_, i) => Math.abs(d[i]) > slack[i]);
     if (off.length) rows.push({ key, a, s, d, why: off.map((k, i) => `${k} ${fmt(d[["x", "y", "width", "height"].indexOf(k)])}`).join(", ") });
   }

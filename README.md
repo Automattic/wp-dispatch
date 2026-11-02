@@ -16,7 +16,7 @@ A macOS menu bar app for skimming WordPress.com. Your notifications and the Read
 - **Mac notifications.** Mentions and replies pop up as banners you can reply to, mark read or put off for an hour. ⋯ → Notify Me About picks the kinds.
 - **Reminders.** Remind Me (the alarm in the reader, or right-click a row) brings a notification or post back later as a banner. The Later tab lists them all, soonest first.
 - **Panel.** Drag the bottom edge to resize. Drag the header to tear it off into a resizable window, which sits in the Dock and ⌘-Tab like any app. In ⋯, **Open as a Window** starts it that way, and **Show in Dock** keeps a Dock icon in the menu bar too.
-- **Keyboard.** `↑`/`↓` or `j`/`k` move between items, `⌘↑` jumps back to the top of the list, `l` likes, `o` opens in the browser, `s` saves, `esc` closes the reader, and `⌘W` closes the window.
+- **Keyboard.** `←`/`→` walk every list (Notifications, the Reader's tabs, Later), `↑`/`↓` or `j`/`k` move within one, `Space` pages a post, `c`/`f`/`r` work its comments, `l` likes, `s` saves, `m` sets a reminder, `o` opens in the browser, and `esc` backs out. `?` shows them all.
 - **Updates.** Dispatch checks for updates once a day, or on demand from ⋯ → Check for Updates…
 
 ## Quick start
