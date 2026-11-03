@@ -69,11 +69,11 @@ const html = `<!doctype html>
 <body>
 <header class="nav"><div class="nav-in">
   <a class="brand" href="/"><img src="/icon.png" width="28" height="28" alt="">Dispatch</a>
-  <nav aria-label="Site"><a class="home" href="/">Home</a><a href="/releases/" aria-current="page">Releases</a><a class="get" href="/download">Download</a></nav>
+  <nav aria-label="Site"><a class="home" href="/">Home</a><a href="/releases/" aria-current="page">Releases</a></nav>
 </div></header>
 <main>
   <h1>What's new</h1>
-  <p class="lede">Every release of Dispatch, newest first. Dispatch updates itself, so you'll get these on your Mac within a day. <a href="../download">Download the latest</a>.</p>
+  <p class="lede">Every release of Dispatch, newest first. Dispatch updates itself, so you'll get these on your Mac within a day. (New downloads are paused while Dispatch gets signed by Apple.)</p>
 ${releases.map((r) => `  <article id="v${r.version}">
     <h2>Dispatch ${r.version}</h2>
     ${r.date ? `<time datetime="${r.date.toISOString().slice(0, 10)}">${day(r.date)}</time>` : ""}

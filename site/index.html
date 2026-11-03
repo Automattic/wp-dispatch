@@ -56,6 +56,12 @@
   h1 span { color: var(--muted); font-weight: 500; }
   .lede { font-size: 20px; color: var(--muted); max-width: 34em; margin: 18px 0 28px; }
   .download { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .paused { display: flex; gap: 12px; align-items: flex-start; max-width: 34em; padding: 14px 16px; border-radius: 14px;
+            border: 1px solid color-mix(in srgb, #f5a623 45%, var(--line)); background: color-mix(in srgb, #f5a623 10%, var(--bg)); }
+  .paused svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: #d48806; }
+  .paused strong { display: block; }
+  .paused span { color: var(--muted); font-size: 16px; }
+  .intro .meta { margin: 14px 0 0; }
   .button {
     display: inline-block; padding: 12px 22px; border-radius: 999px;
     background: var(--accent); color: var(--accent-text);
@@ -97,17 +103,24 @@
 <body>
 <header class="nav"><div class="nav-in">
   <a class="brand" href="/"><img src="/icon.png" width="28" height="28" alt="">Dispatch</a>
-  <nav aria-label="Site"><a class="home" href="/" aria-current="page">Home</a><a href="/releases/">Releases</a><a class="get" href="/download">Download</a></nav>
+  <nav aria-label="Site"><a class="home" href="/" aria-current="page">Home</a><a href="/releases/">Releases</a></nav>
 </div></header>
 <main>
   <div class="intro">
     <img class="app-icon" src="icon.png" width="96" height="96" alt="">
     <h1>Dispatch <span>for WordPress.com</span></h1>
     <p class="lede">Your WordPress.com notifications, blogs and P2s, one click away in the menu bar. Skim everything, read what matters, and never lose the afternoon to a browser tab.</p>
-    <div class="download">
-      <a class="button" href="/download">Download for Mac</a>
-      <span class="meta">macOS 14 or later · Apple silicon and Intel · <a href="releases/">What's new</a></span>
+    <!-- Downloads are paused until Dispatch is signed with a Developer ID. To bring them back:
+         restore the Download button here and in the nav (and in tools/release/log.mjs), the Installing
+         section below, and /download in site/_redirects (release.sh rewrites it). -->
+    <div class="paused" id="paused" role="status">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm-.9 4.6h1.8v5.4H9.1V6.1Zm.9 8.6a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2Z"/></svg>
+      <div>
+        <strong>Downloads are paused for a little while.</strong>
+        <span>We're getting Dispatch signed by Apple, so it installs without warnings. Already have it? It keeps updating itself as usual.</span>
+      </div>
     </div>
+    <p class="meta">macOS 14 or later · Apple silicon and Intel · <a href="releases/">What's new</a></p>
   </div>
 
   <section class="row" data-sim-row>
@@ -227,13 +240,8 @@
     <p class="demo-note">Every demo on this page is the real layout with made-up people and posts. Click around in any of them, or press play to watch again.</p>
 
     <section class="install">
-      <h2>Installing</h2>
-      <ol>
-        <li>Unzip the download and drag <strong>Dispatch</strong> into Applications.</li>
-        <li>The first time you open it, macOS may say it can't verify the app. Go to System Settings → Privacy &amp; Security and click <strong>Open Anyway</strong>.</li>
-        <li>Click the W in your menu bar and connect your WordPress.com account.</li>
-      </ol>
-      <p>Dispatch checks for updates once a day. You can also choose Check for Updates… from its ⋯ menu.</p>
+      <h2>Already have Dispatch?</h2>
+      <p>It checks for updates once a day, or choose Check for Updates… from its ⋯ menu. New downloads will be back once it's signed.</p>
     </section>
   </div>
 </main>

@@ -14,6 +14,10 @@ Dispatch ships as a zip on its website and updates itself with [Sparkle](https:/
 | Update signing key | EdDSA private key in the login Keychain, under the account `dispatch`. The public key is `SUPublicEDKey` in `Info.plist`. |
 | Sparkle tools | `.build/artifacts/sparkle/Sparkle/bin/` (`generate_keys`, `generate_appcast`, `sign_update`), available after the first build. |
 
+## Downloads are paused
+
+Until Dispatch is signed with a Developer ID (requested from Apps Infra, AINFRA), the site offers no download: the home page shows a notice instead of the button, the nav and the release log have no Download link, the Installing steps are gone, and `/download` redirects to the notice. Installed copies still update through Sparkle, so the appcast and the release zips stay published. Hold off on releases until the build is signed; `release.sh` would point `/download` back at the new zip. To bring downloads back, undo the "Pause downloads" commit.
+
 ## Ship an update
 
 1. Commit your change and make sure it runs:
