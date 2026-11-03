@@ -91,7 +91,17 @@ Click an image in the reader (or a link straight to one) and it opens in macOS's
 
 ## Images on private sites
 
-Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed-in session, and the reader's web view has no WordPress.com cookies. `MediaLoader.route` rewrites `src`/`srcset` URLs on `*.wordpress.com` to `wpn-media://…`, and `MediaLoader` (a `WKURLSchemeHandler`) fetches them over https with the app's token. The token is only ever sent to `*.wordpress.com`.
+Private P2 images (`*.wordpress.com/wp-content/…`) return 403 without a signed-in session, and the reader's web view has no WordPress.com cookies. `MediaLoader.route` rewrites WordPress.com media URLs to `wpn-media://…`, and `MediaLoader` (a `WKURLSchemeHandler`) fetches them over https with the app's token. "Media" is `MediaLoader.isWordPressMedia`: a site's `/wp-content/uploads/` or `/files/`, or `*.files.wordpress.com`, never `public-api.wordpress.com`; GET only, and only images and video come back.
+
+## Security
+
+Post HTML is untrusted: it's whatever the author wrote, and posts from self-hosted (Jetpack) sites can contain scripts. So:
+
+- **Reader pages** carry a Content Security Policy that allows only Dispatch's own script (a per-page nonce) and no requests of their own; images, video, styles, fonts and embedded frames still load (`ReaderPage.policy`). After the page's own HTML loads, main-frame navigation is refused, and the `hovercard` and `image` script handlers only listen to the main frame.
+- **The token** goes to `public-api.wordpress.com` for API calls and, from a page, only with WordPress.com media (above), also for Quick Look downloads. Quick Look only keeps images, up to 50 MB, in a temporary folder cleared at launch and quit.
+- **Links** from posts, profiles and WordPress.com's data go through `openLink`, which opens only http, https and mailto.
+- **Sign-in** is hardened as described in [auth.md](auth.md).
+- **The token is in a 0600 file**, not the Keychain, until the app is signed with a Developer ID (see `Credentials.swift`).
 
 ## Mac notifications and reminders: `Alerts.swift`, `Reminders.swift`
 
