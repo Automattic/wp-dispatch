@@ -78,6 +78,8 @@ final class Store: ObservableObject {
     @Published var notes: [Note] = []
     @Published var isLoading = false
     @Published var error: String?
+    /// When the list last came back from WordPress.com, for the header's "3m".
+    @Published private(set) var updatedAt: Date?
     @Published private(set) var token: String? = Demo.isOn ? "demo" : Credentials.get("token")
 
     /// True when a token we had stopped working (expired or revoked), so setup says "reconnect".
@@ -150,6 +152,7 @@ final class Store: ObservableObject {
             let data = try await request("notifications/?number=40&fields=id,type,read,timestamp,icon,url,subject,body,meta")
             notes = try JSONDecoder().decode(Response.self, from: data).notes
             Alerts.shared.announce(notes)
+            updatedAt = .now
             error = nil
             if mentionTerms.isEmpty { await loadMe() }
         } catch {

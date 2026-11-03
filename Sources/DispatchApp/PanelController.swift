@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import ServiceManagement
 import SwiftUI
 import WebKit
 
@@ -68,6 +69,17 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     /// A Dock icon even while Dispatch lives in the menu bar. As a window it always has one.
     @Published var showInDock = UserDefaults.standard.bool(forKey: "showInDock") {
         didSet { UserDefaults.standard.set(showInDock, forKey: "showInDock"); updateDockIcon() }
+    }
+    /// A login item, through macOS's own list (System Settings → General → Login Items).
+    @Published var opensAtLogin = !Demo.isOn && SMAppService.mainApp.status == .enabled {
+        didSet {
+            guard !Demo.isOn, opensAtLogin != (SMAppService.mainApp.status == .enabled) else { return }
+            do {
+                try opensAtLogin ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
+            } catch {
+                opensAtLogin = SMAppService.mainApp.status == .enabled // say what actually happened
+            }
+        }
     }
     /// Launch as a window instead of in the menu bar.
     @Published var opensAsWindow = UserDefaults.standard.bool(forKey: "opensAsWindow") {
@@ -152,7 +164,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
         embed(hosting, in: panelBackground)
 
         if let button = statusItem?.button {
-            button.image = WordPressLogo.image
+            button.image = DispatchMark.menuBar
             button.imagePosition = .imageLeading
             button.target = self
             button.action = #selector(toggle)

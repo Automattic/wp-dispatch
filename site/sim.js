@@ -27,7 +27,8 @@
     const svg = (d, w = 1.5) =>
       `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     const I = {
-      w: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6Zm-7.6 8.8c0-1.1.2-2.1.6-3.1l3.6 9.9A7.6 7.6 0 0 1 2.4 10Zm7.6 7.6c-.7 0-1.5-.1-2.1-.3l2.3-6.6 2.3 6.4.1.1c-.8.3-1.7.4-2.6.4Zm1-11.2c.5 0 .9-.1.9-.1.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1-.8 0-2-.1-2-.1-.4 0-.5.7 0 .7l.8.1 1.2 3.2-1.7 5-2.8-8.2.9-.1c.4 0 .4-.7 0-.7 0 0-1.2.1-2 .1h-.5A7.6 7.6 0 0 1 15.3 4.6h-.1c-.8 0-1.3.7-1.3 1.4 0 .6.4 1.2.8 1.8.3.5.6 1.2.6 2.2 0 .7-.3 1.5-.6 2.6l-.8 2.7-2.9-8.9Zm2.8 10.2 2.3-6.7c.4-1.1.6-2 .6-2.7l-.1-.8a7.6 7.6 0 0 1-2.8 10.2Z"/></svg>`,
+      // Dispatch's mark (DispatchMark.swift), for the menu bar and the empty reader.
+    mark: `<svg viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd"><path d="M5.18 0.00L9.82 0.00L9.82 0.00C14.41 0.00 18.12 3.72 18.12 8.31C18.12 12.90 14.41 16.62 9.82 16.62L8.64 16.62C5.70 16.62 3.35 18.09 1.88 20.00C2.90 17.72 3.12 15.15 3.12 12.21L3.12 2.06C3.12 0.92 4.04 0.00 5.18 0.00ZM7.83 4.71L9.82 4.71L9.82 4.71C11.81 4.71 13.42 6.32 13.42 8.31C13.42 10.30 11.81 11.91 9.82 11.91L7.83 11.91ZM7.83 4.71"/></svg>`,
       refresh: svg(`<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/>`),
     signal: `<svg viewBox="0 0 11 9" fill="currentColor" class="bars"><rect x="0" y="5.76" width="1.6" height="3.24" rx=".8"/><rect x="3" y="3.87" width="1.6" height="5.13" rx=".8"/><rect x="6" y="1.89" width="1.6" height="7.11" rx=".8"/><rect x="9" y="0" width="1.6" height="9" rx=".8"/></svg>`, // SignalBars in Views.swift
     expand: svg(`<path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/>`),
@@ -111,7 +112,7 @@
     root.innerHTML = `
       <div class="sim" tabindex="0" aria-label="Interactive demo of Dispatch">
         <div class="sim-menubar"><span class="apple"></span><b>Finder</b><span>File</span><span>Edit</span><span>View</span>
-          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.w}<span class="sim-wcount"></span></button><span>Tue 9:41</span></div>
+          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.mark}<span class="sim-wcount"></span></button><span>Tue 9:41</span></div>
         <div class="sim-panel">
           <div class="sim-detail" data-drift="detail"></div>
           <div class="sim-list" data-drift="list">
@@ -157,7 +158,7 @@
         ${(() => { const due = Object.values(st.reminders).filter((x) => x.due <= new Date()).length;
           return `<button class="sim-tab ${st.section === "later" ? "on" : ""}" data-a="section" data-v="later"${dt("tab.later")}>Later${due ? `<span class="sim-badge">${due}</span>` : ""}</button>`; })()}
         <span class="spacer"></span>
-        <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh"${dt("btn.refresh")}>${I.refresh}</button>
+        <button class="sim-icon" data-a="toast" data-v="Refreshed" title="Refresh (⌘R)"${dt("btn.refresh")}>${I.refresh}</button>
         ${st.detached
           ? `<button class="sim-icon" data-a="attach" title="Put back in the menu bar">${I.putBack}</button>`
           : `<button class="sim-icon" data-a="detach" title="Pop out into a window (or drag the header)"${dt("btn.popout")}>${I.popout}</button>`}
@@ -229,6 +230,7 @@
       box.innerHTML = `<div class="sim-pills"${dt("pills")}><div class="sim-pill-thumb"></div>${opts.map(([v, label], i) =>
         `<button class="sim-pill ${v === cur ? "on" : ""}" data-a="${st.section === "notifications" ? "filter" : "feed"}" data-v="${v}"${dt(`pill.${i}`)}>${label}</button>`).join("")}</div>
         <span class="spacer"></span>
+        <span class="sim-updated" title="Updated just now"${dt("updated")}>now</span>
         ${st.section === "notifications" ? `<button class="sim-icon" data-a="markAll" title="Mark all as read"${dt("btn.markall")} ${unread ? "" : "disabled"}>${I.check}</button>` : ""}`;
       const on = box.querySelector(".sim-pill.on"), t = box.querySelector(".sim-pill-thumb");
       // Slide from where the thumb was, unless the pill set itself changed.
@@ -321,7 +323,7 @@
     function renderDetail() {
       const s = selected();
       if (!s) {
-        detail.innerHTML = `<div class="sim-placeholder">${I.w}Pick something to read<small>${st.section === "reader"
+        detail.innerHTML = `<div class="sim-placeholder">${I.mark}Pick something to read<small>${st.section === "reader"
           ? "↑ ↓ or j k to move · l to like · s to save · o to open" : "↑ ↓ or j k to move · o to open in browser"}</small></div>`;
         return;
       }

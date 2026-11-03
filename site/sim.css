@@ -114,6 +114,8 @@
 .sim-head .spacer { flex: 1; }
 .sim-icon { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--s-muted); transition: background .1s; }
 .sim-icon:hover { background: var(--s-fill-2); }
+.sim-updated + .sim-icon { margin-left: 4px; } /* that row's HStack spacing is 8, not 4 */
+.sim-updated { margin-right: 2px; color: var(--s-muted); font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; }
 .sim-icon svg { width: 14px; height: 14px; }
 .sim-filters { height: 36px; padding: 0 12px 6px; display: flex; align-items: center; gap: 4px; flex: none; }
 .sim-filters .spacer { flex: 1; }

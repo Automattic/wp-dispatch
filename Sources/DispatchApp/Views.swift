@@ -136,6 +136,7 @@ struct MoreMenu: View {
                     ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
             }
             Divider()
+            Toggle("Open at Login", isOn: $c.opensAtLogin)
             Toggle("Show in Dock", isOn: $c.showInDock)
             Toggle("Open as a Window", isOn: $c.opensAsWindow)
             Picker("Menu Bar Count", selection: $c.menuBarCount) {
@@ -575,6 +576,7 @@ struct NotificationFilters: View {
             PillPicker(options: [.init("All", false), .init("Unread", true, badge: store.unreadCount)],
                        selection: c.unreadOnly) { c.unreadOnly = $0 }
             Spacer()
+            UpdatedStamp(date: store.updatedAt)
             BackToTopButton()
             IconButton("checkmark.circle", help: "Mark all as read") { Task { await store.markAllRead() } }
                 .driftTag("btn.markall")
@@ -609,8 +611,27 @@ struct ReaderFilters: View {
                     .init("Saved", .saved, badge: reader.savedCount, symbol: "bookmark.fill", quietBadge: true),
                 ], selection: reader.feed) { reader.show($0) }
                 Spacer()
+                UpdatedStamp(date: reader.updatedAt)
                 BackToTopButton()
             }
+        }
+    }
+}
+
+/// How fresh the list is ("now", "1m", "3h"), at the end of the filter row.
+struct UpdatedStamp: View {
+    let date: Date?
+
+    var body: some View {
+        if let date {
+            TimelineView(.periodic(from: .now, by: 30)) { _ in
+                Text(shortTime(date))
+                    .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .help("Updated \(RelativeDateTimeFormatter().localizedString(for: date, relativeTo: .now))")
+            }
+            .driftTag("updated")
+            .padding(.trailing, 2)
         }
     }
 }
@@ -1680,7 +1701,7 @@ struct ReaderPlaceholder: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(nsImage: WordPressLogo.image)
+            Image(nsImage: DispatchMark.image(size: 40, height: 36))
                 .resizable()
                 .frame(width: 40, height: 40)
                 .opacity(0.18)

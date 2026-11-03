@@ -186,7 +186,10 @@ final class ReaderStore: ObservableObject {
     private let store: Store
     private var cache: [Feed: Page] = [:]
     private var pages: [String: String] = [:]
-    private struct Page { var posts: [ReaderPost]; var before: String?; var done: Bool }
+    private struct Page { var posts: [ReaderPost]; var before: String?; var done: Bool; var at = Date.now }
+
+    /// When the current feed last came back from WordPress.com, for the header's "3m".
+    var updatedAt: Date? { cache[feed]?.at }
 
     init(store: Store) {
         self.store = store
@@ -235,7 +238,7 @@ final class ReaderStore: ObservableObject {
         defer { isLoading = false }
         guard let next = try? await fetch(feed, before: current.before) else { return }
         let merged = Self.oneCopyEach(current.posts + next.posts)
-        cache[feed] = Page(posts: merged, before: next.before, done: next.done)
+        cache[feed] = Page(posts: merged, before: next.before, done: next.done, at: current.at)
         if self.feed == feed { posts = merged }
         if feed == .saved { saved = merged; persist() }
     }

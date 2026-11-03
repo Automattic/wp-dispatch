@@ -61,6 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .separator(),
             item("Check for Updates…", #selector(checkForUpdates), target: self),
             .separator(),
+            item("Open at Login", #selector(toggleLogin), target: self),
             item("Show in Dock", #selector(toggleDock), target: self),
             item("Open as a Window", #selector(toggleOpensAsWindow), target: self),
             .separator(),
@@ -106,6 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func checkForUpdates() { Updates.shared.checkForUpdates() }
     @objc private func toggleDock() { controller?.showInDock.toggle() }
+    @objc private func toggleLogin() { controller?.opensAtLogin.toggle() }
     @objc private func toggleOpensAsWindow() { controller?.opensAsWindow.toggle() }
     @objc private func putBack() { controller?.attach() }
     @objc private func goNotifications() { controller?.switchSection(.notifications) }
@@ -122,6 +124,7 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         switch item.action {
         case #selector(toggleDock): item.state = controller?.showInDock == true ? .on : .off
+        case #selector(toggleLogin): item.state = controller?.opensAtLogin == true ? .on : .off
         case #selector(toggleOpensAsWindow): item.state = controller?.opensAsWindow == true ? .on : .off
         case #selector(putBack): return controller?.mode == .detached
         default: break
