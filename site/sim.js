@@ -28,7 +28,7 @@
       `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     const I = {
       // Dispatch's mark (DispatchMark.swift), for the menu bar and the empty reader.
-    mark: `<svg viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd"><path d="M5.18 0.00L9.82 0.00L9.82 0.00C14.41 0.00 18.12 3.72 18.12 8.31C18.12 12.90 14.41 16.62 9.82 16.62L8.64 16.62C5.70 16.62 3.35 18.09 1.88 20.00C2.90 17.72 3.12 15.15 3.12 12.21L3.12 2.06C3.12 0.92 4.04 0.00 5.18 0.00ZM7.83 4.71L9.82 4.71L9.82 4.71C11.81 4.71 13.42 6.32 13.42 8.31C13.42 10.30 11.81 11.91 9.82 11.91L7.83 11.91ZM7.83 4.71"/></svg>`,
+    dispatch: `<svg viewBox="0 0 20 20" fill="currentColor" fill-rule="evenodd"><path d="M5.18 0.00L9.82 0.00L9.82 0.00C14.41 0.00 18.12 3.72 18.12 8.31C18.12 12.90 14.41 16.62 9.82 16.62L8.64 16.62C5.70 16.62 3.35 18.09 1.88 20.00C2.90 17.72 3.12 15.15 3.12 12.21L3.12 2.06C3.12 0.92 4.04 0.00 5.18 0.00ZM7.83 4.71L9.82 4.71L9.82 4.71C11.81 4.71 13.42 6.32 13.42 8.31C13.42 10.30 11.81 11.91 9.82 11.91L7.83 11.91ZM7.83 4.71"/></svg>`,
       refresh: svg(`<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/>`),
     signal: `<svg viewBox="0 0 11 9" fill="currentColor" class="bars"><rect x="0" y="5.76" width="1.6" height="3.24" rx=".8"/><rect x="3" y="3.87" width="1.6" height="5.13" rx=".8"/><rect x="6" y="1.89" width="1.6" height="7.11" rx=".8"/><rect x="9" y="0" width="1.6" height="9" rx=".8"/></svg>`, // SignalBars in Views.swift
     expand: svg(`<path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/>`),
@@ -112,7 +112,7 @@
     root.innerHTML = `
       <div class="sim" tabindex="0" aria-label="Interactive demo of Dispatch">
         <div class="sim-menubar"><span class="apple"></span><b>Finder</b><span>File</span><span>Edit</span><span>View</span>
-          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.mark}<span class="sim-wcount"></span></button><span>Tue 9:41</span></div>
+          <span class="spacer"></span><button class="sim-w on" data-a="toggle" title="Dispatch">${I.dispatch}<span class="sim-wcount"></span></button><span>Tue 9:41</span></div>
         <div class="sim-panel">
           <div class="sim-detail" data-drift="detail"></div>
           <div class="sim-list" data-drift="list">
@@ -323,7 +323,7 @@
     function renderDetail() {
       const s = selected();
       if (!s) {
-        detail.innerHTML = `<div class="sim-placeholder">${I.mark}Pick something to read<small>${st.section === "reader"
+        detail.innerHTML = `<div class="sim-placeholder">${I.dispatch}Pick something to read<small>${st.section === "reader"
           ? "↑ ↓ or j k to move · l to like · s to save · o to open" : "↑ ↓ or j k to move · o to open in browser"}</small></div>`;
         return;
       }
