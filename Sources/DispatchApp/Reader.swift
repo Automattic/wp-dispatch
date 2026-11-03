@@ -43,9 +43,10 @@ enum ReaderPage {
             }.joined())</div>
             """
         let termsJSON = (try? String(data: JSONEncoder().encode(terms), encoding: .utf8)) ?? "[]"
+        let nonce = Self.nonce()
 
         return """
-        <!doctype html><html><head><meta charset=utf-8>
+        <!doctype html><html><head><meta charset=utf-8>\(policy(nonce))
         <meta name=viewport content="width=device-width">
         <style>\(css)</style></head><body>
         <header>
@@ -56,10 +57,22 @@ enum ReaderPage {
           \(likersTag)
         </header>
         <article id=content>\(MediaLoader.route(content))</article>
-        <script>const TERMS = \(termsJSON);\(js)</script>
+        <script nonce=\(nonce)>const TERMS = \(termsJSON);\(js)</script>
         </body></html>
         """
     }
+
+    /// Post HTML is whatever its author wrote, and posts from self-hosted (Jetpack) sites can carry
+    /// scripts. The page allows only its own script (the nonce) and makes no requests of its own
+    /// (`connect-src` falls back to `'none'`), so a post can't run code or reach anything through
+    /// the app. Images, video, styles, fonts and embeds still load.
+    private static func policy(_ nonce: String) -> String {
+        "<meta http-equiv=Content-Security-Policy content=\"default-src 'none'; script-src 'nonce-\(nonce)'; "
+            + "img-src https: data: \(MediaLoader.scheme):; media-src https: \(MediaLoader.scheme):; "
+            + "style-src 'unsafe-inline' https:; font-src https: data:; frame-src https:\">"
+    }
+
+    private static func nonce() -> String { UUID().uuidString.replacingOccurrences(of: "-", with: "") }
 
     /// Someone in a comment thread, or the post's author: who, when, and what they wrote (HTML).
     struct Speaker { let name: String?; let avatar: String?; let date: String?; let html: String }
@@ -99,9 +112,10 @@ enum ReaderPage {
             }.joined())</div>
             """
         let termsJSON = (try? String(data: JSONEncoder().encode(terms), encoding: .utf8)) ?? "[]"
+        let nonce = Self.nonce()
 
         return """
-        <!doctype html><html><head><meta charset=utf-8>
+        <!doctype html><html><head><meta charset=utf-8>\(policy(nonce))
         <meta name=viewport content="width=device-width">
         <style>\(css)\(threadCSS)</style></head><body>
         <header>
@@ -117,7 +131,7 @@ enum ReaderPage {
           <div class=chips><span id=time class=chip hidden></span><button id=jump class="chip me" hidden></button></div>
           \(likersTag)
         </article>
-        <script>const TERMS = \(termsJSON);\(js)</script>
+        <script nonce=\(nonce)>const TERMS = \(termsJSON);\(js)</script>
         </body></html>
         """
     }
@@ -311,11 +325,15 @@ struct HTMLView: NSViewRepresentable {
         if view.pageZoom != c.textZoom { view.pageZoom = c.textZoom }
         guard context.coordinator.loaded != html else { return }
         context.coordinator.loaded = html
+        context.coordinator.expectingLoad = true
         view.loadHTMLString(html, baseURL: baseURL)
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
+        /// The one main-frame load each page gets: our own HTML. Anything after that (a script,
+        /// a meta refresh) would take the reader pane somewhere else, so it's refused.
+        var expectingLoad = false
         let anchor = Hovercard.Anchor()
         var reader: ReaderStore?
         var panel: PanelController?
@@ -323,6 +341,8 @@ struct HTMLView: NSViewRepresentable {
         /// `{enter, name, avatar, x, y, w, h}` from the page's hover listeners (rect in page points).
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
             MainActor.assumeIsolated {
+                // Only our page's own script talks to the app; embeds live in frames.
+                guard message.frameInfo.isMainFrame else { return }
                 if message.name == "image" {
                     guard let body = message.body as? [String: Any], let urls = body["urls"] as? [String] else { return }
                     ImagePreview.shared.show(urls, at: body["index"] as? Int ?? 0, token: panel?.store.token)
@@ -347,8 +367,11 @@ struct HTMLView: NSViewRepresentable {
                     NSWorkspace.shared.open(url)
                 }
                 decisionHandler(.cancel)
+            } else if action.targetFrame?.isMainFrame ?? true {
+                decisionHandler(expectingLoad ? .allow : .cancel)
+                expectingLoad = false
             } else {
-                decisionHandler(.allow)
+                decisionHandler(.allow) // embeds load in their own frames
             }
         }
     }
