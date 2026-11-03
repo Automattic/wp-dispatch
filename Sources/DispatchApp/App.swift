@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         AppData.migrateFromOldName()
+        ImagePreview.clearDownloads() // anything a crash left behind
         let controller = PanelController(store: Store())
         self.controller = controller
         _ = Updates.shared // starts the daily background check
@@ -24,6 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Alerts.shared.start(controller)
         controller.applyLaunchMode()
         Screenshots.stage(controller)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        ImagePreview.clearDownloads()
     }
 
     // A Dock icon click, or ⌘-Tab to Dispatch with nothing of it showing.

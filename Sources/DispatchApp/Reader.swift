@@ -387,17 +387,39 @@ final class MediaLoader: NSObject, WKURLSchemeHandler {
 
     init(store: Store) { self.store = store }
 
-    /// Rewrites `src`/`srcset` values on *.wordpress.com to the handler's scheme. Links are left alone.
+    /// WordPress.com media: uploads on a *.wordpress.com site, or the files.wordpress.com CDN. The
+    /// only requests from a page the token ever goes with; never the API or anywhere else.
+    nonisolated static func isWordPressMedia(_ url: URL) -> Bool {
+        guard url.scheme == "https", let host = url.host()?.lowercased(),
+              host.hasSuffix(".wordpress.com"), host != "public-api.wordpress.com" else { return false }
+        if host.hasSuffix(".files.wordpress.com") { return true }
+        let path = url.path()
+        return path.hasPrefix("/wp-content/uploads/") || path.hasPrefix("/files/")
+    }
+
+    /// Rewrites WordPress.com media URLs in `src`, `srcset` and the full-size attributes to the
+    /// handler's scheme. Everything else, links included, is left alone.
     static func route(_ html: String) -> String {
         // data-orig-file is the full-size image, for Quick Look (ImagePreview).
-        guard let attr = try? NSRegularExpression(pattern: #"\b(src|srcset|data-orig-file|data-large-file)="([^"]*)""#) else { return html }
+        guard let attr = try? NSRegularExpression(pattern: #"\b(src|srcset|data-orig-file|data-large-file)="([^"]*)""#),
+              let link = try? NSRegularExpression(pattern: #"https?://[^\s",]+"#) else { return html }
         let ns = html as NSString
         var out = ""
         var at = 0
         for m in attr.matches(in: html, range: NSRange(location: 0, length: ns.length)) {
-            let value = ns.substring(with: m.range(at: 2))
-            let routed = value.replacingOccurrences(of: #"https?://((?:[a-z0-9-]+\.)+)wordpress\.com/"#,
-                                                    with: "\(scheme)://$1wordpress.com/", options: .regularExpression)
+            let value = ns.substring(with: m.range(at: 2)) as NSString
+            var routed = ""
+            var from = 0
+            for u in link.matches(in: value as String, range: NSRange(location: 0, length: value.length)) {
+                let address = value.substring(with: u.range)
+                var parts = URLComponents(string: address)
+                parts?.scheme = "https"
+                let media = parts?.url.map(isWordPressMedia) ?? false
+                routed += value.substring(with: NSRange(location: from, length: u.range.location - from))
+                routed += media ? "\(scheme)://" + address.replacingOccurrences(of: #"^https?://"#, with: "", options: .regularExpression) : address
+                from = u.range.location + u.range.length
+            }
+            routed += value.substring(from: from)
             out += ns.substring(with: NSRange(location: at, length: m.range(at: 2).location - at)) + routed
             at = m.range(at: 2).location + m.range(at: 2).length
         }
@@ -408,8 +430,9 @@ final class MediaLoader: NSObject, WKURLSchemeHandler {
         MainActor.assumeIsolated {
             guard let url = task.request.url, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
             parts.scheme = "https"
-            // The token only ever goes to wordpress.com.
-            guard let real = parts.url, real.host()?.hasSuffix(".wordpress.com") == true, let token = store.token else {
+            // The token only ever goes with WordPress.com media, and only to read it.
+            guard let real = parts.url, Self.isWordPressMedia(real), task.request.httpMethod ?? "GET" == "GET",
+                  let token = store.token else {
                 return task.didFailWithError(URLError(.badURL))
             }
             var req = URLRequest(url: real)
@@ -419,7 +442,9 @@ final class MediaLoader: NSObject, WKURLSchemeHandler {
             URLSession.shared.dataTask(with: req) { data, response, error in
                 DispatchQueue.main.async {
                     guard self.live.remove(id) != nil else { return } // the page stopped asking
-                    if let data, let http = response as? HTTPURLResponse {
+                    // Images and video only: anything else isn't what the page asked for.
+                    let type = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")?.lowercased() ?? ""
+                    if let data, let http = response as? HTTPURLResponse, type.hasPrefix("image/") || type.hasPrefix("video/") {
                         task.didReceive(HTTPURLResponse(url: url, statusCode: http.statusCode, httpVersion: nil,
                                                         headerFields: http.allHeaderFields as? [String: String]) ?? http)
                         task.didReceive(data)
