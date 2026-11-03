@@ -8,6 +8,8 @@ The app uses WordPress.com's **implicit grant** (`response_type=token`, `scope=g
 2. After approval, WordPress.com redirects to `/callback#access_token=…`. Browsers don't send fragments to servers, so `/callback` serves a tiny page that forwards the fragment to `/token?…`.
 3. `/token` checks `state` and returns the token to the app.
 
+The listener only accepts loopback connections, finishes only on a reply that carries this attempt's random `state` (anything else gets an error page and is ignored), escapes any text it echoes back, and gives up after 10 minutes.
+
 The token is stored in `credentials.json` and lasts about 14 days, with no refresh token. When it expires, or the API returns `invalid_token` or a 401, the app shows "Session expired" and the user clicks Reconnect.
 
 ## App registration

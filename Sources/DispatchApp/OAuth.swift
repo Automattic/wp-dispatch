@@ -45,6 +45,10 @@ final class OAuth {
                 cont.resume(with: result)
             }
             abandon = { finish(.failure(OAuthError.denied("Sign-in was restarted."))) }
+            // Don't leave a listener open for good if the browser tab is abandoned.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 600) {
+                finish(.failure(OAuthError.denied("Sign-in timed out. Click Connect to try again.")))
+            }
 
             listener.newConnectionHandler = { conn in
                 conn.start(queue: .main)
@@ -58,23 +62,27 @@ final class OAuth {
                         conn.send(content: Self.http(body), completion: .contentProcessed { _ in conn.cancel() })
                     }
 
+                    // Only a reply carrying this attempt's state can finish it. Anything else (another
+                    // page on this Mac poking at the port) gets an error page and is otherwise ignored.
+                    let ours = value("state") == state
                     if path.hasPrefix("/callback") {
                         // Denied requests come back as a query; approvals as a fragment.
                         if let error = value("error") {
-                            reply(Self.message("Couldn’t connect", value("error_description") ?? error))
-                            finish(.failure(OAuthError.denied(value("error_description") ?? error)))
+                            let why = value("error_description") ?? error
+                            reply(Self.message("Couldn’t connect", why))
+                            if ours { finish(.failure(OAuthError.denied(why))) }
                         } else {
                             reply(Self.bridge)
                         }
                     } else if path.hasPrefix("/token") {
-                        if let token = value("access_token"), value("state") == state {
+                        if ours, let token = value("access_token") {
                             reply(Self.message("Connected to WordPress.com", "You can close this tab."))
                             let expires = value("expires_in").flatMap(Double.init).map { Date.now.addingTimeInterval($0) }
                             finish(.success(Token(value: token, expires: expires)))
                         } else {
                             let why = value("error_description") ?? value("error") ?? "Missing token or state mismatch."
                             reply(Self.message("Couldn’t connect", why))
-                            finish(.failure(OAuthError.denied(why)))
+                            if ours { finish(.failure(OAuthError.denied(why))) }
                         }
                     } else {
                         reply(Self.message("Not found", ""))
@@ -113,8 +121,9 @@ final class OAuth {
         </script>
         """
 
+    /// Escaped: `detail` can be text from the request, which anything on this Mac could send.
     private static func message(_ title: String, _ detail: String) -> String {
-        "<h2>\(title)</h2><p>\(detail)</p>"
+        "<h2>\(ReaderPage.escape(title))</h2><p>\(ReaderPage.escape(detail))</p>"
     }
 
     nonisolated private static func http(_ body: String) -> Data {
