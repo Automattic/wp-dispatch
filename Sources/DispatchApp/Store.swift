@@ -170,7 +170,7 @@ final class Store: ObservableObject {
     }
 
     func openInBrowser(_ note: Note) {
-        if let s = note.url, let url = URL(string: s) { NSWorkspace.shared.open(url) }
+        if let s = note.url, let url = URL(string: s) { openLink(url) }
     }
 
     func markRead(_ note: Note) {

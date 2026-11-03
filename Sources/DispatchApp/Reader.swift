@@ -364,7 +364,7 @@ struct HTMLView: NSViewRepresentable {
                 if url.scheme == "wpn" {
                     NotificationCenter.default.post(name: .openSite, object: url)
                 } else {
-                    NSWorkspace.shared.open(url)
+                    openLink(url)
                 }
                 decisionHandler(.cancel)
             } else if action.targetFrame?.isMainFrame ?? true {

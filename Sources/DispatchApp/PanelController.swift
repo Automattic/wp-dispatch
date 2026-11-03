@@ -244,7 +244,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
             select(post)
             return
         }
-        if let s = r.url, let url = URL(string: s) { NSWorkspace.shared.open(url) }
+        if let s = r.url, let url = URL(string: s) { openLink(url) }
     }
 
     /// At launch: open as a window if that's the setting.
@@ -515,7 +515,7 @@ final class PanelController: NSObject, ObservableObject, NSWindowDelegate {
     func openSelectedInBrowser() {
         let link = section == .notifications ? selectedNote?.url : (selectedPost?.originalURL ?? selectedPost?.URL)
         guard let link, let url = URL(string: link) else { return }
-        NSWorkspace.shared.open(url)
+        openLink(url)
         if mode == .attached { hidePanel() }
     }
 

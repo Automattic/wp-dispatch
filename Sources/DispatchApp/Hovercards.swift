@@ -301,7 +301,7 @@ struct PersonCard: View {
 
     private func open(_ url: URL) {
         Hovercard.shared.hide()
-        NSWorkspace.shared.open(url)
+        openLink(url)
         if c.mode == .attached { c.hidePanel() }
     }
 }
@@ -347,7 +347,7 @@ struct SiteCard: View {
                 if let url = info?.URL.flatMap(URL.init(string:)) {
                     CardLink("Visit site") {
                         Hovercard.shared.hide()
-                        NSWorkspace.shared.open(url)
+                        openLink(url)
                         if c.mode == .attached { c.hidePanel() }
                     }
                 }

@@ -132,7 +132,7 @@ struct MoreMenu: View {
     var body: some View {
         Menu {
             Button("Open on WordPress.com") {
-                NSWorkspace.shared.open(URL(string: c.section == .reader
+                openLink(URL(string: c.section == .reader
                     ? "https://wordpress.com/reader" : "https://wordpress.com/notifications")!)
             }
             Divider()
@@ -1014,7 +1014,7 @@ struct PostRow: View {
             Button("Show Only \(site)") { reader.show(.site(post.site_ID, isFeed: post.isExternal)) }
             Divider()
             Button("Open in Browser") {
-                if let s = post.URL, let url = URL(string: s) { NSWorkspace.shared.open(url) }
+                if let s = post.URL, let url = URL(string: s) { openLink(url) }
             }
         }
     }
@@ -1087,7 +1087,7 @@ struct XPostRow: View {
             Button(reader.isSaved(post) ? "Remove from Saved" : "Save Post") { reader.toggleSave(post) }
             Divider()
             Button("Open Original in Browser") {
-                if let s = post.originalURL ?? post.URL, let url = URL(string: s) { NSWorkspace.shared.open(url) }
+                if let s = post.originalURL ?? post.URL, let url = URL(string: s) { openLink(url) }
             }
         }
     }
@@ -1677,7 +1677,7 @@ struct WebContent: View {
                         HStack {
                             Button("Try Again") { slow = false; attempt += 1 }
                             if let url = baseURL.flatMap(URL.init(string:)) {
-                                Button("Open in Browser") { NSWorkspace.shared.open(url) }
+                                Button("Open in Browser") { openLink(url) }
                             }
                         }
                         .controlSize(.small)
