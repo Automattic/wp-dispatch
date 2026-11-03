@@ -92,7 +92,6 @@ final class Hovercard {
     private var isShowing: Bool { panel?.isVisible == true }
 
     func hover(_ card: AnyView, from anchor: Anchor, edge: Edge) {
-        NSLog("HC hover")
         hiding?.cancel()
         pending?.cancel()
         let delay: Duration = isShowing ? .milliseconds(120) : .milliseconds(550)
@@ -134,9 +133,7 @@ final class Hovercard {
     }
 
     private func present(_ card: AnyView, at anchor: Anchor, edge: Edge) {
-        NSLog("HC present view=%@ win=%@", String(describing: anchor.view), String(describing: anchor.view?.window))
         guard let rect = screenRect(anchor) else { return }
-        NSLog("HC rect %@", NSStringFromRect(rect))
         let panel = self.panel ?? makePanel()
         current = anchor
         self.edge = edge
