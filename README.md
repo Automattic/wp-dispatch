@@ -1,6 +1,6 @@
 # Dispatch for WordPress.com
 
-A macOS menu bar app for skimming WordPress.com. Your notifications and the Reader (blogs and P2s) sit in a panel under the W icon, with an in-app reader so you can tell whether something is worth your time before you open a browser.
+A macOS menu bar app for skimming WordPress.com. Your notifications and the Reader (blogs and P2s) sit in a panel under the D in your menu bar, with an in-app reader so you can tell whether something is worth your time before you open a browser.
 
 **Website and download:** https://dispatchapp.space.fast · **Current version:** see `CFBundleShortVersionString` in `Info.plist`.
 
@@ -71,3 +71,13 @@ docs/                  Everything else worth knowing
 | `Credentials.swift` | Data folder, token file, migration from the old name. |
 | `Updates.swift` | Sparkle updater and version label. |
 | `Screenshots.swift` | `DISPATCH_SCENE` staging, for checking the UI without clicking. |
+
+## Contributing
+
+Issues and pull requests are welcome. Read [docs/development.md](docs/development.md) to build and check a change, and match the existing code: plain AppKit and SwiftUI, no extra dependencies, and the doc for anything you change updated in the same commit.
+
+Your own builds sign in to WordPress.com like the released app. Shipping updates needs the Sparkle signing key, which only the maintainers have.
+
+## License
+
+Dispatch is free software, released under the [GNU General Public License v2](LICENSE) or later.

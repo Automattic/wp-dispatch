@@ -80,6 +80,6 @@ To sign out completely, use ⋯ → **Sign out**, or delete `credentials.json`. 
 
 ## Committing
 
-- Branch: `trunk`. Remote: `shaunandrews/dispatch-for-wordpress-com`, which is private.
+- Branch: `trunk`. Remote: `shaunandrews/dispatch-for-wordpress-com`, which is private for now. The public home will be a new repo under `github.com/Automattic`.
 - Never commit `build/`, `.build/`, release zips or deltas, or `site/.spacefast/state.json`. All of these are in `.gitignore`.
 - Screenshots for PRs or issues don't belong in the repo: upload those through GitHub.
