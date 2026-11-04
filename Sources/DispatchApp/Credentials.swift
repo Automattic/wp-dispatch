@@ -11,8 +11,9 @@ enum AppData {
         return dir
     }()
 
-    /// The app was "WP Notifications" (com.shaunandrews.wpnotifications) before it was Dispatch.
-    /// Carries over the sign-in, stars/saves and panel settings once. Run before anything reads them.
+    /// The app was "WP Notifications" (com.shaunandrews.wpnotifications), then com.shaunandrews.dispatch,
+    /// before it was com.automattic.dispatch. Carries over the sign-in, stars/saves and settings once.
+    /// Run before anything reads them.
     static func migrateFromOldName() {
         let fm = FileManager.default
         let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -27,6 +28,12 @@ enum AppData {
             where defaults.object(forKey: key) == nil {
                 if let value = oldDefaults.object(forKey: key) { defaults.set(value, forKey: key) }
             }
+        }
+        // The data folder is named for the app, so only the settings live under the old bundle ID.
+        let oldID = "com.shaunandrews.dispatch"
+        if Bundle.main.bundleIdentifier != oldID, let oldSettings = defaults.persistentDomain(forName: oldID) {
+            for (key, value) in oldSettings where defaults.object(forKey: key) == nil { defaults.set(value, forKey: key) }
+            defaults.removePersistentDomain(forName: oldID)
         }
     }
 }

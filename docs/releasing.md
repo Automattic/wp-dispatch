@@ -97,14 +97,14 @@ To check that installed copies really update:
 2. Release a new version.
 3. Make Sparkle check right away and install when the app quits:
    ```bash
-   defaults write com.shaunandrews.dispatch SULastCheckTime -date "2020-01-01 00:00:00 +0000"
+   defaults write com.automattic.dispatch SULastCheckTime -date "2020-01-01 00:00:00 +0000"
    ```
    ```bash
-   defaults write com.shaunandrews.dispatch SUAutomaticallyUpdate -bool true
+   defaults write com.automattic.dispatch SUAutomaticallyUpdate -bool true
    ```
 4. Restart the app, wait about 20 seconds, then quit it normally:
    ```bash
-   osascript -e 'tell application id "com.shaunandrews.dispatch" to quit'
+   osascript -e 'tell application id "com.automattic.dispatch" to quit'
    ```
 5. Check the installed version:
    ```bash
@@ -112,7 +112,7 @@ To check that installed copies really update:
    ```
 6. Undo the test setting:
    ```bash
-   defaults delete com.shaunandrews.dispatch SUAutomaticallyUpdate
+   defaults delete com.automattic.dispatch SUAutomaticallyUpdate
    ```
 
 The 0.1.0 → 0.1.1 test on 2026-10-28 passed. It installed a 1.3 KB delta, the signature stayed valid, and macOS didn't flag the app as downloaded.
@@ -165,4 +165,5 @@ Never put real notifications, P2 content or anything internal to Automattic on t
   2. Build with `SIGN_IDENTITY="Developer ID Application: …" ./build.sh`.
   3. Add `xcrun notarytool submit … --wait` and `xcrun stapler staple` to `release.sh`, between building and zipping.
   4. Remove the "Open Anyway" step from the site.
+- **Test an update across the bundle ID change.** The bundle ID moved from `com.shaunandrews.dispatch` to `com.automattic.dispatch` after 0.6.0. `AppData.migrateFromOldName()` carries the settings over, but Open at Login and notification permission belong to the old ID and have to be turned on again. Before shipping 0.7.0, update a 0.6.0 install with `--no-publish` builds (see "Testing an update") to make sure Sparkle installs it.
 - **Automattic-owned OAuth client.** The app signs in with Shaun's WordPress.com app, 151672. See [auth.md](auth.md).

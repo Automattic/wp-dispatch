@@ -58,7 +58,7 @@ kill <pid>; open ~/Applications/Dispatch.app
 |---|---|
 | `~/Library/Application Support/Dispatch/credentials.json` | Sign-in token and its expiry (0600). |
 | `~/Library/Application Support/Dispatch/reader.json` | A cache of your saved posts (they live on WordPress.com). |
-| `defaults read com.shaunandrews.dispatch` | Panel height, window frame, last section, the Unread filter, Sparkle's state (`SU*`). |
+| `defaults read com.automattic.dispatch` | Panel height, window frame, last section, the Unread filter, Sparkle's state (`SU*`). |
 
 To sign out completely, use ⋯ → **Sign out**, or delete `credentials.json`. Never print the token in logs or chat.
 
