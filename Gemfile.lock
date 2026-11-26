@@ -321,7 +321,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  fastlane (~> 2.241)
+  fastlane (~> 2.242)
   fastlane-plugin-wpmreleasetoolkit (~> 15.4)
 
 CHECKSUMS
