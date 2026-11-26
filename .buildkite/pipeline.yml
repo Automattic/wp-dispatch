@@ -5,8 +5,7 @@ env:
   IMAGE_ID: $IMAGE_ID
 
 steps:
-  # Keep these two steps last: a block step holds back every step after it.
-  - block: ":closed_lock_with_key: Build a signed and notarized artifact?"
+  - input: ":closed_lock_with_key: Build a signed and notarized artifact?"
     key: request-signed-build
 
   - label: ":apple: Build, sign, notarize"
