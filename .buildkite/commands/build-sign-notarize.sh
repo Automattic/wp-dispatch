@@ -20,3 +20,6 @@ bundle exec fastlane notarize_app app:"build/Dispatch.app"
 
 echo "--- :package: Archive"
 ditto -c -k --sequesterRsrc --keepParent "build/Dispatch.app" "dist/Dispatch.zip"
+
+buildkite-agent annotate --context "notarized-app-dl-link" --style "success" --scope job \
+  "Notarized binary available for download [here](artifact://dist/Dispatch.zip)"
