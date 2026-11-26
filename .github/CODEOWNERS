@@ -1,0 +1,7 @@
+/.buildkite/ @Automattic/apps-infra-tooling
+/fastlane/ @Automattic/apps-infra-tooling
+/Gemfile @Automattic/apps-infra-tooling
+/Gemfile.lock @Automattic/apps-infra-tooling
+/.bundle/ @Automattic/apps-infra-tooling
+/.ruby-version @Automattic/apps-infra-tooling
+/.xcode-version @Automattic/apps-infra-tooling
