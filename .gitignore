@@ -17,3 +17,8 @@ tools/drift/node_modules/
 
 # Old deltas generate_appcast sets aside once the appcast stops listing them.
 site/releases/old_updates/
+
+vendor/bundle/
+dist/
+fastlane/report.xml
+fastlane/README.md

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
+---
+
+env:
+  IMAGE_ID: $IMAGE_ID
+
+steps:
+  - input: ":closed_lock_with_key: Build a signed and notarized artifact?"
+    key: request-signed-build
+
+  - label: ":apple: Build, sign, notarize"
+    key: sign-notarize
+    depends_on: request-signed-build
+    agents:
+      queue: mac
+    command: .buildkite/commands/build-sign-notarize.sh
+    plugins: [$CI_TOOLKIT_PLUGIN]
+    artifact_paths:
+      - dist/*
+    notify:
+      - github_commit_status:
+          context: Build, Sign & Notarize
