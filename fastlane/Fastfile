@@ -1,0 +1,94 @@
+# frozen_string_literal: true
+
+require 'fileutils'
+
+UI.user_error!('Please run fastlane via `bundle exec`') unless FastlaneCore::Helper.bundler?
+
+PROJECT_ROOT_FOLDER = File.dirname(File.expand_path(__dir__))
+
+APPLE_TEAM_ID = 'PZYM8XX95Q'
+SIGNING_IDENTITY = "Developer ID Application: Automattic, Inc. (#{APPLE_TEAM_ID})"
+
+CODE_SIGNING_STORAGE_OPTIONS = {
+  storage_mode: 's3',
+  s3_bucket: 'a8c-fastlane-match',
+  s3_region: 'us-east-2'
+}.freeze
+
+CODE_SIGNING_ENV_VARS = %w[
+  MATCH_S3_ACCESS_KEY
+  MATCH_S3_SECRET_ACCESS_KEY
+  MATCH_PASSWORD
+].freeze
+
+ASC_API_KEY_ENV_VARS = %w[
+  APP_STORE_CONNECT_API_KEY_KEY_ID
+  APP_STORE_CONNECT_API_KEY_ISSUER_ID
+  APP_STORE_CONNECT_API_KEY_KEY
+].freeze
+
+before_all do
+  # Gives `match` a temporary keychain on CI. No-op locally.
+  setup_ci
+end
+
+# Fetch the Developer ID Application certificate into the keychain.
+# Creating and renewing it needs the Account Holder, so it's an Apps Infra procedure, not a lane.
+#
+lane :configure_code_signing do
+  require_env_vars!(*CODE_SIGNING_ENV_VARS)
+
+  sync_code_signing(
+    type: 'developer_id',
+    platform: 'macos',
+    team_id: APPLE_TEAM_ID,
+    # Certificate only: Developer ID apps without restricted entitlements need no provisioning profile.
+    app_identifier: [],
+    readonly: true,
+    **CODE_SIGNING_STORAGE_OPTIONS
+  )
+end
+
+# Notarize and staple an app bundle the build already signed with the Automattic Developer ID.
+#
+# @param app [String] Path to the `.app`, relative to the repo root.
+#
+lane :notarize_app do |app:|
+  app = resolve_from_project_root(app)
+  require_env_vars!(*ASC_API_KEY_ENV_VARS)
+
+  # Fail before the upload if the build signed with the wrong identity or without the hardened runtime.
+  verify_code_signing(artifact: app, notarized: false)
+
+  # Zips the bundle for upload, then staples the ticket to the bundle itself.
+  notarize(
+    package: app,
+    api_key: app_store_connect_api_key,
+    print_log: true
+  )
+
+  verify_code_signing(artifact: app, notarized: true)
+end
+
+# @param artifact [String] An absolute path to a `.app`, `.dmg` or bare binary.
+# @param notarized [Boolean] Also assert Gatekeeper acceptance and, for bundles and disk images, a stapled ticket.
+#
+private_lane :verify_code_signing do |artifact:, notarized:|
+  macos_verify_code_signing(
+    artifact_path: artifact,
+    expected_authority: SIGNING_IDENTITY,
+    verify_hardened_runtime: true,
+    # A fresh bare binary's online Gatekeeper lookup lags its submission.
+    verify_notarization: notarized && (File.directory?(artifact) || File.extname(artifact) == '.dmg')
+  )
+end
+
+# fastlane runs lanes from `fastlane/`, so resolve caller paths against the repo root.
+def resolve_from_project_root(path)
+  File.absolute_path(path, PROJECT_ROOT_FOLDER)
+end
+
+def require_env_vars!(*names)
+  missing = names.select { |name| ENV[name].to_s.empty? }
+  UI.user_error!("Missing required environment variable(s): #{missing.join(', ')}") unless missing.empty?
+end
